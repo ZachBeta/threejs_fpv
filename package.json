@@ -5,14 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others-on-fail --handle-input \"npm run dev-client\" \"npm run dev-server\"",
-    "dev-client": "vite",
-    "dev-server": "nodemon --config nodemon.json",
+    "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "analyze-logs": "node src/analyze_routine_logs.js",
-    "server": "node src/server.js"
+    "analyze-logs": "node src/analyze_routine_logs.js"
   },
   "repository": {
     "type": "git",
