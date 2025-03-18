@@ -150,6 +150,101 @@ sqlite3 logs.db "SELECT * FROM frame_metrics LIMIT 5;"
 
 Please read our [RULES.md](RULES.md) for guidelines on contributing to this project.
 
+## TODO and Progress
+
+### Completed Items
+- Index.html points to demos
+- Pulled demo JS closer to index
+- Renamed logging demo to game state demo
+- Resolved issue with multiple logging_demo.js files by renaming to game_state_demo.js
+- Basic FPV drone controls implementation
+- Map Enhancement:
+  - Added more objects to the map
+  - Added tall towers dispersed near the edges
+  - Implemented edge fade-out effect with fog
+  - Fixed floating demo cube clipping
+  - Added checkerboard texture and improved shading
+  - Enhanced lighting system with multiple directional lights
+- Reset drone with L button
+- Basic gamepad support
+- Improved visual feedback for controls
+- Handle npm warnings - npm audit fix
+- Confirm logging database tests only interface with our code
+- Set up Vite development environment
+- Implement basic telemetry logging system
+
+### In Progress
+- Investigating issues with sending game state
+- Logging System Test Demos:
+  - Implement logging functionality for system test demonstrations
+  - Add performance metrics collection
+  - Create visualization tools for logged data
+
+### High Priority
+- Physics and Movement:
+  - Create a demo render of the physics engine
+  - Implement core physics features (acceleration, floating mechanics, etc.)
+- Controller Support:
+  - Fix controller mapping to match traditional controls
+  - Add controller calibration options
+  - Implement deadzone settings
+  - Add controller connection status indicator
+- Game State Display:
+  - Display controller state information
+  - Show position and orientation data
+  - Add performance metrics overlay
+
+### Todo
+- Profile database to determine which code paths are dead
+- Switch to TypeScript
+- Clean up markdown, remove excess content
+- Rename game state logger to game_state_api
+- Evaluate need to flush server logs
+- Handle separation of events database from logging
+- Check in on tests
+- Development Tasks:
+  - Write unit tests for new features
+  - Add integration tests for physics system
+  - Implement automated performance testing
+  - Add browser compatibility tests
+- Performance Optimization:
+  - Profile and optimize render loop
+  - Implement level of detail system
+  - Add object pooling for frequently created/destroyed objects
+  - Optimize physics calculations
+- UI/UX Improvements:
+  - Add game state display (controller state, position, etc.)
+  - Implement HUD for important information
+  - Add visual feedback for physics interactions
+  - Create settings menu for controls and graphics
+
+### Ideas and Future Considerations
+- Add visual feedback for stick boundaries
+- Add labels for stick axes
+- Improve routine step transitions
+- Add smooth interpolation between steps
+- Create visualization tool for logged data
+- Map Enhancement:
+  - Separate map and map data when it becomes an issue
+  - Extract map logic to a dedicated class
+  - Add procedural generation options
+  - Implement dynamic loading for large maps
+- Additional Features:
+  - Add multiplayer support
+  - Implement race mode
+  - Create obstacle course mode
+  - Add drone customization options
+
+### Questions
+- Should we adjust the base throttle for routine steps?
+- Do we need to handle window focus/blur for the routine?
+- Should we add error recovery for failed steps?
+
+### Notes
+- Logger might be causing initialization issues
+- Consider adding more error handling
+- Maybe we need to delay logging until after DOM is ready
+
 ## License
 
 MIT
