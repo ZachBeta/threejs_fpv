@@ -49,6 +49,95 @@ const pedestal = new THREE.Mesh(pedestalGeometry, pedestalMaterial);
 pedestal.position.y = 5; // Half of its height
 scene.add(pedestal);
 
+// Create checkerboard texture
+const size = 32;
+const canvas = document.createElement('canvas');
+canvas.width = size;
+canvas.height = size;
+const context = canvas.getContext('2d');
+context.fillStyle = '#ffffff';
+context.fillRect(0, 0, size, size);
+context.fillStyle = '#000000';
+for (let i = 0; i < size; i += 8) {
+    for (let j = 0; j < size; j += 8) {
+        if ((i + j) % 16 === 0) {
+            context.fillRect(i, j, 8, 8);
+        }
+    }
+}
+const checkerTexture = new THREE.CanvasTexture(canvas);
+checkerTexture.wrapS = THREE.RepeatWrapping;
+checkerTexture.wrapT = THREE.RepeatWrapping;
+checkerTexture.repeat.set(2, 2);
+
+// Function to create a building
+function createBuilding(x, z) {
+    const height = 10 + Math.random() * 15;
+    const width = 8 + Math.random() * 6;
+    const depth = 8 + Math.random() * 6;
+    
+    const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+    
+    // Create materials for each face
+    const materials = [
+        new THREE.MeshStandardMaterial({ // right
+            color: 0x808080,
+            roughness: 0.7,
+            metalness: 0.3,
+            flatShading: true,
+            map: checkerTexture.clone()
+        }),
+        new THREE.MeshStandardMaterial({ // left
+            color: 0x808080,
+            roughness: 0.7,
+            metalness: 0.3,
+            flatShading: true,
+            map: checkerTexture.clone()
+        }),
+        new THREE.MeshStandardMaterial({ // top
+            color: 0x808080,
+            roughness: 0.7,
+            metalness: 0.3,
+            flatShading: true
+        }),
+        new THREE.MeshStandardMaterial({ // bottom
+            color: 0x808080,
+            roughness: 0.7,
+            metalness: 0.3,
+            flatShading: true
+        }),
+        new THREE.MeshStandardMaterial({ // front
+            color: 0x808080,
+            roughness: 0.7,
+            metalness: 0.3,
+            flatShading: true,
+            map: checkerTexture.clone()
+        }),
+        new THREE.MeshStandardMaterial({ // back
+            color: 0x808080,
+            roughness: 0.7,
+            metalness: 0.3,
+            flatShading: true,
+            map: checkerTexture.clone()
+        })
+    ];
+    
+    const building = new THREE.Mesh(buildingGeometry, materials);
+    building.position.set(x, height/2, z);
+    
+    // Add subtle edge highlights
+    const edges = new THREE.EdgesGeometry(buildingGeometry);
+    const edgesMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x000000,
+        opacity: 0.2,
+        transparent: true
+    });
+    const edgesMesh = new THREE.LineSegments(edges, edgesMaterial);
+    building.add(edgesMesh);
+    
+    return building;
+}
+
 // Function to create a tower
 function createTower(x, z, height, color = 0x808080) {
     const towerGeometry = new THREE.BoxGeometry(4, height, 4);
@@ -120,23 +209,6 @@ obstacles.forEach(pos => {
     scene.add(obstacle);
 });
 
-// Create some additional structures
-function createBuilding(x, z) {
-    const height = 10 + Math.random() * 15;
-    const width = 8 + Math.random() * 6;
-    const depth = 8 + Math.random() * 6;
-    
-    const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
-    const buildingMaterial = new THREE.MeshStandardMaterial({
-        color: 0x505050 + Math.random() * 0x202020,
-        roughness: 0.8,
-        metalness: 0.2
-    });
-    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
-    building.position.set(x, height/2, z);
-    return building;
-}
-
 // Add some buildings in the middle area
 for (let i = 0; i < 8; i++) {
     const angle = (i / 8) * Math.PI * 2;
@@ -149,18 +221,30 @@ for (let i = 0; i < 8; i++) {
 
 // Create the landmark cube
 const cubeGeometry = new THREE.BoxGeometry();
-const cubeMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+const cubeMaterial = new THREE.MeshPhongMaterial({ 
+    color: 0x00ff00,
+    shininess: 100,
+    specular: 0x444444
+});
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-cube.position.y = 10.5; // Place on top of pedestal
+cube.position.y = 15; // Raised from 10.5 to prevent clipping
 scene.add(cube);
 
 // Add lights
-const light = new THREE.DirectionalLight(0xffffff, 1);
+const light = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity
 light.position.set(1, 1, 1);
 scene.add(light);
 
-const ambientLight = new THREE.AmbientLight(0x404040);
+const ambientLight = new THREE.AmbientLight(0x404040, 0.8); // Increased intensity
 scene.add(ambientLight);
+
+// Add a second directional light for better shading
+const secondaryLight = new THREE.DirectionalLight(0xffffff, 0.8);
+secondaryLight.position.set(-1, 0.5, -1);
+scene.add(secondaryLight);
+
+// Create fog for edge fade-out effect
+scene.fog = new THREE.Fog(0x87CEEB, 100, 400); // Sky blue fog that starts at 100 units and ends at 400
 
 // Drone movement state
 const droneState = {
