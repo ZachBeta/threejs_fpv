@@ -30,10 +30,14 @@ The demo supports both keyboard and gamepad controls:
 - `Arrow Keys`: Rotate the view (left/right/up/down)
 
 ### Gamepad Controls
-- Left Stick: Move forward/backward and strafe left/right
-- Right Stick: Rotate view (pitch and yaw)
-- Y Button: Move up
-- A Button: Move down
+- Left Stick:
+  - Up/Down: Throttle (vertical movement)
+  - Left/Right: Yaw (rotate left/right)
+- Right Stick:
+  - Up/Down: Pitch (tilt forward/backward)
+  - Left/Right: Roll (tilt left/right)
+
+The control scheme follows traditional FPV drone controls for intuitive flying.
 
 Note: The gamepad controls will automatically activate when a controller is connected. Keyboard controls remain available as a fallback.
 

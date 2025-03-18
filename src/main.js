@@ -105,36 +105,32 @@ function handleGamepadInput() {
     const gamepad = droneState.gamepad;
     const deadzone = droneState.deadzone;
 
-    // Left stick - Movement
+    // Left stick - Throttle and Yaw
     const leftX = Math.abs(gamepad.axes[0]) > deadzone ? gamepad.axes[0] : 0;
     const leftY = Math.abs(gamepad.axes[1]) > deadzone ? gamepad.axes[1] : 0;
     
-    // Right stick - Rotation
+    // Right stick - Pitch and Roll
     const rightX = Math.abs(gamepad.axes[2]) > deadzone ? gamepad.axes[2] : 0;
     const rightY = Math.abs(gamepad.axes[3]) > deadzone ? gamepad.axes[3] : 0;
 
-    // Movement
+    // Left stick controls
     if (leftY !== 0) {
-        camera.translateZ(droneState.moveSpeed * leftY);
+        // Vertical movement (throttle)
+        camera.translateY(-droneState.moveSpeed * leftY);
     }
     if (leftX !== 0) {
-        camera.translateX(droneState.moveSpeed * leftX);
+        // Yaw (rotate left/right)
+        camera.rotateY(-droneState.rotationSpeed * leftX);
     }
 
-    // Rotation
-    if (rightX !== 0) {
-        camera.rotateY(-droneState.rotationSpeed * rightX);
-    }
+    // Right stick controls
     if (rightY !== 0) {
-        camera.rotateX(-droneState.rotationSpeed * rightY);
+        // Pitch (tilt forward/backward)
+        camera.translateZ(droneState.moveSpeed * rightY);
     }
-
-    // Altitude control (buttons)
-    if (gamepad.buttons[0].pressed) { // A button - down
-        camera.translateY(-droneState.moveSpeed);
-    }
-    if (gamepad.buttons[3].pressed) { // Y button - up
-        camera.translateY(droneState.moveSpeed);
+    if (rightX !== 0) {
+        // Roll (tilt left/right)
+        camera.translateX(droneState.moveSpeed * rightX);
     }
 }
 
