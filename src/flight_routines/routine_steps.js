@@ -24,7 +24,7 @@ export const BasicSteps = {
   },
 
   land: {
-    name: "Land",
+    name: "0 throttle",
     duration: 2000,
     controls: {
       throttle: 0,

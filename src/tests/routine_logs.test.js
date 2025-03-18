@@ -154,7 +154,7 @@ describe('Routine Log Analysis', () => {
     // Simulate a complete routine sequence
     const steps = [
       'Takeoff', 'Hover', 'Forward', 'Backward', 'Left', 'Right',
-      'Rotate Left', 'Rotate Right', 'Land', 'Reset'
+      'Rotate Left', 'Rotate Right', '0 throttle', 'Reset'
     ];
 
     steps.forEach((step, stepIndex) => {
