@@ -24,4 +24,7 @@ build/
 *.swp
 *.swo
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Personal notes and TODOs
+INBOX.md 
