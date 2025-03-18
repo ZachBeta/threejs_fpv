@@ -4,6 +4,7 @@ Simple guidelines for working with this project.
 
 ## Dev tool rules
 * handle git commits with appropriate flags to commit from a single line with new lines in the commit message - a series of `-m` tags should work
+* prefer longer more expressive commits
 
 ## Code Rules
 
