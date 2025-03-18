@@ -13,6 +13,63 @@ overlay.style.borderRadius = '5px';
 overlay.style.zIndex = '1000';
 document.body.appendChild(overlay);
 
+// Create controller display
+const controllerDisplay = document.createElement('div');
+controllerDisplay.style.position = 'fixed';
+controllerDisplay.style.bottom = '20px';
+controllerDisplay.style.left = '50%';
+controllerDisplay.style.transform = 'translateX(-50%)';
+controllerDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+controllerDisplay.style.color = '#00ff00';
+controllerDisplay.style.fontFamily = 'monospace';
+controllerDisplay.style.padding = '10px';
+controllerDisplay.style.borderRadius = '5px';
+controllerDisplay.style.zIndex = '1000';
+controllerDisplay.style.display = 'flex';
+controllerDisplay.style.gap = '20px';
+
+// Create stick displays
+const leftStickDisplay = document.createElement('div');
+leftStickDisplay.style.width = '100px';
+leftStickDisplay.style.height = '100px';
+leftStickDisplay.style.border = '1px solid #00ff00';
+leftStickDisplay.style.position = 'relative';
+leftStickDisplay.innerHTML = '<div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%);">Left Stick</div>';
+
+const rightStickDisplay = document.createElement('div');
+rightStickDisplay.style.width = '100px';
+rightStickDisplay.style.height = '100px';
+rightStickDisplay.style.border = '1px solid #00ff00';
+rightStickDisplay.style.position = 'relative';
+rightStickDisplay.innerHTML = '<div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%);">Right Stick</div>';
+
+// Create stick indicators
+const leftStickIndicator = document.createElement('div');
+leftStickIndicator.style.width = '10px';
+leftStickIndicator.style.height = '10px';
+leftStickIndicator.style.backgroundColor = '#00ff00';
+leftStickIndicator.style.borderRadius = '50%';
+leftStickIndicator.style.position = 'absolute';
+leftStickIndicator.style.left = '50%';
+leftStickIndicator.style.top = '50%';
+leftStickIndicator.style.transform = 'translate(-50%, -50%)';
+leftStickDisplay.appendChild(leftStickIndicator);
+
+const rightStickIndicator = document.createElement('div');
+rightStickIndicator.style.width = '10px';
+rightStickIndicator.style.height = '10px';
+rightStickIndicator.style.backgroundColor = '#00ff00';
+rightStickIndicator.style.borderRadius = '50%';
+rightStickIndicator.style.position = 'absolute';
+rightStickIndicator.style.left = '50%';
+rightStickIndicator.style.top = '50%';
+rightStickIndicator.style.transform = 'translate(-50%, -50%)';
+rightStickDisplay.appendChild(rightStickIndicator);
+
+controllerDisplay.appendChild(leftStickDisplay);
+controllerDisplay.appendChild(rightStickDisplay);
+document.body.appendChild(controllerDisplay);
+
 // Create scene
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); // Sky blue background
@@ -459,6 +516,22 @@ function animate() {
         <div>Altitude: ${droneState.diagnostics.altitude.toFixed(2)} m</div>
         <div>Position: (${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)})</div>
     `;
+
+    // Update stick positions
+    if (droneState.gamepad) {
+        const leftX = droneState.gamepad.axes[0];
+        const leftY = droneState.gamepad.axes[1];
+        const rightX = droneState.gamepad.axes[2];
+        const rightY = droneState.gamepad.axes[3];
+
+        // Update left stick position (scale from -1,1 to 0,100)
+        leftStickIndicator.style.left = `${50 + leftX * 50}%`;
+        leftStickIndicator.style.top = `${50 + leftY * 50}%`;
+
+        // Update right stick position
+        rightStickIndicator.style.left = `${50 + rightX * 50}%`;
+        rightStickIndicator.style.top = `${50 + rightY * 50}%`;
+    }
 
     // Rotate the cube
     cube.rotation.x += 0.01;
