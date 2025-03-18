@@ -6,9 +6,6 @@
     * separate out map and map data when it starts to become an issue
     * Extract the map logic to a new file - probably use a class to handle behavior and state
 
-* [ ] Game State Display
-  * display a simple x/y render on the bottom of the screen with the current controller state
-
 * [ ] Physics and Movement
   * [ ] create a demo render of the phsyics engine, maybe simulate simple inputs, this can copy the map and renderer from main.js
 

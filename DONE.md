@@ -11,3 +11,8 @@
 
 * QOL updates
   * reset drone with L button
+
+* [IN PROGRESS] Logging System Test Demos
+  * Implement logging functionality for system test demonstrations
+* [ ] Game State Display
+  * display a simple x/y render on the bottom of the screen with the current controller state
