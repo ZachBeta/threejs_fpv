@@ -130,6 +130,7 @@
 
             <div class="controls-group">
                 <button id="start-demo">Start Demo Routine</button>
+                <button id="stop-demo">Stop Demo Routine</button>
                 <button id="check-logs">Check Log Files</button>
                 <button id="clear-logs">Clear Logs</button>
                 <button id="toggle-live">Start Live Updates</button>
@@ -288,9 +289,38 @@
             }
         }
 
+        // Update demo status display
+        function updateDemoStatus() {
+            const isRunning = isDemoRunning();
+            const demoStatus = document.getElementById('demo-status');
+            const currentStep = document.getElementById('current-step');
+            const startButton = document.getElementById('start-demo');
+            const stopButton = document.getElementById('stop-demo');
+
+            if (isRunning) {
+                demoStatus.innerHTML = '<div class="success">Demo is running</div>';
+                startButton.disabled = true;
+                stopButton.disabled = false;
+            } else {
+                demoStatus.innerHTML = '<div class="status">Demo is stopped</div>';
+                startButton.disabled = false;
+                stopButton.disabled = true;
+                currentStep.textContent = 'Ready to start';
+            }
+        }
+
         // Event listeners
         console.log('Setting up event listeners...');
-        document.getElementById('start-demo').addEventListener('click', runDemo);
+        document.getElementById('start-demo').addEventListener('click', () => {
+            startDemo();
+            updateDemoStatus();
+        });
+
+        document.getElementById('stop-demo').addEventListener('click', () => {
+            stopDemo();
+            updateDemoStatus();
+        });
+
         document.getElementById('check-logs').addEventListener('click', listLogFiles);
         document.getElementById('clear-logs').addEventListener('click', clearLogs);
         document.getElementById('toggle-live').addEventListener('click', toggleLiveUpdates);
