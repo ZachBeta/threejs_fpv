@@ -1,0 +1,69 @@
+import { BasicSteps, OrientationSteps, createStep } from './routine_steps.js';
+
+export class BasicRoutine {
+  constructor() {
+    this.name = "Basic Flight Test";
+    this.description = "Tests basic flight controls and movements";
+
+    // Create custom steps for basic movements
+    const moveForward = createStep("Forward", 2000, {
+      throttle: 0.5,
+      pitch: -0.5,
+      roll: 0,
+      yaw: 0
+    });
+
+    const moveBackward = createStep("Backward", 2000, {
+      throttle: 0.5,
+      pitch: 0.5,
+      roll: 0,
+      yaw: 0
+    });
+
+    const moveLeft = createStep("Left", 2000, {
+      throttle: 0.5,
+      pitch: 0,
+      roll: -0.5,
+      yaw: 0
+    });
+
+    const moveRight = createStep("Right", 2000, {
+      throttle: 0.5,
+      pitch: 0,
+      roll: 0.5,
+      yaw: 0
+    });
+
+    const rotateLeft = createStep("Rotate Left", 2000, {
+      throttle: 0.5,
+      pitch: 0,
+      roll: 0,
+      yaw: 0.5
+    });
+
+    const rotateRight = createStep("Rotate Right", 2000, {
+      throttle: 0.5,
+      pitch: 0,
+      roll: 0,
+      yaw: -0.5
+    });
+
+    this.steps = [
+      BasicSteps.takeOff,
+      BasicSteps.hover,
+      moveForward,
+      BasicSteps.hover,
+      moveBackward,
+      BasicSteps.hover,
+      moveLeft,
+      BasicSteps.hover,
+      moveRight,
+      BasicSteps.hover,
+      rotateLeft,
+      BasicSteps.hover,
+      rotateRight,
+      BasicSteps.hover,
+      BasicSteps.land
+    ];
+  }
+} 

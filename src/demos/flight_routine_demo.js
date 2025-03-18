@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import { DroneModel } from '../models/drone_model.js';
 import { GameStateApi } from '../game_state_api.js';
 import { Map } from '../models/map.js';
+import { BasicRoutine } from '../flight_routines/basic_routine.js';
+import { CircleRoutine } from '../flight_routines/circle_routine.js';
+import { FigureEightRoutine } from '../flight_routines/figure_eight_routine.js';
+import { OrientationTestRoutine } from '../flight_routines/orientation_test_routine.js';
+import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
 
 class RoutineDemo {
   constructor() {
@@ -16,54 +21,18 @@ class RoutineDemo {
     this.lastFpsUpdate = 0;
     this.isPaused = false;
     
-    // Basic and advanced routines
+    // Initialize available routines
     this.routines = {
-      basic: [
-        { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
-        { name: 'Hover', duration: 2000, action: () => this.hover() },
-        { name: 'Forward', duration: 2000, action: () => this.moveForward() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Backward', duration: 2000, action: () => this.moveBackward() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Left', duration: 2000, action: () => this.moveLeft() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Right', duration: 2000, action: () => this.moveRight() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Rotate Left', duration: 2000, action: () => this.rotateLeft() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Rotate Right', duration: 2000, action: () => this.rotateRight() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Land', duration: 2000, action: () => this.land() },
-        { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
-      ],
-      advanced: [
-        { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Circle Left', duration: 4000, action: () => this.circleLeft() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Circle Right', duration: 4000, action: () => this.circleRight() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Figure Eight', duration: 6000, action: () => this.figureEight() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Ascend', duration: 2000, action: () => this.ascend() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Descend', duration: 2000, action: () => this.descend() },
-        { name: 'Hover', duration: 1000, action: () => this.hover() },
-        { name: 'Land', duration: 2000, action: () => this.land() },
-        { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
-      ],
-      // Special figure eight pattern
-      figureEight: [
-        { name: 'Start Figure Eight', duration: 1000, action: () => this.startFigureEight() },
-        { name: 'Circle Left Part', duration: 3000, action: () => this.figureEightLeft() },
-        { name: 'Circle Right Part', duration: 3000, action: () => this.figureEightRight() },
-        { name: 'End Figure Eight', duration: 1000, action: () => this.hover() }
-      ]
+      basic: new BasicRoutine().steps,
+      circle: new CircleRoutine().steps,
+      figureEight: new FigureEightRoutine().steps,
+      orientationTest: new OrientationTestRoutine().steps,
+      physicsTest: new PhysicsTestRoutine().steps
     };
-    
-    // Set active routine to basic
+
+    // Set default routine
     this.activeRoutineType = 'basic';
-    this.routine = this.routines.basic;
+    this.routine = this.routines[this.activeRoutineType];
 
     // Check server status
     this.checkServerStatus();
@@ -250,7 +219,7 @@ Controls:
           this.isRoutineRunning = false;
         } else {
           this.stepStartTime = currentTime;
-          this.routine[this.currentStep].action();
+          this.applyStepControls(this.routine[this.currentStep]);
         }
       }
     }
@@ -338,8 +307,18 @@ Controls:
     this.stepStartTime = performance.now();
     this.logs = []; // Clear previous logs
     this.logger.enable(); // Enable logging
-    this.routine[this.currentStep].action();
+    this.applyStepControls(this.routine[this.currentStep]);
     this.updateUI();
+  }
+
+  // Add new method to apply controls from a step
+  applyStepControls(step) {
+    console.log('Applying controls for step:', step.name);
+    const controls = step.controls;
+    this.setThrottle(controls.throttle);
+    this.setPitch(controls.pitch);
+    this.setRoll(controls.roll);
+    this.setYaw(controls.yaw);
   }
 
   stopRoutine() {
@@ -399,84 +378,6 @@ Controls:
     }
   }
 
-  // Routine step implementations
-  takeoff() {
-    console.log('Executing takeoff');
-    this.setThrottle(0.8);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
-
-  hover() {
-    console.log('Executing hover - leveling drone');
-    this.setThrottle(0.5); // Maintain altitude
-    this.setPitch(0);      // Level pitch
-    this.setRoll(0);       // Level roll
-    this.setYaw(0);        // Stop any rotation
-    
-    // Reset the physics rotation to ensure the drone is flat
-    // This will be helpful in case there's any accumulated rotation
-    this.drone.physics.rotation.x = 0;
-    this.drone.physics.rotation.z = 0;
-  }
-
-  moveForward() {
-    console.log('Executing forward movement');
-    this.setThrottle(0.5);
-    this.setPitch(-0.5);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
-
-  moveBackward() {
-    console.log('Executing backward movement');
-    this.setThrottle(0.5);
-    this.setPitch(0.5);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
-
-  moveLeft() {
-    console.log('Executing left movement');
-    this.setThrottle(0.5);
-    this.setPitch(0);
-    this.setRoll(-0.5);
-    this.setYaw(0);
-  }
-
-  moveRight() {
-    console.log('Executing right movement');
-    this.setThrottle(0.5);
-    this.setPitch(0);
-    this.setRoll(0.5);
-    this.setYaw(0);
-  }
-
-  rotateLeft() {
-    console.log('Executing left rotation');
-    this.setThrottle(0.5);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0.5);
-  }
-
-  rotateRight() {
-    console.log('Executing right rotation');
-    this.setThrottle(0.5);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(-0.5);
-  }
-
-  land() {
-    console.log('Executing landing');
-    this.setThrottle(0.2);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
-
   checkServerStatus() {
     const API_BASE = '/api';
     const statusElement = document.getElementById('server-status');
@@ -516,68 +417,6 @@ Controls:
     this.lastFpsUpdate = performance.now();
     this.frameCount = 0;
     this.animate();
-  }
-
-  // Advanced flight routines
-  circleLeft() {
-    console.log('Executing circle left');
-    this.setThrottle(0.5);
-    this.setPitch(0.3);
-    this.setRoll(-0.3);
-    this.setYaw(-0.2);
-  }
-  
-  circleRight() {
-    console.log('Executing circle right');
-    this.setThrottle(0.5);
-    this.setPitch(0.3);
-    this.setRoll(0.3);
-    this.setYaw(0.2);
-  }
-  
-  figureEight() {
-    console.log('Executing figure eight');
-    this.startFigureEight();
-  }
-  
-  startFigureEight() {
-    console.log('Starting figure eight');
-    this.setThrottle(0.6);
-    this.setPitch(0.3);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
-  
-  figureEightLeft() {
-    console.log('Figure eight - left turn');
-    this.setThrottle(0.6);
-    this.setPitch(0.3);
-    this.setRoll(-0.4);
-    this.setYaw(-0.2);
-  }
-  
-  figureEightRight() {
-    console.log('Figure eight - right turn');
-    this.setThrottle(0.6);
-    this.setPitch(0.3);
-    this.setRoll(0.4);
-    this.setYaw(0.2);
-  }
-  
-  ascend() {
-    console.log('Executing ascend');
-    this.setThrottle(0.8);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
-  
-  descend() {
-    console.log('Executing descend');
-    this.setThrottle(0.3);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
   }
 
   // Helper method to reset all controls to neutral position

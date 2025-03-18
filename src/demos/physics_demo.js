@@ -1,29 +1,12 @@
 import * as THREE from 'three';
 import { DroneModel } from '../models/drone_model.js';
 import { Map } from '../models/map.js';
+import { Controls } from '../controls.js';
 
 class PhysicsDemo {
   constructor() {
-    // Initialize drone state
-    this.droneState = {
-      gamepad: null,
-      deadzone: 0.1,
-      diagnostics: {
-        speed: 0,
-        altitude: 0,
-        controllerConnected: false,
-        controllerName: '',
-        lastInput: 'None'
-      },
-      // Add control state
-      controls: {
-        throttle: 0,
-        yaw: 0,
-        pitch: 0,
-        roll: 0,
-        hover: false
-      }
-    };
+    // Initialize controls
+    this.controls = new Controls();
 
     // Create controller display
     this.setupControllerDisplay();
@@ -48,21 +31,6 @@ class PhysicsDemo {
     // Set up camera position
     this.camera.position.set(0, 15, 15);
     this.camera.lookAt(0, 0, 0);
-
-    // Setup gamepad event listeners
-    window.addEventListener("gamepadconnected", (e) => {
-      console.log("Gamepad connected:", e.gamepad);
-      this.droneState.gamepad = e.gamepad;
-      this.droneState.diagnostics.controllerConnected = true;
-      this.droneState.diagnostics.controllerName = e.gamepad.id;
-    });
-
-    window.addEventListener("gamepaddisconnected", (e) => {
-      console.log("Gamepad disconnected");
-      this.droneState.gamepad = null;
-      this.droneState.diagnostics.controllerConnected = false;
-      this.droneState.diagnostics.controllerName = '';
-    });
 
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
@@ -157,111 +125,67 @@ class PhysicsDemo {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  updateGamepadState() {
-    const gamepads = navigator.getGamepads();
-    
-    if (!this.droneState.gamepad) {
-      for (const gamepad of gamepads) {
-        if (gamepad) {
-          this.droneState.gamepad = gamepad;
-          this.droneState.diagnostics.controllerConnected = true;
-          this.droneState.diagnostics.controllerName = gamepad.id;
-          break;
-        }
-      }
-      return;
-    }
-
-    // Get fresh gamepad state
-    const freshGamepad = navigator.getGamepads()[this.droneState.gamepad.index];
-    
-    if (!freshGamepad) {
-      this.droneState.gamepad = null;
-      this.droneState.diagnostics.controllerConnected = false;
-      this.droneState.diagnostics.controllerName = '';
-    } else {
-      this.droneState.gamepad = freshGamepad;
-    }
-  }
-
-  handleGamepadInput() {
-    if (!this.droneState.gamepad) {
-      this.droneState.diagnostics.controllerConnected = false;
-      this.droneState.diagnostics.controllerName = '';
-      return;
-    }
-
-    const gamepad = this.droneState.gamepad;
-    this.droneState.diagnostics.controllerConnected = true;
-    this.droneState.diagnostics.controllerName = gamepad.id;
-    const deadzone = this.droneState.deadzone;
-
-    // Check for L button press (button 4) to reset the drone
-    if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
-      this.reset();
-      return;
-    }
-
-    // Left stick - Throttle and Yaw
-    const leftX = Math.abs(gamepad.axes[0]) > deadzone ? gamepad.axes[0] : 0;
-    const leftY = Math.abs(gamepad.axes[1]) > deadzone ? gamepad.axes[1] : 0;
-    
-    // Right stick - Pitch and Roll
-    const rightX = Math.abs(gamepad.axes[2]) > deadzone ? gamepad.axes[2] : 0;
-    const rightY = Math.abs(gamepad.axes[3]) > deadzone ? gamepad.axes[3] : 0;
-
-    // Update last input for diagnostics
-    if (leftX !== 0 || leftY !== 0 || rightX !== 0 || rightY !== 0) {
-      this.droneState.diagnostics.lastInput = `L:(${leftX.toFixed(2)},${leftY.toFixed(2)}) R:(${rightX.toFixed(2)},${rightY.toFixed(2)})`;
-    }
-
-    // Update controller display
-    this.leftStickIndicator.style.left = `${(leftX * 50) + 50}%`;
-    this.leftStickIndicator.style.top = `${(leftY * 50) + 50}%`;
-    this.rightStickIndicator.style.left = `${(rightX * 50) + 50}%`;
-    this.rightStickIndicator.style.top = `${(rightY * 50) + 50}%`;
-
-    // Update game state based on inputs
-    this.droneState.controls.throttle = leftY !== 0 ? -leftY : 0;
-    this.droneState.controls.yaw = leftX !== 0 ? -leftX : 0;
-    this.droneState.controls.pitch = rightY !== 0 ? rightY : 0;
-    this.droneState.controls.roll = rightX !== 0 ? rightX : 0;
-  }
-
   updatePhysicsFromState() {
+    const controls = this.controls.getControls();
+    
     // Apply game state to drone
-    this.drone.setThrottle(this.droneState.controls.throttle);
-    this.drone.setYaw(this.droneState.controls.yaw);
-    this.drone.setPitch(this.droneState.controls.pitch);
-    this.drone.setRoll(this.droneState.controls.roll);
+    this.drone.setThrottle(controls.throttle);
+    this.drone.setYaw(controls.yaw);
+    this.drone.setPitch(controls.pitch);
+    this.drone.setRoll(controls.roll);
+
+    // Update controls diagnostics with drone orientation
+    this.controls.updateDroneOrientation(this.drone.rotation);
   }
 
   updateDiagnostics() {
+    const diagnostics = this.controls.getDiagnostics();
+    const controls = this.controls.getControls();
+    
     // Calculate speed from physics velocity
     const velocity = this.drone.velocity;
-    this.droneState.diagnostics.speed = Math.sqrt(
+    diagnostics.speed = Math.sqrt(
       velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z
     );
-    this.droneState.diagnostics.altitude = this.drone.position.y;
+    diagnostics.altitude = this.drone.position.y;
     
-    // Update overlay text
+    // Update overlay text with enhanced debug info
     this.diagnosticOverlay.innerHTML = `
-      <div>Controller: ${this.droneState.diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
-      <div>Controller Name: ${this.droneState.diagnostics.controllerName || 'None'}</div>
-      <div>Last Input: ${this.droneState.diagnostics.lastInput}</div>
-      <div>Speed: ${this.droneState.diagnostics.speed.toFixed(2)} m/s</div>
-      <div>Altitude: ${this.droneState.diagnostics.altitude.toFixed(2)} m</div>
+      <div>Controller: ${diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
+      <div>Controller Name: ${diagnostics.controllerName || 'None'}</div>
+      <div>Last Input: ${diagnostics.lastInput}</div>
+      <div>Speed: ${diagnostics.speed.toFixed(2)} m/s</div>
+      <div>Altitude: ${diagnostics.altitude.toFixed(2)} m</div>
       <div>Throttle: ${this.drone.throttle.toFixed(2)}</div>
       <div>Hover Mode: ${this.drone.hoverMode ? 'ON' : 'OFF'}</div>
+      <div>Debug State:</div>
+      <div style="margin-left: 10px">
+        Raw Inputs: ${JSON.stringify(diagnostics.debugState.rawInputs, null, 2)}</div>
+      <div style="margin-left: 10px">
+        Processed Controls: ${JSON.stringify(diagnostics.debugState.processedControls, null, 2)}</div>
+      <div style="margin-left: 10px">
+        Drone Orientation: ${JSON.stringify(diagnostics.debugState.droneOrientation, null, 2)}</div>
     `;
+
+    // Update stick indicators
+    if (diagnostics.debugState.rawInputs.leftStick) {
+      const leftStick = diagnostics.debugState.rawInputs.leftStick;
+      this.leftStickIndicator.style.left = `${(leftStick.x * 50) + 50}%`;
+      this.leftStickIndicator.style.top = `${(leftStick.y * 50) + 50}%`;
+    }
+    if (diagnostics.debugState.rawInputs.rightStick) {
+      const rightStick = diagnostics.debugState.rawInputs.rightStick;
+      this.rightStickIndicator.style.left = `${(rightStick.x * 50) + 50}%`;
+      this.rightStickIndicator.style.top = `${(rightStick.y * 50) + 50}%`;
+    }
   }
 
   animate() {
     requestAnimationFrame(() => this.animate());
 
     // Update gamepad state
-    this.updateGamepadState();
-    this.handleGamepadInput();
+    this.controls.updateGamepadState();
+    this.controls.handleGamepadInput();
 
     // Update physics from game state
     this.updatePhysicsFromState();
@@ -287,38 +211,30 @@ class PhysicsDemo {
     this.renderer.render(this.scene, this.camera);
   }
 
-  // Control methods now delegate to drone
+  // Control methods now delegate to controls instance
   setThrottle(value) {
-    this.droneState.controls.throttle = value;
+    this.controls.setThrottle(value);
   }
 
   setPitch(value) {
-    this.droneState.controls.pitch = value;
+    this.controls.setPitch(value);
   }
 
   setRoll(value) {
-    this.droneState.controls.roll = value;
+    this.controls.setRoll(value);
   }
 
   setYaw(value) {
-    this.droneState.controls.yaw = value;
+    this.controls.setYaw(value);
   }
 
   toggleHoverMode() {
-    this.droneState.controls.hover = !this.droneState.controls.hover;
+    this.controls.toggleHoverMode();
     this.drone.toggleHoverMode();
   }
 
   reset() {
-    // Reset game state
-    this.droneState.controls = {
-      throttle: 0,
-      yaw: 0,
-      pitch: 0,
-      roll: 0,
-      hover: false
-    };
-    // Reset drone
+    this.controls.reset();
     this.drone.reset();
   }
 }
@@ -345,10 +261,10 @@ document.addEventListener('keydown', (event) => {
     
     // Right stick (IJKL)
     case 'i': // Pitch forward
-      demo.setPitch(-1.0);
+      demo.setPitch(-1.0); // Negative value to pitch forward
       break;
     case 'k': // Pitch backward
-      demo.setPitch(1.0);
+      demo.setPitch(1.0); // Positive value to pitch backward
       break;
     case 'j': // Roll left
       demo.setRoll(-1.0);

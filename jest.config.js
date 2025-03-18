@@ -1,10 +1,10 @@
 export default {
+  testEnvironment: 'jsdom',
   transform: {},
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^three$': '<rootDir>/node_modules/three/build/three.module.js'
   },
-  testEnvironment: 'node',
   transformIgnorePatterns: [
-    'node_modules/(?!three/.*)',
-  ],
+    'node_modules/(?!(three)/)'
+  ]
 }; 

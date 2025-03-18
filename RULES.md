@@ -7,6 +7,7 @@ Simple guidelines for working with this project.
 * It is also untracked intentionally leave it alone
 * prefer realitic tests over mocked tests
 * cat any output from git to avoid view waiting for user input
+* use dependency injection to help make objects easier to test
 
 ## Development Environment Rules
 
