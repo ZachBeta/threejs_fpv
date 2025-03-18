@@ -78,8 +78,9 @@
             padding: 15px;
             border-radius: 4px;
             margin: 10px 0;
-            max-height: 400px;
+            max-height: 600px;
             overflow-y: auto;
+            border: 1px solid #e9ecef;
         }
         .state-card {
             background: white;
@@ -88,6 +89,22 @@
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             border-left: 3px solid #007bff;
+            transition: all 0.2s ease;
+        }
+        .state-card:first-child {
+            border-left: 3px solid #28a745;
+            background-color: #f8fff8;
+        }
+        .state-card.newest {
+            border-left: 3px solid #dc3545;
+            background-color: #fff8f8;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.2); }
+            70% { box-shadow: 0 0 0 4px rgba(220, 53, 69, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
         }
         .state-value {
             font-family: monospace;
@@ -144,7 +161,7 @@
         </div>
 
         <div class="section">
-            <h3>Latest Game States</h3>
+            <h3>Latest Game States <span id="live-indicator" style="color: #28a745; font-size: 14px; margin-left: 10px;">● LIVE</span></h3>
             <div id="game-states" class="game-state">
                 <div id="states-list"></div>
             </div>
@@ -180,22 +197,40 @@
             return typeof num === 'number' ? num.toFixed(2) : num;
         }
 
+        // Format time ago
+        function formatTimeAgo(timestamp) {
+            const seconds = (Date.now() - timestamp) / 1000;
+            if (seconds < 1) return 'just now';
+            if (seconds < 60) return `${Math.floor(seconds)}s ago`;
+            return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s ago`;
+        }
+
         // Update game states display
         async function updateGameStates() {
-            console.log('Updating game states...');
             try {
-                const response = await fetch(`${API_BASE}/game-states?limit=10`);
+                const response = await fetch(`${API_BASE}/game-states?limit=20`);
                 const data = await response.json();
-                console.log('Game states response:', data);
                 if (data.success && data.states) {
+                    // Update the live indicator
+                    const liveIndicator = document.getElementById('live-indicator');
+                    liveIndicator.style.display = 'inline';
+                    
                     const statesList = document.getElementById('states-list');
-                    statesList.innerHTML = data.states.map(state => {
+                    // Sort states to show newest first
+                    const sortedStates = [...data.states].sort((a, b) => b.timestamp - a.timestamp);
+                    statesList.innerHTML = sortedStates.map((state, index) => {
                         if (!state || !state.position || !state.rotation || !state.controls) {
                             return '<div class="state-card">Invalid state data</div>';
                         }
+                        
+                        // Add special class for newest entry
+                        const isNewest = index === 0;
+                        const cardClass = isNewest ? 'state-card newest' : 'state-card';
+                        const timeAgo = formatTimeAgo(state.timestamp);
+                        
                         return `
-                            <div class="state-card">
-                                <div class="state-value">Time: ${new Date(state.timestamp).toLocaleTimeString()}</div>
+                            <div class="${cardClass}">
+                                <div class="state-value"><strong>${isNewest ? '🔴 LATEST' : ''}</strong> ${new Date(state.timestamp).toLocaleTimeString()} <span style="color: #888;">(${timeAgo})</span></div>
                                 <div class="state-value">Position: (${formatNumber(state.position.x)}, ${formatNumber(state.position.y)}, ${formatNumber(state.position.z)})</div>
                                 <div class="state-value">Rotation: (${formatNumber(state.rotation.x)}, ${formatNumber(state.rotation.y)}, ${formatNumber(state.rotation.z)})</div>
                                 <div class="state-value">Controls: T:${formatNumber(state.controls.throttle)} P:${formatNumber(state.controls.pitch)} R:${formatNumber(state.controls.roll)} Y:${formatNumber(state.controls.yaw)}</div>
@@ -205,10 +240,12 @@
                     }).join('');
                 } else {
                     document.getElementById('states-list').innerHTML = '<div>No game states available</div>';
+                    document.getElementById('live-indicator').style.display = 'none';
                 }
             } catch (error) {
                 console.error('Error updating game states:', error);
                 document.getElementById('states-list').innerHTML = '<div>Error loading game states</div>';
+                document.getElementById('live-indicator').style.display = 'none';
             }
         }
 
@@ -303,6 +340,11 @@
         console.log('Running initial setup...');
         checkServerStatus();
         updateGameStates(); // Initial game states load
+        
+        // Set up auto-refresh for game states
+        const refreshInterval = 500; // Update every 500ms
+        setInterval(updateGameStates, refreshInterval);
+        
         console.log('Initial setup complete');
     </script>
 </body>
