@@ -233,6 +233,11 @@ export function clearAllData() {
   }
 }
 
+// Export the database instance for proper cleanup
+export function getDatabase() {
+  return db;
+}
+
 // Export the initialize function for explicit initialization
 export { initializeDatabase };
 
