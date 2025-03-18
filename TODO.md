@@ -6,17 +6,13 @@
     * separate out map and map data when it starts to become an issue
     * Extract the map logic to a new file - probably use a class to handle behavior and state
 
-* game state display
-  * display a simple x/y render on the botton of the screen with the current controller state
+* [ ] Game State Display
+  * display a simple x/y render on the bottom of the screen with the current controller state
 
 * [ ] Physics and Movement
   * Implement physics acceleration on throttle
   * Add floating mechanics
   * Match feeling of FPV drone sims (focus on playability and transferability over exact realism)
-
-* [ ] Development Tasks
-  * Test rendering logging
-  * Move completed items from TODO.md to DONE.md
 
 ## Soon
 
@@ -36,5 +32,7 @@
       - Left: Tilt left
       - Right: Tilt right
     ```
-- [ ] is there an npm clean we can use? previous build can cause issues
-  * might be irrelevant after turning off browser cache
+
+* [ ] Development Tasks
+  * Investigate npm clean options for handling previous build issues
+  * Note: might be irrelevant after turning off browser cache
