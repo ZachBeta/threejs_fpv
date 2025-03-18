@@ -1,10 +1,13 @@
 # Three.js FPV Demo
 
-A simple 3D demo using Three.js that displays a rotating cube with proper lighting and includes telemetry logging capabilities.
+A simple 3D demo using Three.js that features a first-person view (FPV) drone-like camera movement system in a large open space with a central landmark.
 
 ## Features
 
-- 3D scene with a rotating green cube
+- FPV drone-like controls for intuitive navigation
+- Large open map with a central landmark
+  - Rotating green cube on a tall pedestal as a reference point
+  - 1000x1000 unit ground plane
 - Directional and ambient lighting
 - Responsive design that adapts to window resizing
 - Modern development setup using Vite
@@ -14,6 +17,15 @@ A simple 3D demo using Three.js that displays a rotating cube with proper lighti
   - Stores system information
 - Real-time performance monitoring
 - Automatic error handling and logging
+
+## Controls
+
+The demo implements drone-like FPV controls:
+- `W/S`: Move forward/backward
+- `A/D`: Strafe left/right
+- `Space`: Move up
+- `Shift`: Move down
+- `Arrow Keys`: Rotate the view (left/right/up/down)
 
 ## Prerequisites
 
