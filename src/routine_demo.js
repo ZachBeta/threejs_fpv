@@ -3,6 +3,23 @@ import { DronePhysics } from './physics.js';
 
 class RoutineDemo {
   constructor() {
+    console.log('Creating new RoutineDemo instance');
+    this.isRoutineRunning = false;
+    this.currentStep = 0;
+    this.stepStartTime = 0;
+    this.routine = [
+      { name: 'Takeoff', duration: 2000 },
+      { name: 'Hover', duration: 2000 },
+      { name: 'Forward', duration: 2000 },
+      { name: 'Backward', duration: 2000 },
+      { name: 'Left', duration: 2000 },
+      { name: 'Right', duration: 2000 },
+      { name: 'Rotate Left', duration: 2000 },
+      { name: 'Rotate Right', duration: 2000 },
+      { name: 'Land', duration: 2000 },
+      { name: 'Reset', duration: 1000 }
+    ];
+
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -71,24 +88,6 @@ class RoutineDemo {
 
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
-
-    // Initialize routine
-    this.routine = [
-      { name: 'Takeoff', duration: 2000, action: () => this.setThrottle(1.0) },
-      { name: 'Hover', duration: 2000, action: () => this.toggleHoverMode() },
-      { name: 'Forward', duration: 2000, action: () => this.setPitch(1.0) },
-      { name: 'Backward', duration: 2000, action: () => this.setPitch(-1.0) },
-      { name: 'Left', duration: 2000, action: () => this.setRoll(-1.0) },
-      { name: 'Right', duration: 2000, action: () => this.setRoll(1.0) },
-      { name: 'Rotate Left', duration: 2000, action: () => this.setYaw(-1.0) },
-      { name: 'Rotate Right', duration: 2000, action: () => this.setYaw(1.0) },
-      { name: 'Land', duration: 2000, action: () => this.setThrottle(0) },
-      { name: 'Reset', duration: 1000, action: () => this.reset() }
-    ];
-
-    this.currentStep = 0;
-    this.stepStartTime = 0;
-    this.isRoutineRunning = false;
 
     // Get UI elements
     this.overlay = document.getElementById('overlay');
@@ -247,6 +246,7 @@ class RoutineDemo {
   }
 
   startRoutine() {
+    console.log('Starting routine...');
     this.isRoutineRunning = true;
     this.currentStep = 0;
     this.stepStartTime = performance.now();
@@ -256,6 +256,7 @@ class RoutineDemo {
   }
 
   stopRoutine() {
+    console.log('Stopping routine...');
     this.isRoutineRunning = false;
     // Reset controls
     this.setThrottle(0);
@@ -290,6 +291,28 @@ class RoutineDemo {
       console.error('Error sending logs to server:', error);
     });
   }
+
+  updateRoutine() {
+    if (!this.isRoutineRunning) return;
+
+    const currentTime = performance.now();
+    const currentStep = this.routine[this.currentStep];
+    
+    console.log(`Current step: ${currentStep.name} (${Math.ceil((currentStep.duration - (currentTime - this.stepStartTime)) / 1000)}s remaining)`);
+
+    if (currentTime - this.stepStartTime >= currentStep.duration) {
+      this.currentStep++;
+      if (this.currentStep >= this.routine.length) {
+        console.log('Routine completed');
+        this.isRoutineRunning = false;
+      } else {
+        this.stepStartTime = currentTime;
+        setTimeout(() => this.updateRoutine(), 100);
+      }
+    } else {
+      setTimeout(() => this.updateRoutine(), 100);
+    }
+  }
 }
 
 // Create demo instance
@@ -309,4 +332,6 @@ document.addEventListener('keydown', (event) => {
       demo.reset();
       break;
   }
-}); 
+});
+
+export { RoutineDemo }; 
