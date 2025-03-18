@@ -8,9 +8,8 @@ export class OrientationTestRoutine {
       BasicSteps.takeOff,
       BasicSteps.hoverMaintainHeading,
       {
-        ...OrientationSteps.yawRight90,
-        duration: 1500,
-        name: "Yaw 90 degrees right (drone should face right)"
+        ...OrientationSteps.yawRight,
+        name: "Yaw right for 2 seconds (drone should face right)"
       },
       BasicSteps.hoverMaintainHeading,
       {
@@ -24,9 +23,8 @@ export class OrientationTestRoutine {
       },
       BasicSteps.hoverMaintainHeading,
       {
-        ...OrientationSteps.yawLeft90,
-        duration: 1500,
-        name: "Yaw back to start (-90 degrees)"
+        ...OrientationSteps.yawLeft,
+        name: "Yaw left for 2 seconds (return to start)"
       },
       BasicSteps.hoverMaintainHeading,
       BasicSteps.land

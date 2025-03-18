@@ -181,18 +181,18 @@ describe('Flight Routines', () => {
 
     test('should include orientation test steps', () => {
       const stepNames = routine.steps.map(step => step.name);
-      expect(stepNames).toContain('Yaw 90 degrees right (drone should face right)');
+      expect(stepNames).toContain('Yaw right for 2 seconds (drone should face right)');
       expect(stepNames).toContain('Pitch forward (should move right relative to starting position)');
       expect(stepNames).toContain('Pitch backward (should move left relative to starting position)');
-      expect(stepNames).toContain('Yaw back to start (-90 degrees)');
+      expect(stepNames).toContain('Yaw left for 2 seconds (return to start)');
     });
 
     test('should have correct yaw control values', () => {
-      const yawRight = routine.steps.find(step => step.name === 'Yaw 90 degrees right (drone should face right)');
-      const yawLeft = routine.steps.find(step => step.name === 'Yaw back to start (-90 degrees)');
+      const yawRight = routine.steps.find(step => step.name === 'Yaw right for 2 seconds (drone should face right)');
+      const yawLeft = routine.steps.find(step => step.name === 'Yaw left for 2 seconds (return to start)');
 
-      expect(yawRight.controls.yaw).toBeGreaterThan(0);
-      expect(yawLeft.controls.yaw).toBeLessThan(0);
+      expect(yawRight.controls.yaw).toBeLessThan(0);
+      expect(yawLeft.controls.yaw).toBeGreaterThan(0);
     });
   });
 

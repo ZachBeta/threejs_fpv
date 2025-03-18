@@ -30,7 +30,9 @@ export class DronePhysics {
     this.maxThrottle = 1.0;
     this.throttleAcceleration = 40.0;
     this.tiltSpeed = 2.0;
-    this.yawSpeed = 4.5; // Fine-tuned for precise 90-degree rotation
+    this.yawSpeed = 2.0; // Reduced from 4.5 for smoother control
+    this.yawAcceleration = 4.0; // New parameter for smooth yaw changes
+    this.yawDamping = 0.92; // New parameter for yaw momentum
     this.airResistance = 0.05;
     this.angularDamping = 0.95;
     this.tiltForce = 5.0;
@@ -66,16 +68,19 @@ export class DronePhysics {
   }
 
   updateRotations(deltaTime) {
-    // Handle yaw input - maintain last yaw if input is null
+    // Handle yaw input with smooth acceleration
     if (this.yaw === null) {
-      // When yaw is null, don't apply any rotation
-      this.lastYaw = 0;
+      // When yaw is null, gradually reduce rotation
+      this.angularVelocity.y *= this.yawDamping;
     } else {
-      this.lastYaw = this.yaw;
-      // Update yaw rotation with reduced damping compensation
-      const dampingCompensation = 1.0 / Math.sqrt(this.angularDamping);
-      this.localRotation.y += this.yaw * this.yawSpeed * deltaTime * (this.yaw !== 0 ? dampingCompensation : 1.0);
+      // Smoothly accelerate yaw based on input
+      const targetYawVelocity = this.yaw * this.yawSpeed;
+      const yawDiff = targetYawVelocity - this.angularVelocity.y;
+      this.angularVelocity.y += yawDiff * this.yawAcceleration * deltaTime;
     }
+    
+    // Apply yaw rotation with momentum
+    this.localRotation.y += this.angularVelocity.y * deltaTime;
     
     // Update pitch and roll
     this.localRotation.x += this.pitch * this.tiltSpeed * deltaTime; // Pitch
@@ -83,9 +88,6 @@ export class DronePhysics {
     
     // Apply angular damping
     this.localRotation.x *= this.angularDamping;
-    if (this.yaw !== null) { // Only damp yaw when not maintaining position
-      this.localRotation.y *= this.angularDamping;
-    }
     this.localRotation.z *= this.angularDamping;
     
     // Update rotation euler with current local rotation

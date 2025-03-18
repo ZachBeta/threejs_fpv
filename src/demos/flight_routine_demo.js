@@ -96,6 +96,9 @@ class RoutineDemo {
     
     // Initialize routine steps display with the current routine
     this.updateRoutineStepsDisplay();
+
+    // Make demo available globally for UI updates
+    window.demo = this;
   }
   
   updateRoutineStepsDisplay() {
@@ -448,6 +451,36 @@ class RoutineDemo {
     this.lastFpsUpdate = performance.now();
     this.frameCount = 0;
     this.animate();
+  }
+
+  getRoutineSteps(routineType) {
+    let routine;
+    switch(routineType) {
+      case 'orientationTest':
+        routine = new OrientationTestRoutine();
+        break;
+      case 'basic':
+        routine = new BasicRoutine();
+        break;
+      case 'circle':
+        routine = new CircleRoutine();
+        break;
+      case 'figureEight':
+        routine = new FigureEightRoutine();
+        break;
+      case 'physicsTest':
+        routine = new PhysicsTestRoutine();
+        break;
+      case 'throttleTest':
+        routine = new ThrottleTestRoutine();
+        break;
+      case 'advancedManeuvers':
+        routine = new AdvancedManeuversRoutine();
+        break;
+      default:
+        routine = new BasicRoutine();
+    }
+    return routine.steps;
   }
 }
 

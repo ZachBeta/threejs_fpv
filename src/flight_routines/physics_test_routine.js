@@ -15,7 +15,7 @@ export class PhysicsTestRoutine {
 
     const gentlePitchForward = {
       ...OrientationSteps.pitchForward,
-      name: "Gentle pitch forward",
+      name: "Test momentum - pitch forward",
       controls: {
         ...OrientationSteps.pitchForward.controls,
         pitch: -0.5  // Half strength for better testing
@@ -24,7 +24,7 @@ export class PhysicsTestRoutine {
 
     const gentlePitchBackward = {
       ...OrientationSteps.pitchBackward,
-      name: "Gentle pitch backward",
+      name: "Test momentum - counter pitch",
       controls: {
         ...OrientationSteps.pitchBackward.controls,
         pitch: 0.5  // Half strength for better testing
@@ -48,7 +48,10 @@ export class PhysicsTestRoutine {
       BasicSteps.hover,
 
       // Test 2: Orientation-relative movement
-      OrientationSteps.yawRight90,
+      {
+        ...OrientationSteps.yawRight,
+        name: "Yaw right for 2 seconds"
+      },
       BasicSteps.hover,
       {
         ...gentlePitchForward,
@@ -60,7 +63,10 @@ export class PhysicsTestRoutine {
         name: "Test orientation - should move left"
       },
       BasicSteps.hover,
-      OrientationSteps.yawLeft90,
+      {
+        ...OrientationSteps.yawLeft,
+        name: "Yaw left for 2 seconds"
+      },
       
       // Test 3: Quick direction changes
       {

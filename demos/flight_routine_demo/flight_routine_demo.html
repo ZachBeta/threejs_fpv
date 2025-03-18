@@ -186,16 +186,7 @@
         </ul>
         <p>Routine Steps:</p>
         <div id="routine-steps">
-            <div class="routine-step">1. Takeoff</div>
-            <div class="routine-step">2. Hover</div>
-            <div class="routine-step">3. Forward</div>
-            <div class="routine-step">4. Backward</div>
-            <div class="routine-step">5. Left</div>
-            <div class="routine-step">6. Right</div>
-            <div class="routine-step">7. Rotate Left</div>
-            <div class="routine-step">8. Rotate Right</div>
-            <div class="routine-step">9. 0 throttle</div>
-            <div class="routine-step">10. Reset</div>
+            <!-- Steps will be populated by JavaScript -->
         </div>
     </div>
     <div id="controller-display">
@@ -219,6 +210,7 @@
             const menu = document.getElementById('menu');
             const closeMenuButton = document.getElementById('close-menu-button');
             const resumeButton = document.getElementById('resume-button');
+            const routineSelector = document.getElementById('routine-selector');
             let menuOpen = false;
             let demoObject = null;
 
@@ -226,7 +218,35 @@
             setTimeout(() => {
                 // Get the demo object from global scope
                 demoObject = window.demo;
+                
+                // Initial update of routine steps
+                if (demoObject) {
+                    updateRoutineSteps(routineSelector.value);
+                }
             }, 500);
+
+            // Update routine steps when selector changes
+            routineSelector.addEventListener('change', (event) => {
+                updateRoutineSteps(event.target.value);
+            });
+
+            function updateRoutineSteps(routineType) {
+                if (!demoObject || !demoObject.getRoutineSteps) return;
+                
+                const steps = demoObject.getRoutineSteps(routineType);
+                const stepsContainer = document.getElementById('routine-steps');
+                
+                // Clear existing steps
+                stepsContainer.innerHTML = '';
+                
+                // Add new steps
+                steps.forEach((step, index) => {
+                    const stepDiv = document.createElement('div');
+                    stepDiv.className = 'routine-step';
+                    stepDiv.textContent = `${index + 1}. ${step.name}`;
+                    stepsContainer.appendChild(stepDiv);
+                });
+            }
 
             // Toggle menu
             function toggleMenu() {
