@@ -21,16 +21,23 @@ class RoutineDemo {
         { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
         { name: 'Hover', duration: 2000, action: () => this.hover() },
         { name: 'Forward', duration: 2000, action: () => this.moveForward() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Backward', duration: 2000, action: () => this.moveBackward() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Left', duration: 2000, action: () => this.moveLeft() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Right', duration: 2000, action: () => this.moveRight() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Rotate Left', duration: 2000, action: () => this.rotateLeft() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Rotate Right', duration: 2000, action: () => this.rotateRight() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Land', duration: 2000, action: () => this.land() },
         { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
       ],
       advanced: [
         { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Circle Left', duration: 4000, action: () => this.circleLeft() },
         { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Circle Right', duration: 4000, action: () => this.circleRight() },
@@ -38,6 +45,7 @@ class RoutineDemo {
         { name: 'Figure Eight', duration: 6000, action: () => this.figureEight() },
         { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Ascend', duration: 2000, action: () => this.ascend() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Descend', duration: 2000, action: () => this.descend() },
         { name: 'Hover', duration: 1000, action: () => this.hover() },
         { name: 'Land', duration: 2000, action: () => this.land() },
@@ -123,7 +131,15 @@ class RoutineDemo {
     this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
     this.droneMesh.position.y = 10; // Match initial physics position
     this.droneMesh.castShadow = true;
+    this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
     this.scene.add(this.droneMesh);
+
+    // Add front indicator cube
+    const frontCubeGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const frontCubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Bright red
+    const frontCube = new THREE.Mesh(frontCubeGeometry, frontCubeMaterial);
+    frontCube.position.set(0, 0, 0.6); // Position at the front of the drone (z axis is forward)
+    this.droneMesh.add(frontCube); // Add to drone mesh so it moves with it
 
     // Add propellers
     const propellerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
@@ -171,11 +187,19 @@ class RoutineDemo {
     
     // Start animation loop
     this.animate();
+    
+    // Initialize routine steps display with the current routine
+    this.updateRoutineStepsDisplay();
   }
   
   updateRoutineStepsDisplay() {
     const stepsContainer = document.getElementById('routine-steps');
-    if (!stepsContainer) return;
+    if (!stepsContainer) {
+      console.error('Routine steps container not found');
+      return;
+    }
+    
+    console.log(`Updating routine steps display for ${this.activeRoutineType} routine with ${this.routine.length} steps`);
     
     // Clear existing steps
     stepsContainer.innerHTML = '';
@@ -190,6 +214,7 @@ class RoutineDemo {
     
     // Update routineSteps reference
     this.routineSteps = document.querySelectorAll('.routine-step');
+    console.log(`Created ${this.routineSteps.length} routine step elements`);
   }
 
   onWindowResize() {
@@ -267,7 +292,7 @@ Controls:
     // Update drone rotation - use rotation from physics
     const droneRotation = new THREE.Euler(
       this.physics.rotation.x,
-      this.physics.rotation.y,
+      this.physics.rotation.y + Math.PI, // Add 180 degrees to keep facing away from camera
       this.physics.rotation.z,
       'XYZ'
     );
@@ -307,10 +332,7 @@ Controls:
     if (this.isRoutineRunning) {
       if (currentTime - this.stepStartTime >= this.routine[this.currentStep].duration) {
         // Reset controls before next step
-        this.setThrottle(0);
-        this.setPitch(0);
-        this.setRoll(0);
-        this.setYaw(0);
+        this.resetControls();
 
         // Move to next step
         this.currentStep++;
@@ -411,10 +433,7 @@ Controls:
   stopRoutine() {
     this.isRoutineRunning = false;
     // Reset controls
-    this.setThrottle(0);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
+    this.resetControls();
     this.logger.disable(); // Disable logging
 
     // Save logs to file
@@ -478,11 +497,16 @@ Controls:
   }
 
   hover() {
-    console.log('Executing hover');
-    this.setThrottle(0.5);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
+    console.log('Executing hover - leveling drone');
+    this.setThrottle(0.5); // Maintain altitude
+    this.setPitch(0);      // Level pitch
+    this.setRoll(0);       // Level roll
+    this.setYaw(0);        // Stop any rotation
+    
+    // Reset the physics rotation to ensure the drone is flat
+    // This will be helpful in case there's any accumulated rotation
+    this.physics.rotation.x = 0;
+    this.physics.rotation.z = 0;
   }
 
   moveForward() {
@@ -553,10 +577,10 @@ Controls:
     this.camera.position.set(0, 20, 20);
     this.camera.lookAt(0, 10, 0);
     
-    this.setThrottle(0);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
+    this.resetControls();
+    
+    // Rotate drone to face away from camera (180 degrees around y-axis)
+    this.droneMesh.rotation.y = Math.PI;
   }
 
   checkServerStatus() {
@@ -661,6 +685,14 @@ Controls:
     this.setRoll(0);
     this.setYaw(0);
   }
+
+  // Helper method to reset all controls to neutral position
+  resetControls() {
+    this.setThrottle(0);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
 }
 
 // Create demo instance
@@ -702,6 +734,17 @@ document.getElementById('close-menu-button')?.addEventListener('click', () => {
     console.log('Resuming simulation');
     demo.resumeSimulation();
   }
+});
+
+// Ensure routine steps are displayed when DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, updating routine steps display');
+  // Use setTimeout to ensure the demo instance is fully initialized
+  setTimeout(() => {
+    if (demo) {
+      demo.updateRoutineStepsDisplay();
+    }
+  }, 100);
 });
 
 export { RoutineDemo }; 
