@@ -62,6 +62,10 @@
             background-color: #ffd700;
             color: #000;
         }
+        .demo-status.completed {
+            background-color: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -69,19 +73,19 @@
         <h1>Three.js FPV Demos</h1>
         <ul class="demo-list">
             <li class="demo-item">
-                <a href="demos/initial_demo/index.html">Initial Demo</a>
+                <a href="demos/initial_demo/index.html">Initial Demo <span class="demo-status completed">Completed</span></a>
                 <div class="demo-description">The original FPV drone simulation with basic controls and environment.</div>
             </li>
             <li class="demo-item">
-                <a href="demos/physics_demo/index.html">Physics Demo</a>
+                <a href="demos/physics_demo/index.html">Physics Demo <span class="demo-status">In Progress</span></a>
                 <div class="demo-description">Experimental physics engine demonstration.</div>
             </li>
             <li class="demo-item">
-                <a href="demos/routine_demo/index.html">Routine Demo</a>
+                <a href="demos/routine_demo/index.html">Routine Demo <span class="demo-status">In Progress</span></a>
                 <div class="demo-description">Pre-programmed flight routine demonstration.</div>
             </li>
             <li class="demo-item">
-                <a href="demos/game_state_demo/index.html">Game State Demo <span class="demo-status">In Progress</span></a>
+                <a href="demos/game_state_demo/index.html">Game State Demo <span class="demo-status completed">Completed</span></a>
                 <div class="demo-description">System test demonstrations with game state tracking.</div>
             </li>
         </ul>
