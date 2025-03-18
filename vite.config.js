@@ -16,6 +16,15 @@ export default defineConfig({
       '@demos': '/demos'
     }
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: '/index.html',
+        home: '/home.html',
+        drone_flight_demo: '/src/demos/drone_flight_demo.html'
+      }
+    }
+  },
   server: {
     port: 5173,
     proxy: {

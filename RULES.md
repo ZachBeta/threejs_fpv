@@ -100,4 +100,37 @@ Simple guidelines for working with this project.
    - Check mobile compatibility
    - Document test cases
 
+## UI Overlay Conventions
+
+1. **Standard Positioning**
+   - Diagnostic/Debug Information: Bottom right corner
+   - Controls Information: Top right corner
+   - Status Messages: Bottom left corner
+   - Controller/Input Visualization: Bottom center
+   - Home Link: Top left corner (not in menus)
+   - Menus: Center of screen
+
+2. **Styling Consistency**
+   - Use semi-transparent black backgrounds (rgba(0, 0, 0, 0.7))
+   - Use green text (#00ff00) for controls, home links, and diagnostic information
+   - Use white text for general status messages
+   - Use consistent padding (10px) and border radius (5px)
+   - Use monospace font for all technical information
+
+3. **Menu Design**
+   - All demos should include a menu accessible via ESC key
+   - Menus should include a "Home" link to return to the home page
+   - Menus should follow the established button styling
+   - Menu home links should use the same styling as other menu buttons
+
+4. **Home Link Implementation**
+   - Home links in demos should always be placed in the top left corner using the standard styling
+   - All demos should have a home link both in the top left corner and in the ESC menu for consistency
+   - The top left home link should be styled consistently across all demos
+
+5. **Responsiveness**
+   - All overlays should maintain readability at different screen sizes
+   - Ensure overlays don't overlap at common resolutions
+   - Handle window resize events properly
+
 That's it! Keep it simple, keep it working. 

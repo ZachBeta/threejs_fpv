@@ -109,7 +109,7 @@ npm run preview
 ## Project Structure
 
 - `home.html` - Main HTML file (previously index.html)
-- `src/main.js` - Main JavaScript file containing Three.js scene setup and animation
+- `src/demos/drone_flight_demo.js` - Drone flight simulation with Three.js scene setup and animation
 - `src/logger.js` - Telemetry logging system implementation
 - `src/demos/` - Demo-specific code and implementations
 - `demos/` - Demo HTML files and assets

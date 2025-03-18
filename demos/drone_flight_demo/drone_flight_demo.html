@@ -3,34 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drone Physics Demo</title>
+    <title>Drone Flight Demo - Three.js FPV</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
         }
-        #instructions {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #00ff00;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            line-height: 1.5;
-            z-index: 1000;
-        }
-        #instructions h2 {
-            margin-top: 0;
-            color: #00ff00;
-        }
-        .key {
-            background: #333;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: monospace;
+        canvas {
+            display: block;
         }
         .home-link {
             position: fixed;
@@ -49,6 +29,17 @@
         }
         .home-link a:hover {
             text-decoration: underline;
+        }
+        .controls-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #00ff00;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
         }
         #menu {
             position: fixed;
@@ -92,32 +83,23 @@
     <div class="home-link">
         <a href="../../home.html">Home</a>
     </div>
-    <div id="instructions">
-        <h2>Drone Physics Demo</h2>
-        <p>Controls:</p>
-        <ul>
-            <li><span class="key">Space</span> - Throttle (hold to go up)</li>
-            <li><span class="key">W</span>/<span class="key">S</span> - Pitch (forward/backward)</li>
-            <li><span class="key">A</span>/<span class="key">D</span> - Roll (left/right)</li>
-            <li><span class="key">Q</span>/<span class="key">E</span> - Yaw (rotate left/right)</li>
-            <li><span class="key">H</span> - Toggle hover mode</li>
-            <li><span class="key">R</span> - Reset drone</li>
-            <li><span class="key">ESC</span> - Menu</li>
-        </ul>
-        <p>Features:</p>
-        <ul>
-            <li>Realistic physics with gravity and air resistance</li>
-            <li>Non-linear throttle response</li>
-            <li>Hover mode for stable flight</li>
-            <li>Animated propellers</li>
-        </ul>
+    <div class="controls-info">
+        <h3>Controls:</h3>
+        <p>Keyboard: WASD - movement, Arrow keys - rotation</p>
+        <p>Space/Shift - Up/Down</p>
+        <p>R - Reset position</p>
+        <p>H - Toggle hover mode</p>
+        <p>Gamepad: Left/Right sticks for movement</p>
+        <p>L1/LB - Reset position</p>
+        <p>R1/RB - Toggle hover mode</p>
+        <p>ESC - Menu</p>
     </div>
     <div id="menu">
         <h2>MENU</h2>
         <button id="close-menu-button" class="menu-button">Close Menu</button>
         <a href="../../home.html" class="menu-button">Exit to Home</a>
     </div>
-    <script type="module" src="/src/demos/physics_demo.js"></script>
+    <script type="module" src="../../src/demos/drone_flight_demo.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const menu = document.getElementById('menu');

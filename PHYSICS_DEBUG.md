@@ -1,7 +1,7 @@
 # Physics Debug Plan
 
 ## 1. Initial Setup and Verification
-- [ ] Verify physics module is properly imported in main.js
+- [ ] Verify physics module is properly imported in src/demos/drone_flight_demo.js
 - [ ] Add debug logging to track physics values in real-time
 - [ ] Create a simple visual indicator for current throttle value
 - [ ] Add position and velocity display to the overlay

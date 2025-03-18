@@ -3,8 +3,8 @@ import * as THREE from 'three';
 // Create diagnostic overlay
 const overlay = document.createElement('div');
 overlay.style.position = 'fixed';
-overlay.style.top = '10px';
-overlay.style.left = '10px';
+overlay.style.bottom = '20px';
+overlay.style.right = '20px';
 overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
 overlay.style.color = '#00ff00';
 overlay.style.fontFamily = 'monospace';
@@ -233,7 +233,6 @@ function createObstacle(x, y, z) {
     });
     const torus = new THREE.Mesh(torusGeometry, torusMaterial);
     torus.position.set(x, y, z);
-    // Rotate the ring to make it vertical
     torus.rotation.x = Math.PI / 2;
     group.add(torus);
     
@@ -253,12 +252,23 @@ towerPositions.forEach(pos => {
     scene.add(tower);
 });
 
-// Add some obstacles for an interesting flight path
+// Add some buildings scattered around
+for (let i = 0; i < 30; i++) {
+    const x = (Math.random() - 0.5) * 200;
+    const z = (Math.random() - 0.5) * 200;
+    
+    // Don't place buildings too close to the origin
+    if (Math.sqrt(x*x + z*z) > 20) {
+        const building = createBuilding(x, z);
+        scene.add(building);
+    }
+}
+
+// Add obstacle course
 const obstacles = [
-    { x: 20, y: 15, z: 0 },
-    { x: -15, y: 10, z: 20 },
-    { x: 0, y: 20, z: -25 },
-    { x: -30, y: 25, z: -15 }
+    { x: 30, y: 15, z: -30 },
+    { x: 60, y: 20, z: -45 },
+    { x: 90, y: 25, z: -60 }
 ];
 
 obstacles.forEach(pos => {
@@ -266,37 +276,22 @@ obstacles.forEach(pos => {
     scene.add(obstacle);
 });
 
-// Add some buildings in the middle area
-for (let i = 0; i < 8; i++) {
-    const angle = (i / 8) * Math.PI * 2;
-    const radius = 30 + Math.random() * 20;
-    const x = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
-    const building = createBuilding(x, z);
-    scene.add(building);
-}
-
-// Create the landmark cube
-const cubeGeometry = new THREE.BoxGeometry();
-const cubeMaterial = new THREE.MeshPhongMaterial({ 
-    color: 0x00ff00,
-    shininess: 100,
-    specular: 0x444444
-});
+// Create a drone cube for reference
+const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
 const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-cube.position.y = 15; // Raised from 10.5 to prevent clipping
+cube.position.set(0, 10, 0);
 scene.add(cube);
 
 // Add lights
-const light = new THREE.DirectionalLight(0xffffff, 1.5); // Increased intensity
-light.position.set(1, 1, 1);
-scene.add(light);
-
-const ambientLight = new THREE.AmbientLight(0x404040, 0.8); // Increased intensity
+const ambientLight = new THREE.AmbientLight(0x404040, 1.5); // Soft ambient light
 scene.add(ambientLight);
 
-// Add a second directional light for better shading
-const secondaryLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+directionalLight.position.set(1, 1, 1);
+scene.add(directionalLight);
+
+const secondaryLight = new THREE.DirectionalLight(0xffffff, 0.5);
 secondaryLight.position.set(-1, 0.5, -1);
 scene.add(secondaryLight);
 
@@ -315,18 +310,31 @@ const droneState = {
     diagnostics: {
         speed: 0,
         altitude: 0,
+        fps: 0,
         controllerConnected: false,
         controllerName: '',
         lastInput: 'None'
     },
     // Add initial position and rotation for reset
     initialPosition: new THREE.Vector3(0, 5, 15),
-    initialLookAt: new THREE.Vector3(0, 5, 0)
+    initialLookAt: new THREE.Vector3(0, 5, 0),
+    hover: false
 };
 
 // Handle keyboard controls
 window.addEventListener('keydown', (e) => {
     droneState.keys[e.key.toLowerCase()] = true;
+    
+    // Handle hover mode toggle with 'h' key
+    if (e.key.toLowerCase() === 'h') {
+        droneState.hover = !droneState.hover;
+        console.log("Hover mode:", droneState.hover ? "ON" : "OFF");
+    }
+    
+    // Handle reset with 'r' key
+    if (e.key.toLowerCase() === 'r') {
+        resetDrone();
+    }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -335,14 +343,12 @@ window.addEventListener('keyup', (e) => {
 
 // Handle gamepad connection/disconnection
 window.addEventListener("gamepadconnected", (e) => {
-    console.log("Gamepad connected event:", e.gamepad);
     droneState.gamepad = e.gamepad;
     droneState.diagnostics.controllerConnected = true;
     droneState.diagnostics.controllerName = e.gamepad.id;
 });
 
 window.addEventListener("gamepaddisconnected", (e) => {
-    console.log("Gamepad disconnected event:", e.gamepad);
     droneState.gamepad = null;
     droneState.diagnostics.controllerConnected = false;
     droneState.diagnostics.controllerName = '';
@@ -351,13 +357,10 @@ window.addEventListener("gamepaddisconnected", (e) => {
 // Update gamepad state
 function updateGamepadState() {
     const gamepads = navigator.getGamepads();
-    console.log("All gamepads:", gamepads);
     
     if (!droneState.gamepad) {
-        console.log("No gamepad in state, searching for available gamepads...");
         for (const gamepad of gamepads) {
             if (gamepad) {
-                console.log("Found available gamepad:", gamepad);
                 droneState.gamepad = gamepad;
                 droneState.diagnostics.controllerConnected = true;
                 droneState.diagnostics.controllerName = gamepad.id;
@@ -369,10 +372,8 @@ function updateGamepadState() {
 
     // Get fresh gamepad state
     const freshGamepad = navigator.getGamepads()[droneState.gamepad.index];
-    console.log("Fresh gamepad state:", freshGamepad);
     
     if (!freshGamepad) {
-        console.log("Gamepad no longer available");
         droneState.gamepad = null;
         droneState.diagnostics.controllerConnected = false;
         droneState.diagnostics.controllerName = '';
@@ -402,11 +403,18 @@ function handleGamepadInput() {
     droneState.diagnostics.controllerName = gamepad.id;
     const deadzone = droneState.deadzone;
 
-    // Check for L button press (button 4)
+    // Check for reset button press (typically L1 or LB, button 4)
     if (gamepad.buttons[4].pressed) {
         resetDrone();
         return; // Skip other inputs this frame
     }
+    
+    // Check for hover mode toggle (typically R1 or RB, button 5)
+    if (gamepad.buttons[5].pressed && !droneState.prevRbState) {
+        droneState.hover = !droneState.hover;
+        console.log("Hover mode:", droneState.hover ? "ON" : "OFF");
+    }
+    droneState.prevRbState = gamepad.buttons[5].pressed;
 
     // Left stick - Throttle and Yaw
     const leftX = Math.abs(gamepad.axes[0]) > deadzone ? gamepad.axes[0] : 0;
@@ -419,7 +427,6 @@ function handleGamepadInput() {
     // Update last input
     if (leftX !== 0 || leftY !== 0 || rightX !== 0 || rightY !== 0) {
         droneState.diagnostics.lastInput = `L:(${leftX.toFixed(2)},${leftY.toFixed(2)}) R:(${rightX.toFixed(2)},${rightY.toFixed(2)})`;
-        console.log("Active gamepad input:", droneState.diagnostics.lastInput);
     }
 
     // Left stick controls
@@ -440,6 +447,16 @@ function handleGamepadInput() {
     if (rightX !== 0) {
         // Roll (tilt left/right)
         camera.translateX(droneState.moveSpeed * rightX);
+    }
+    
+    // If hover mode is enabled, maintain altitude
+    if (droneState.hover) {
+        // Maintain current altitude
+        const currentAltitude = camera.position.y;
+        if (Math.abs(currentAltitude - droneState.initialPosition.y) > 0.1) {
+            const direction = currentAltitude < droneState.initialPosition.y ? 1 : -1;
+            camera.translateY(0.01 * direction);
+        }
     }
 }
 
@@ -495,26 +512,40 @@ function updateDroneMovement() {
     }
 }
 
+// FPS calculation
+let frameCount = 0;
+let lastTime = performance.now();
+
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
 
+    // Calculate FPS
+    frameCount++;
+    const now = performance.now();
+    if (now > lastTime + 1000) {
+        droneState.diagnostics.fps = Math.round(frameCount * 1000 / (now - lastTime));
+        frameCount = 0;
+        lastTime = now;
+    }
+
     // Update diagnostics
     droneState.diagnostics.speed = Math.sqrt(
         Math.pow(camera.position.x, 2) + 
-        Math.pow(camera.position.y, 2) + 
         Math.pow(camera.position.z, 2)
     );
     droneState.diagnostics.altitude = camera.position.y;
 
     // Update overlay with diagnostics
     overlay.innerHTML = `
+        <div>FPS: ${droneState.diagnostics.fps}</div>
         <div>Controller: ${droneState.diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
         <div>Controller Name: ${droneState.diagnostics.controllerName || 'None'}</div>
         <div>Last Input: ${droneState.diagnostics.lastInput}</div>
         <div>Speed: ${droneState.diagnostics.speed.toFixed(2)} m/s</div>
         <div>Altitude: ${droneState.diagnostics.altitude.toFixed(2)} m</div>
         <div>Position: (${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)})</div>
+        <div>Hover Mode: ${droneState.hover ? 'ON' : 'OFF'}</div>
     `;
 
     // Update stick positions

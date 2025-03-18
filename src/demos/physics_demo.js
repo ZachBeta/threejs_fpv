@@ -168,8 +168,8 @@ class PhysicsDemo {
     // Create diagnostic overlay
     const overlay = document.createElement('div');
     overlay.style.position = 'fixed';
-    overlay.style.top = '10px';
-    overlay.style.left = '10px';
+    overlay.style.bottom = '20px';
+    overlay.style.right = '20px';
     overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
     overlay.style.color = '#00ff00';
     overlay.style.fontFamily = 'monospace';
