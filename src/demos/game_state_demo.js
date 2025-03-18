@@ -1,6 +1,14 @@
 import { DronePhysics } from '../physics.js';
 import { GameStateApi } from '../game_state_api.js';
 
+// Helper function to get current time in both browser and Node.js environments
+const getCurrentTime = () => {
+  if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+    return performance.now();
+  }
+  return Date.now(); // Fallback for Node.js
+};
+
 class LoggingDemo {
   constructor() {
     console.log('Creating new LoggingDemo instance');
@@ -29,12 +37,15 @@ class LoggingDemo {
     // Initialize physics
     this.physics = new DronePhysics();
 
-    // Start simulation loop
-    this.simulate();
+    // Only start simulation if in browser environment
+    if (typeof window !== 'undefined') {
+      // Start simulation loop
+      this.simulate();
+    }
   }
 
   simulate() {
-    const currentTime = performance.now();
+    const currentTime = getCurrentTime();
 
     // Log state if enough time has passed
     if (currentTime - this.lastLogTime >= this.logInterval) {
@@ -69,7 +80,9 @@ class LoggingDemo {
     this.physics.updatePhysics(0.016); // Assuming 60fps
 
     // Schedule next simulation frame
-    setTimeout(() => this.simulate(), 16);
+    if (typeof window !== 'undefined') {
+      setTimeout(() => this.simulate(), 16);
+    }
   }
 
   // Control methods
@@ -101,7 +114,7 @@ class LoggingDemo {
     if (!this.isRoutineRunning) return;
 
     const state = {
-      timestamp: performance.now(),
+      timestamp: getCurrentTime(),
       position: {
         x: this.physics.position.x.toFixed(2),
         y: this.physics.position.y.toFixed(2),
@@ -130,12 +143,15 @@ class LoggingDemo {
       console.log('Starting routine');
       this.isRoutineRunning = true;
       this.currentStep = 0;
-      this.stepStartTime = performance.now();
+      this.stepStartTime = getCurrentTime();
       this.logger.enable();
       this.routine[this.currentStep].action();
       
-      // Store the routine interval ID so we can clear it later
-      this.routineInterval = setInterval(() => this.simulate(), 16); // ~60fps
+      // Only use interval if in browser environment
+      if (typeof window !== 'undefined') {
+        // Store the routine interval ID so we can clear it later
+        this.routineInterval = setInterval(() => this.simulate(), 16); // ~60fps
+      }
     }
   }
 
@@ -158,6 +174,9 @@ class LoggingDemo {
   }
 
   saveLogs() {
+    // Only run in browser environment
+    if (typeof window === 'undefined') return;
+    
     const logData = JSON.stringify(this.logs, null, 2);
     const blob = new Blob([logData], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -176,7 +195,11 @@ let demo = null;
 
 export function initializeDemo() {
     if (!demo) {
-        demo = new LoggingDemo();
+        try {
+            demo = new LoggingDemo();
+        } catch (error) {
+            console.error('Error initializing demo:', error);
+        }
     }
     return demo;
 }
@@ -185,15 +208,15 @@ export function startDemo() {
     if (!demo) {
         demo = initializeDemo();
     }
-    demo.startRoutine();
+    if (demo) {
+        demo.startRoutine();
+    }
     return demo;
 }
 
 export function stopDemo() {
     if (demo) {
         demo.stopRoutine();
-        // Clear any potential demo references to allow garbage collection
-        demo = null;
     }
 }
 
