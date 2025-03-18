@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { startDemo, stopDemo, initializeDemo } from '../demos/logging_demo.js';
+import { startDemo, stopDemo, initializeDemo } from '../demos/game_state_demo.js';
 
 const API_BASE = 'http://localhost:3000/api';
 

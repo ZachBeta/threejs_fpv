@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Logging Demo - Three.js FPV</title>
+    <title>Game State Demo - Three.js FPV</title>
     <style>
         body {
             margin: 0;
@@ -128,10 +128,10 @@
 </head>
 <body>
     <div class="container">
-        <h1>Logging Demo</h1>
+        <h1>Game State Demo</h1>
         
         <div class="description">
-            <p>This demo showcases the logging functionality for system test demonstrations, including:</p>
+            <p>This demo showcases the game state management functionality for system test demonstrations, including:</p>
             <ul>
                 <li>Real-time logging of drone state and controls</li>
                 <li>Database integration for persistent storage</li>
@@ -169,8 +169,8 @@
     </div>
 
     <script type="module">
-        console.log('Loading logging demo...');
-        import { startDemo, stopDemo, isDemoRunning } from '../../src/demos/logging_demo.js';
+        console.log('Loading game state demo...');
+        import { startDemo, stopDemo, isDemoRunning } from '../../src/demos/game_state_demo.js';
         console.log('Demo integration module loaded');
         
         const API_BASE = 'http://localhost:3000/api';
