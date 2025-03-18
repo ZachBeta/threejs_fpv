@@ -23,6 +23,18 @@ export const BasicSteps = {
     }
   },
 
+  // New hover step that maintains orientation
+  hoverMaintainHeading: {
+    name: "Hover (maintain heading)",
+    duration: 1000,
+    controls: {
+      throttle: 0.6,
+      pitch: 0,
+      roll: 0,
+      yaw: null // null means maintain current yaw
+    }
+  },
+
   land: {
     name: "0 throttle",
     duration: 2000,
@@ -38,23 +50,23 @@ export const BasicSteps = {
 export const OrientationSteps = {
   yawRight90: {
     name: "Yaw 90 degrees right",
-    duration: 1000,
+    duration: 1500,
     controls: {
       throttle: 0.6,
       pitch: 0,
       roll: 0,
-      yaw: 1.0
+      yaw: -1.0 // Negative for clockwise rotation
     }
   },
 
   yawLeft90: {
     name: "Yaw 90 degrees left",
-    duration: 1000,
+    duration: 1500,
     controls: {
       throttle: 0.6,
       pitch: 0,
       roll: 0,
-      yaw: -1.0
+      yaw: 1.0 // Positive for counterclockwise rotation
     }
   },
 
@@ -65,7 +77,7 @@ export const OrientationSteps = {
       throttle: 0.6,
       pitch: -1.0,
       roll: 0,
-      yaw: 0
+      yaw: null // maintain current yaw
     }
   },
 
@@ -76,7 +88,7 @@ export const OrientationSteps = {
       throttle: 0.6,
       pitch: 1.0,
       roll: 0,
-      yaw: 0
+      yaw: null // maintain current yaw
     }
   }
 };

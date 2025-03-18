@@ -1,22 +1,36 @@
+import * as THREE from 'three';
+
 export class DronePhysics {
   constructor() {
     // Position and movement
     this.position = { x: 0, y: 10, z: 0 };
     this.velocity = { x: 0, y: 0, z: 0 };
-    this.rotation = { x: 0, y: 0, z: 0 }; // pitch, yaw, roll
+    
+    // Use THREE.js for quaternion math
+    this.quaternion = new THREE.Quaternion();
+    this.targetQuaternion = new THREE.Quaternion();
+    this.rotationEuler = new THREE.Euler(0, 0, 0, 'YXZ'); // YXZ order: yaw, pitch, roll
+    this.localRotation = { x: 0, y: 0, z: 0 }; // For input tracking
     this.angularVelocity = { x: 0, y: 0, z: 0 };
+    
+    // Vectors for transformation
+    this.forward = new THREE.Vector3(0, 0, -1);
+    this.up = new THREE.Vector3(0, 1, 0);
+    this.right = new THREE.Vector3(1, 0, 0);
     
     // Controls
     this.throttle = 0;
     this.pitch = 0;
     this.roll = 0;
     this.yaw = 0;
+    this.lastYaw = 0; // Track last yaw input for null handling
     
     // Physics parameters
     this.gravity = 9.81;
     this.maxThrottle = 1.0;
     this.throttleAcceleration = 40.0;
     this.tiltSpeed = 2.0;
+    this.yawSpeed = 4.5; // Fine-tuned for precise 90-degree rotation
     this.airResistance = 0.05;
     this.angularDamping = 0.95;
     this.tiltForce = 5.0;
@@ -52,21 +66,42 @@ export class DronePhysics {
   }
 
   updateRotations(deltaTime) {
-    // Update angular velocities based on control inputs
-    // Note: Control inputs directly influence angular velocity
-    this.angularVelocity.x += (this.pitch - this.rotation.x) * this.tiltSpeed * deltaTime;
-    this.angularVelocity.y += this.yaw * this.tiltSpeed * deltaTime;
-    this.angularVelocity.z += (this.roll - this.rotation.z) * this.tiltSpeed * deltaTime;
-
+    // Handle yaw input - maintain last yaw if input is null
+    if (this.yaw === null) {
+      // When yaw is null, don't apply any rotation
+      this.lastYaw = 0;
+    } else {
+      this.lastYaw = this.yaw;
+      // Update yaw rotation with reduced damping compensation
+      const dampingCompensation = 1.0 / Math.sqrt(this.angularDamping);
+      this.localRotation.y += this.yaw * this.yawSpeed * deltaTime * (this.yaw !== 0 ? dampingCompensation : 1.0);
+    }
+    
+    // Update pitch and roll
+    this.localRotation.x += this.pitch * this.tiltSpeed * deltaTime; // Pitch
+    this.localRotation.z += this.roll * this.tiltSpeed * deltaTime; // Roll
+    
     // Apply angular damping
-    this.angularVelocity.x *= this.angularDamping;
-    this.angularVelocity.y *= this.angularDamping;
-    this.angularVelocity.z *= this.angularDamping;
-
-    // Update rotations
-    this.rotation.x += this.angularVelocity.x * deltaTime;
-    this.rotation.y += this.angularVelocity.y * deltaTime;
-    this.rotation.z += this.angularVelocity.z * deltaTime;
+    this.localRotation.x *= this.angularDamping;
+    if (this.yaw !== null) { // Only damp yaw when not maintaining position
+      this.localRotation.y *= this.angularDamping;
+    }
+    this.localRotation.z *= this.angularDamping;
+    
+    // Update rotation euler with current local rotation
+    this.rotationEuler.set(
+      this.localRotation.x,
+      this.localRotation.y,
+      this.localRotation.z
+    );
+    
+    // Convert to quaternion
+    this.quaternion.setFromEuler(this.rotationEuler);
+    
+    // Update direction vectors
+    this.forward.set(0, 0, -1).applyQuaternion(this.quaternion);
+    this.up.set(0, 1, 0).applyQuaternion(this.quaternion);
+    this.right.set(1, 0, 0).applyQuaternion(this.quaternion);
   }
 
   updatePosition(deltaTime) {
@@ -75,17 +110,14 @@ export class DronePhysics {
                            this.throttleChangeRate * deltaTime;
     
     if (this.previousThrottle > 0) {
-      // Calculate the drone's up vector based on its rotation
-      // This determines the direction of thrust
-      const { upX, upY, upZ } = this.calculateUpVector();
-      
-      // Apply thrust force
+      // Apply thrust in the up direction
       const throttleResponse = Math.pow(this.previousThrottle, 1.5);
       const thrustForce = throttleResponse * this.throttleAcceleration;
       
-      this.velocity.x += upX * thrustForce * deltaTime;
-      this.velocity.y += upY * thrustForce * deltaTime;
-      this.velocity.z += upZ * thrustForce * deltaTime;
+      // Add velocity in the up direction
+      this.velocity.x += this.up.x * thrustForce * deltaTime;
+      this.velocity.y += this.up.y * thrustForce * deltaTime;
+      this.velocity.z += this.up.z * thrustForce * deltaTime;
       
       // Apply translational forces from tilt
       this.applyTiltForces(deltaTime);
@@ -106,45 +138,18 @@ export class DronePhysics {
     this.position.z += this.velocity.z * deltaTime;
   }
 
-  calculateUpVector() {
-    // Calculate rotation matrices components
-    const cosPitch = Math.cos(this.rotation.x);
-    const sinPitch = Math.sin(this.rotation.x);
-    const cosYaw = Math.cos(this.rotation.y);
-    const sinYaw = Math.sin(this.rotation.y);
-    const cosRoll = Math.cos(this.rotation.z);
-    const sinRoll = Math.sin(this.rotation.z);
-    
-    // Calculate the drone's up vector (initially [0, 1, 0])
-    // after applying all rotations in order: yaw, pitch, roll
-    return {
-      upX: sinRoll * cosPitch,
-      upY: cosRoll * cosPitch,
-      upZ: sinPitch
-    };
-  }
-
   applyTiltForces(deltaTime) {
-    const cosYaw = Math.cos(this.rotation.y);
-    const sinYaw = Math.sin(this.rotation.y);
-    
-    // Forward vector (where the drone is facing)
-    const forwardX = -sinYaw;
-    const forwardZ = -cosYaw;
-    
-    // Right vector
-    const rightX = cosYaw;
-    const rightZ = -sinYaw;
-    
-    // Apply forward force based on pitch
-    const pitchForce = -this.rotation.x * this.tiltForce * this.previousThrottle;
-    this.velocity.x += forwardX * pitchForce * deltaTime;
-    this.velocity.z += forwardZ * pitchForce * deltaTime;
+    // Apply forward/backward force based on pitch
+    const pitchForce = -this.localRotation.x * this.tiltForce * this.previousThrottle;
+    this.velocity.x += this.forward.x * pitchForce * deltaTime;
+    this.velocity.y += this.forward.y * pitchForce * deltaTime;
+    this.velocity.z += this.forward.z * pitchForce * deltaTime;
     
     // Apply sideways force based on roll
-    const rollForce = this.rotation.z * this.tiltForce * this.previousThrottle;
-    this.velocity.x += rightX * rollForce * deltaTime;
-    this.velocity.z += rightZ * rollForce * deltaTime;
+    const rollForce = this.localRotation.z * this.tiltForce * this.previousThrottle;
+    this.velocity.x += this.right.x * rollForce * deltaTime;
+    this.velocity.y += this.right.y * rollForce * deltaTime;
+    this.velocity.z += this.right.z * rollForce * deltaTime;
   }
 
   applyAirResistance(deltaTime) {
@@ -194,6 +199,11 @@ export class DronePhysics {
   }
 
   setYaw(value) {
+    // Handle null value for maintaining current heading
+    if (value === null) {
+      this.yaw = null;
+      return;
+    }
     this.yaw = Math.min(Math.max(-1, value), 1);
   }
 
@@ -207,8 +217,12 @@ export class DronePhysics {
   reset() {
     this.position = { x: 0, y: 10, z: 0 };
     this.velocity = { x: 0, y: 0, z: 0 };
-    this.rotation = { x: 0, y: 0, z: 0 };
+    this.quaternion.set(0, 0, 0, 1);
+    this.localRotation = { x: 0, y: 0, z: 0 };
     this.angularVelocity = { x: 0, y: 0, z: 0 };
+    this.forward.set(0, 0, -1);
+    this.up.set(0, 1, 0);
+    this.right.set(1, 0, 0);
     this.throttle = 0;
     this.previousThrottle = 0;
     this.pitch = 0;

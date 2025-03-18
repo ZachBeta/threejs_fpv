@@ -39,7 +39,7 @@ class RoutineDemo {
     };
 
     // Set default routine
-    this.activeRoutineType = 'basic';
+    this.activeRoutineType = 'orientationTest';
     this.routine = this.routines[this.activeRoutineType];
 
     // Check server status
@@ -131,43 +131,57 @@ class RoutineDemo {
 
   updateUI() {
     // Calculate speed
-    const speed = Math.sqrt(
-      Math.pow(this.drone.physics.velocity.x, 2) +
-      Math.pow(this.drone.physics.velocity.y, 2) +
-      Math.pow(this.drone.physics.velocity.z, 2)
-    );
+    const velocity = this.drone.physics.velocity;
+    const speed = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
     
-    // Format position for display
-    const pos = this.drone.position;
-    const vel = this.drone.physics.velocity;
-    const controls = this.controls.getControls();
+    // Format position and velocity for display
+    const pos = this.drone.physics.position;
+    const rot = this.drone.physics.localRotation;
+    const quat = this.drone.physics.quaternion;
     
-    let statusText = `FPS: ${this.fps}
-Routine: ${this.activeRoutineType}
-Running: ${this.isRoutineRunning ? 'Yes' : 'No'}
-Step: ${this.isRoutineRunning ? `${this.currentStep + 1}. ${this.routine[this.currentStep].name}` : 'None'}
-
-Position: X: ${pos.x.toFixed(2)}, Y: ${pos.y.toFixed(2)}, Z: ${pos.z.toFixed(2)}
-Velocity: X: ${vel.x.toFixed(2)}, Y: ${vel.y.toFixed(2)}, Z: ${vel.z.toFixed(2)}
-Speed: ${speed.toFixed(2)} m/s
-
-Controls:
-  Throttle: ${controls.throttle.toFixed(2)}
-  Pitch: ${controls.pitch.toFixed(2)}
-  Roll: ${controls.roll.toFixed(2)}
-  Yaw: ${controls.yaw.toFixed(2)}`;
-
-    if (this.overlay) {
-      this.overlay.textContent = statusText;
+    // Get current controls from the active routine step or default to zero values
+    let controls = { throttle: 0, pitch: 0, roll: 0, yaw: 0 };
+    if (this.isRoutineRunning && this.routine && this.currentStep < this.routine.length) {
+      controls = this.routine[this.currentStep].controls;
     }
-
+    
+    // Format control values, handling null values
+    const formatControl = (value) => value === null ? 'maintain' : value.toFixed(2);
+    
+    const statusText = `
+      Position: (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})
+      Speed: ${speed.toFixed(2)} m/s
+      Local Rotation:
+        Pitch: ${rot.x.toFixed(2)}°
+        Yaw: ${rot.y.toFixed(2)}°
+        Roll: ${rot.z.toFixed(2)}°
+      Quaternion:
+        X: ${quat.x.toFixed(2)}
+        Y: ${quat.y.toFixed(2)}
+        Z: ${quat.z.toFixed(2)}
+        W: ${quat.w.toFixed(2)}
+      Controls:
+        Throttle: ${formatControl(controls.throttle)}
+        Pitch: ${formatControl(controls.pitch)}
+        Roll: ${formatControl(controls.roll)}
+        Yaw: ${formatControl(controls.yaw)}
+    `;
+    
+    // Update the overlay text
+    const overlay = document.getElementById('overlay');
+    if (overlay) {
+      overlay.textContent = statusText;
+    }
+    
     // Update active step in UI
-    if (this.routineSteps && this.isRoutineRunning) {
-      this.routineSteps.forEach((el, index) => {
-        if (index === this.currentStep) {
-          el.classList.add('active');
+    if (this.routine) {
+      const stepIndex = this.currentStep;
+      const steps = document.querySelectorAll('.routine-step');
+      steps.forEach((step, index) => {
+        if (index === stepIndex) {
+          step.classList.add('active');
         } else {
-          el.classList.remove('active');
+          step.classList.remove('active');
         }
       });
     }
@@ -306,9 +320,9 @@ Controls:
         z: this.drone.position.z.toFixed(2)
       },
       rotation: {
-        x: this.drone.physics.rotation.x.toFixed(2),
-        y: this.drone.physics.rotation.y.toFixed(2),
-        z: this.drone.physics.rotation.z.toFixed(2)
+        x: this.drone.physics.localRotation.x.toFixed(2),
+        y: this.drone.physics.localRotation.y.toFixed(2),
+        z: this.drone.physics.localRotation.z.toFixed(2)
       },
       controls: this.controls.getControls(),
       currentStep: this.isRoutineRunning ? this.routine[this.currentStep].name : 'Idle'

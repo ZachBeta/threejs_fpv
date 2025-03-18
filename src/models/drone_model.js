@@ -93,14 +93,10 @@ export class DroneModel {
     this.droneMesh.position.y = this.physics.position.y;
     this.droneMesh.position.z = this.physics.position.z;
     
-    // Update drone rotation
-    const droneRotation = new THREE.Euler(
-      this.physics.rotation.x,
-      this.physics.rotation.y + Math.PI, // Add 180 degrees to keep facing away from camera
-      this.physics.rotation.z,
-      'XYZ'
-    );
-    this.droneMesh.rotation.copy(droneRotation);
+    // Update drone rotation using quaternion
+    this.droneMesh.quaternion.copy(this.physics.quaternion);
+    // Add 180 degrees rotation around Y to keep facing away from camera
+    this.droneMesh.rotateY(Math.PI);
 
     // Animate propellers based on throttle
     const propellerSpeed = this.physics.throttle * 0.5;

@@ -6,26 +6,29 @@ export class OrientationTestRoutine {
     this.description = "Tests pitch controls relative to drone orientation";
     this.steps = [
       BasicSteps.takeOff,
-      BasicSteps.hover,
+      BasicSteps.hoverMaintainHeading,
       {
         ...OrientationSteps.yawRight90,
+        duration: 1500,
         name: "Yaw 90 degrees right (drone should face right)"
       },
-      BasicSteps.hover,
+      BasicSteps.hoverMaintainHeading,
       {
         ...OrientationSteps.pitchForward,
         name: "Pitch forward (should move right relative to starting position)"
       },
-      BasicSteps.hover,
+      BasicSteps.hoverMaintainHeading,
       {
         ...OrientationSteps.pitchBackward,
         name: "Pitch backward (should move left relative to starting position)"
       },
-      BasicSteps.hover,
+      BasicSteps.hoverMaintainHeading,
       {
         ...OrientationSteps.yawLeft90,
+        duration: 1500,
         name: "Yaw back to start (-90 degrees)"
       },
+      BasicSteps.hoverMaintainHeading,
       BasicSteps.land
     ];
   }

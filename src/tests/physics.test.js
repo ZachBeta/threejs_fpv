@@ -171,6 +171,74 @@ describe('Drone Physics', () => {
       expect(drone.velocity.y).toBeGreaterThan(0); // Eventually going up
       expect(drone.velocity.z).toBeLessThan(0); // Moving forward (negative Z)
     });
+
+    test('yaw rotation should change the direction of forward movement', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Test each cardinal direction
+      const tests = [
+        { yaw: 0, expectedX: 0, expectedZ: -1, description: "facing forward" },
+        { yaw: Math.PI/2, expectedX: -1, expectedZ: 0, description: "facing right" },
+        { yaw: Math.PI, expectedX: 0, expectedZ: 1, description: "facing backward" },
+        { yaw: -Math.PI/2, expectedX: 1, expectedZ: 0, description: "facing left" }
+      ];
+
+      for (const test of tests) {
+        // Reset drone for each test
+        drone.reset();
+        
+        // Set orientation and apply throttle
+        drone.rotation.y = test.yaw;
+        drone.rotation.x = -Math.PI / 8; // Pitch forward 22.5 degrees
+        drone.setThrottle(1.0);
+        
+        // Let it stabilize
+        for (let i = 0; i < 30; i++) {
+          drone.updatePhysics(deltaTime);
+        }
+        
+        // When pitched forward, velocity should align with facing direction
+        if (test.expectedX !== 0) {
+          expect(Math.sign(drone.velocity.x)).toBe(Math.sign(test.expectedX));
+        } else {
+          expect(Math.abs(drone.velocity.x)).toBeLessThan(0.1);
+        }
+        
+        if (test.expectedZ !== 0) {
+          expect(Math.sign(drone.velocity.z)).toBe(Math.sign(test.expectedZ));
+        } else {
+          expect(Math.abs(drone.velocity.z)).toBeLessThan(0.1);
+        }
+      }
+    });
+
+    test('pitch direction should be relative to drone orientation', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Reset drone and yaw 90 degrees right
+      drone.reset();
+      drone.rotation.y = Math.PI / 2; // Facing right
+      drone.setThrottle(1.0);
+      
+      // Test forward pitch (should move in -X direction when facing right)
+      drone.rotation.x = -Math.PI / 8; // Pitch forward
+      for (let i = 0; i < 30; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      expect(drone.velocity.x).toBeLessThan(0);
+      expect(Math.abs(drone.velocity.z)).toBeLessThan(Math.abs(drone.velocity.x));
+      
+      // Reset and test backward pitch (should move in +X direction when facing right)
+      drone.reset();
+      drone.rotation.y = Math.PI / 2; // Facing right
+      drone.rotation.x = Math.PI / 8; // Pitch backward
+      drone.setThrottle(1.0);
+      for (let i = 0; i < 30; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      expect(drone.velocity.x).toBeGreaterThan(0);
+      expect(Math.abs(drone.velocity.z)).toBeLessThan(Math.abs(drone.velocity.x));
+    });
   });
 
   describe('Tilt-Based Movement', () => {
@@ -236,26 +304,6 @@ describe('Drone Physics', () => {
       
       // The drone should move backward (positive z)
       expect(drone.velocity.z).toBeGreaterThan(0);
-    });
-
-    test('yaw rotation should change the direction of forward movement', () => {
-      const deltaTime = 0.016; // 60fps
-      
-      // Set drone to yaw right 90 degrees and pitch forward
-      drone.rotation.y = Math.PI / 2; // Yaw right 90 degrees
-      drone.rotation.x = -Math.PI / 8; // Pitch forward 22.5 degrees
-      drone.setThrottle(1.0);
-      
-      // Let it stabilize for a few frames
-      for (let i = 0; i < 15; i++) {
-        drone.updatePhysics(deltaTime);
-      }
-      
-      // When yawed 90 degrees right and pitched forward, the drone should move in the negative X direction
-      expect(drone.velocity.x).toBeLessThan(0);
-      
-      // Ensure there is significant X movement when yawed and pitched
-      expect(Math.abs(drone.velocity.x)).toBeGreaterThan(0.05);
     });
 
     test('positive yaw input should rotate drone counterclockwise', () => {
