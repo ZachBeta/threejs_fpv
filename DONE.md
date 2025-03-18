@@ -8,3 +8,6 @@
   * Fix floating demo cube clipping by raising its height
   * Add checkerboard texture and improved shading to building sides for better depth perception
   * Enhance lighting with additional directional light and adjusted intensities
+
+* QOL updates
+  * reset drone with L button
