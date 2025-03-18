@@ -5,6 +5,8 @@ Simple guidelines for working with this project.
 ## Manual overrides
 * NEVER DELETE INBOX.md - it's SACRED
 * It is also untracked intentionally leave it alone
+* prefer realitic tests over mocked tests
+* cat any output from git to avoid view waiting for user input
 
 ## Development Environment Rules
 

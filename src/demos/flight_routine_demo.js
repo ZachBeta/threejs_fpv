@@ -546,7 +546,7 @@ Controls:
     this.setThrottle(0.5);
     this.setPitch(0);
     this.setRoll(0);
-    this.setYaw(-0.5);
+    this.setYaw(0.5);
   }
 
   rotateRight() {
@@ -554,7 +554,7 @@ Controls:
     this.setThrottle(0.5);
     this.setPitch(0);
     this.setRoll(0);
-    this.setYaw(0.5);
+    this.setYaw(-0.5);
   }
 
   land() {
