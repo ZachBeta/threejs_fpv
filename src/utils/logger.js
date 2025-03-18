@@ -1,5 +1,68 @@
 import { logEvent } from './db/database.js';
 import { performance } from 'perf_hooks';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Create logs directory if it doesn't exist
+const logsDir = path.join(__dirname, '..', '..', 'logs');
+if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir);
+}
+
+const logFile = path.join(logsDir, 'server.log');
+
+function formatTimestamp() {
+    return new Date().toISOString();
+}
+
+function formatRequest(req) {
+    return {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        body: req.body,
+        query: req.query,
+        params: req.params
+    };
+}
+
+function formatResponse(res) {
+    return {
+        statusCode: res.statusCode,
+        headers: res.getHeaders()
+    };
+}
+
+export function logRequest(req) {
+    const timestamp = formatTimestamp();
+    const request = formatRequest(req);
+    
+    const logEntry = `\n[${timestamp}] REQUEST:\n${JSON.stringify(request, null, 2)}\n`;
+    fs.appendFileSync(logFile, logEntry);
+}
+
+export function logResponse(req, res) {
+    const timestamp = formatTimestamp();
+    const response = formatResponse(res);
+    
+    const logEntry = `\n[${timestamp}] RESPONSE:\n${JSON.stringify(response, null, 2)}\n`;
+    fs.appendFileSync(logFile, logEntry);
+}
+
+export function logError(error) {
+    const timestamp = formatTimestamp();
+    const errorLog = {
+        message: error.message,
+        stack: error.stack
+    };
+    
+    const logEntry = `\n[${timestamp}] ERROR:\n${JSON.stringify(errorLog, null, 2)}\n`;
+    fs.appendFileSync(logFile, logEntry);
+}
 
 class Logger {
   static logRender(component, details = {}) {
@@ -16,14 +79,6 @@ class Logger {
   static logInteraction(component, details = {}) {
     logEvent('interaction', component, {
       ...details,
-      timestamp: performance.now()
-    });
-  }
-
-  static logError(component, error) {
-    logEvent('error', component, {
-      message: error.message,
-      stack: error.stack,
       timestamp: performance.now()
     });
   }

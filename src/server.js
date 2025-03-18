@@ -1,10 +1,32 @@
 import express from 'express';
 import cors from 'cors';
-import { saveLogs, getLogs, getStepStats, getControlRanges } from './db.js';
+import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates } from './db.js';
+import { logRequest, logResponse, logError } from './utils/logger.js';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Logging middleware
+app.use((req, res, next) => {
+    // Log the request
+    logRequest(req);
+
+    // Log the response when it's sent
+    const originalSend = res.send;
+    res.send = function(data) {
+        logResponse(req, res);
+        return originalSend.apply(res, arguments);
+    };
+
+    next();
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    logError(err);
+    res.status(500).json({ success: false, error: err.message });
+});
 
 // Test endpoint to verify server is running
 app.get('/api/test', (req, res) => {
@@ -52,6 +74,29 @@ app.get('/api/stats', (req, res) => {
     });
   } catch (error) {
     console.error('Error getting stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Save real-time game state
+app.post('/api/game-state', (req, res) => {
+  try {
+    const result = saveGameState(req.body);
+    res.json({ success: true, count: result.count });
+  } catch (error) {
+    console.error('Error saving game state:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Get latest game states
+app.get('/api/game-states', (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+    const states = getLatestGameStates(limit);
+    res.json({ success: true, states });
+  } catch (error) {
+    console.error('Error getting game states:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
