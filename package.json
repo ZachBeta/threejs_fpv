@@ -5,7 +5,12 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "kill:vite": "npx kill-port 5173 || true",
+    "kill:server": "npx kill-port 3001 || true",
+    "kill:all": "npm run kill:vite && npm run kill:server",
+    "start:server": "nodemon src/server.js",
+    "dev:vite": "vite",
+    "dev": "npm run kill:all && concurrently \"npm run start:server\" \"npm run dev:vite\"",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
@@ -32,6 +37,7 @@
   "devDependencies": {
     "concurrently": "^9.1.2",
     "jest": "^29.7.0",
+    "kill-port": "^2.0.1",
     "node-fetch": "^3.3.2",
     "nodemon": "^3.1.9"
   }
