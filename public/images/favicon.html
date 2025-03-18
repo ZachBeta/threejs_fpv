@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG to Favicon Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin: 20px auto;
+            display: block;
+        }
+        .download-btn {
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .download-btn:hover {
+            background-color: #1976D2;
+        }
+        .preview {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SVG to Favicon Generator</h1>
+    <div>
+        <img src="drone-logo.svg" id="svgImage" width="256" height="256" alt="Drone Logo">
+    </div>
+    <div class="preview">
+        <h3>Preview:</h3>
+        <canvas id="canvas32" width="32" height="32"></canvas>
+        <canvas id="canvas16" width="16" height="16"></canvas>
+    </div>
+    <button class="download-btn" id="downloadFavicon">Download Favicon</button>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const svgImage = document.getElementById('svgImage');
+            const canvas32 = document.getElementById('canvas32');
+            const canvas16 = document.getElementById('canvas16');
+            const downloadBtn = document.getElementById('downloadFavicon');
+            
+            // Wait for the SVG to load
+            svgImage.onload = function() {
+                renderToCanvas(svgImage, canvas32);
+                renderToCanvas(svgImage, canvas16);
+            };
+            
+            function renderToCanvas(img, canvas) {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            }
+            
+            downloadBtn.addEventListener('click', function() {
+                // Create a 16x16 favicon
+                const link = document.createElement('a');
+                link.download = 'favicon.ico';
+                link.href = canvas16.toDataURL('image/x-icon');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+    </script>
+</body>
+</html> 

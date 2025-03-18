@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main drone body (X frame) scaled for favicon -->
+  <g transform="translate(16, 16) scale(0.07)">
+    <!-- Arms of the drone in black -->
+    <rect x="-120" y="-10" width="240" height="20" fill="#000000" />
+    <rect x="-10" y="-120" width="20" height="240" fill="#000000" />
+    
+    <!-- Center plate of the drone -->
+    <circle cx="0" cy="0" r="40" fill="#000000" />
+    
+    <!-- Camera at front -->
+    <rect x="-15" y="-60" width="30" height="20" fill="#333333" rx="5" ry="5" />
+    <rect x="-10" y="-55" width="20" height="10" fill="#4477dd" rx="2" ry="2" />
+    
+    <!-- Motor positions -->
+    <circle cx="-120" cy="-120" r="15" fill="#333333" />
+    <circle cx="120" cy="-120" r="15" fill="#333333" />
+    <circle cx="120" cy="120" r="15" fill="#333333" />
+    <circle cx="-120" cy="120" r="15" fill="#333333" />
+    
+    <!-- Propellers in red -->
+    <ellipse cx="-120" cy="-120" rx="40" ry="8" fill="#ff0000" transform="rotate(45, -120, -120)" />
+    <ellipse cx="120" cy="-120" rx="40" ry="8" fill="#ff0000" transform="rotate(-45, 120, -120)" />
+    <ellipse cx="120" cy="120" rx="40" ry="8" fill="#ff0000" transform="rotate(45, 120, 120)" />
+    <ellipse cx="-120" cy="120" rx="40" ry="8" fill="#ff0000" transform="rotate(-45, -120, 120)" />
+  </g>
+</svg> 

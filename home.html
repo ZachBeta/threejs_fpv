@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Three.js FPV Demos</title>
+    <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/public/styles.css">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -19,9 +21,19 @@
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-right: 20px;
+        }
         h1 {
             color: #333;
-            margin-bottom: 30px;
+            margin: 0;
         }
         .demo-list {
             list-style: none;
@@ -40,13 +52,13 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .demo-item a {
-            color: #2196F3;
+            color: var(--primary-color);
             text-decoration: none;
             font-size: 18px;
             display: block;
         }
         .demo-item a:hover {
-            color: #1976D2;
+            color: var(--primary-dark);
         }
         .demo-description {
             color: #666;
@@ -59,18 +71,21 @@
             border-radius: 12px;
             font-size: 12px;
             margin-left: 8px;
-            background-color: #ffd700;
+            background-color: var(--warning-color);
             color: #000;
         }
         .demo-status.completed {
-            background-color: #4CAF50;
+            background-color: var(--success-color);
             color: white;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Three.js FPV Demos</h1>
+        <div class="header">
+            <img src="/public/images/drone-logo.svg" alt="FPV Drone Logo" class="logo">
+            <h1>Three.js FPV Demos</h1>
+        </div>
         <ul class="demo-list">
             <li class="demo-item">
                 <a href="demos/drone_flight_demo/drone_flight_demo.html">Drone Flight Demo <span class="demo-status completed">Completed</span></a>
