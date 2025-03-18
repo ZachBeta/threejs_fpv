@@ -1,5 +1,5 @@
-const { logEvent } = require('./db/database');
-const { performance } = require('perf_hooks');
+import { logEvent } from './db/database.js';
+import { performance } from 'perf_hooks';
 
 class Logger {
   static logRender(component, details = {}) {
@@ -57,4 +57,4 @@ class Logger {
   }
 }
 
-module.exports = Logger; 
+export default Logger; 

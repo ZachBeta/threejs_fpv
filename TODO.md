@@ -13,6 +13,8 @@
   * Implement physics acceleration on throttle
   * Add floating mechanics
   * Match feeling of FPV drone sims (focus on playability and transferability over exact realism)
+  * create a demo render of the phsyics engine, maybe simulate simple inputs
+  * add hover toggle for QOL
 
 ## Soon
 

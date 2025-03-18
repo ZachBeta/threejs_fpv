@@ -1,6 +1,6 @@
-const Logger = require('../utils/logger');
-const LogAnalyzer = require('../utils/logAnalyzer');
-const { db } = require('../utils/db/database');
+import Logger from '../utils/logger.js';
+import LogAnalyzer from '../utils/logAnalyzer.js';
+import { db } from '../utils/db/database.js';
 
 describe('Logging System Tests', () => {
   // Clear the database before each test

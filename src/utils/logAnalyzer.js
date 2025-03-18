@@ -1,4 +1,4 @@
-const { queryEvents } = require('./db/database');
+import { queryEvents } from './db/database.js';
 
 class LogAnalyzer {
   static getPerformanceMetrics(timeRange = {}) {
@@ -113,4 +113,4 @@ class LogAnalyzer {
   }
 }
 
-module.exports = LogAnalyzer; 
+export default LogAnalyzer; 

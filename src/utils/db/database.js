@@ -1,8 +1,12 @@
-const Database = require('better-sqlite3');
-const path = require('path');
+import Database from 'better-sqlite3';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize database connection
-const db = new Database(path.join(__dirname, '../../../logs.db'));
+const db = new Database(join(__dirname, '../../../logs.db'));
 
 // Create tables if they don't exist
 db.exec(`
@@ -79,8 +83,4 @@ process.on('exit', () => {
   db.close();
 });
 
-module.exports = {
-  logEvent,
-  queryEvents,
-  db // Exposed for advanced usage if needed
-}; 
+export { logEvent, queryEvents, db }; 
