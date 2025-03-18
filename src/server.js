@@ -2,6 +2,49 @@ import express from 'express';
 import cors from 'cors';
 import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates, clearAllLogs, clearAllData, initializeDatabase, getDatabase } from './db.js';
 import { logRequest, logResponse, logError } from './utils/logger.js';
+import net from 'net';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+// Convert exec to promise-based
+const execAsync = promisify(exec);
+
+// Port for the server
+const PORT = 3001;
+
+// Check if port is in use and kill the process if needed
+async function ensurePortAvailable(port) {
+  return new Promise((resolve, reject) => {
+    const tester = net.createServer()
+      .once('error', async (err) => {
+        if (err.code === 'EADDRINUSE') {
+          console.log(`Port ${port} is already in use. Attempting to kill the process...`);
+          try {
+            // Find and kill the process using the port (works on macOS/Linux)
+            const { stdout } = await execAsync(`lsof -i :${port} -t`);
+            if (stdout.trim()) {
+              const pid = stdout.trim();
+              console.log(`Killing process ${pid} that's using port ${port}`);
+              await execAsync(`kill -9 ${pid}`);
+              console.log(`Process ${pid} killed. Waiting for port to be released...`);
+              // Wait a bit for the port to be released
+              setTimeout(() => resolve(), 1000);
+            }
+          } catch (error) {
+            console.warn(`Could not kill process using port ${port}: ${error.message}`);
+            reject(new Error(`Port ${port} is in use and could not be released`));
+          }
+        } else {
+          reject(err);
+        }
+      })
+      .once('listening', () => {
+        tester.close();
+        resolve();
+      })
+      .listen(port);
+  });
+}
 
 // Initialize database before setting up the server
 initializeDatabase();
@@ -115,41 +158,53 @@ app.post('/api/clear-logs', (req, res) => {
   }
 });
 
-const PORT = 3001;
-
-// Store server reference for graceful shutdown
-const server = app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  // Clear all logs after server starts
-  clearAllData();
-  console.log('Cleared all previous logs and data');
-});
-
-// Graceful shutdown handling
-function gracefulShutdown() {
-  console.log('Shutting down server gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    // Close the database connection if needed
-    try {
-      const db = getDatabase();
-      if (db && typeof db.close === 'function') {
-        db.close();
-        console.log('Database connection closed');
-      }
-    } catch (err) {
-      console.error('Error closing database:', err);
+// Start the server after ensuring the port is available
+async function startServer() {
+  try {
+    await ensurePortAvailable(PORT);
+    
+    // Store server reference for graceful shutdown
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      // Clear all logs after server starts
+      clearAllData();
+      console.log('Cleared all previous logs and data');
+    });
+    
+    // Graceful shutdown handling
+    function gracefulShutdown() {
+      console.log('Shutting down server gracefully...');
+      server.close(() => {
+        console.log('Server closed');
+        // Close the database connection if needed
+        try {
+          const db = getDatabase();
+          if (db && typeof db.close === 'function') {
+            db.close();
+            console.log('Database connection closed');
+          }
+        } catch (err) {
+          console.error('Error closing database:', err);
+        }
+        process.exit(0);
+      });
+      
+      // Force close if it takes too long
+      setTimeout(() => {
+        console.error('Could not close connections in time, forcefully shutting down');
+        process.exit(1);
+      }, 10000);
     }
-    process.exit(0);
-  });
-  
-  // Force close if it takes too long
-  setTimeout(() => {
-    console.error('Could not close connections in time, forcefully shutting down');
+    
+    // Listen for termination signals
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
+    
+  } catch (error) {
+    console.error(`Failed to start server: ${error.message}`);
     process.exit(1);
-  }, 10000);
+  }
 }
 
-// Listen for termination signals
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown); 
+// Start the server
+startServer(); 
