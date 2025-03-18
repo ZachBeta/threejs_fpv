@@ -36,6 +36,7 @@ The demo supports both keyboard and gamepad controls:
 - Right Stick:
   - Up/Down: Pitch (tilt forward/backward)
   - Left/Right: Roll (tilt left/right)
+- L Button: Reset drone to starting position and orientation
 
 The control scheme follows traditional FPV drone controls for intuitive flying.
 
@@ -135,4 +136,4 @@ sqlite3 logs.db "SELECT * FROM frame_metrics LIMIT 5;"
 
 ## License
 
-ISC
+MIT
