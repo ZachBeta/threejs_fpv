@@ -26,8 +26,25 @@ db.exec(`
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS game_states (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp INTEGER NOT NULL,
+    position_x REAL,
+    position_y REAL,
+    position_z REAL,
+    rotation_x REAL,
+    rotation_y REAL,
+    rotation_z REAL,
+    throttle REAL,
+    pitch REAL,
+    roll REAL,
+    yaw REAL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
+
   CREATE INDEX IF NOT EXISTS idx_routine_logs_timestamp ON routine_logs(timestamp);
   CREATE INDEX IF NOT EXISTS idx_routine_logs_step ON routine_logs(step_name);
+  CREATE INDEX IF NOT EXISTS idx_game_states_timestamp ON game_states(timestamp);
 `);
 
 export function saveLogs(logs) {
@@ -122,4 +139,37 @@ export function getControlRanges() {
       MAX(yaw) as max_yaw
     FROM routine_logs
   `).get();
+}
+
+export function saveGameState(state) {
+  const stmt = db.prepare(`
+    INSERT INTO game_states (
+      timestamp, position_x, position_y, position_z,
+      rotation_x, rotation_y, rotation_z, throttle, pitch, roll, yaw
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  stmt.run(
+    state.timestamp,
+    parseFloat(state.position.x),
+    parseFloat(state.position.y),
+    parseFloat(state.position.z),
+    parseFloat(state.rotation.x),
+    parseFloat(state.rotation.y),
+    parseFloat(state.rotation.z),
+    parseFloat(state.controls.throttle),
+    parseFloat(state.controls.pitch),
+    parseFloat(state.controls.roll),
+    parseFloat(state.controls.yaw)
+  );
+
+  return { success: true, count: 1 };
+}
+
+export function getLatestGameStates(limit = 100) {
+  return db.prepare(`
+    SELECT * FROM game_states 
+    ORDER BY timestamp DESC 
+    LIMIT ?
+  `).all(limit);
 } 
