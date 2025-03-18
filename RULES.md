@@ -40,4 +40,18 @@ Simple guidelines for working with this project.
    - Check for memory leaks
    - Handle errors gracefully
 
+## File Organization Rules
+
+1. **Keep It Organized**
+   - Put demo-specific code in `src/demos/`
+   - Keep related functionality together
+   - Avoid duplicate code across files
+   - When combining files, ensure all imports are updated
+
+2. **Demo Structure**
+   - Each demo should have its own directory in `demos/`
+   - Demo HTML files should import from the correct path in `src/demos/`
+   - Keep demo-specific styles in the demo's HTML file
+   - Use consistent naming across related files
+
 That's it! Keep it simple, keep it working. 
