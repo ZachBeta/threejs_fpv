@@ -13,6 +13,14 @@ class PhysicsDemo {
         controllerConnected: false,
         controllerName: '',
         lastInput: 'None'
+      },
+      // Add control state
+      controls: {
+        throttle: 0,
+        yaw: 0,
+        pitch: 0,
+        roll: 0,
+        hover: false
       }
     };
 
@@ -24,34 +32,69 @@ class PhysicsDemo {
 
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.shadowMap.enabled = true;
     document.body.appendChild(this.renderer.domElement);
 
     // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 5, 5);
+    directionalLight.position.set(5, 10, 5);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
     this.scene.add(directionalLight);
 
     // Create ground
-    const groundGeometry = new THREE.PlaneGeometry(20, 20);
+    const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x808080,
+      color: 0xffffff,
       side: THREE.DoubleSide
     });
     this.ground = new THREE.Mesh(groundGeometry, groundMaterial);
     this.ground.rotation.x = -Math.PI / 2;
+    this.ground.receiveShadow = true;
     this.scene.add(this.ground);
+
+    // Add grid lines to create checkered floor
+    const gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x000000);
+    this.scene.add(gridHelper);
+
+    // Add fog for edge fade-out effect
+    this.scene.fog = new THREE.Fog(0x87CEEB, 100, 400);
+
+    // Add landing pad to mark start/end position
+    const landingPadGeometry = new THREE.CylinderGeometry(2, 2, 0.1, 32);
+    const landingPadMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0.7
+    });
+    this.landingPad = new THREE.Mesh(landingPadGeometry, landingPadMaterial);
+    this.landingPad.position.y = 0.05; // Position slightly above ground to prevent z-fighting
+    this.landingPad.receiveShadow = true;
+    this.scene.add(this.landingPad);
 
     // Create drone mesh
     const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
     const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
     this.droneMesh.position.y = 10;
+    this.droneMesh.castShadow = true;
+    this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
     this.scene.add(this.droneMesh);
+
+    // Add front indicator cube
+    const frontCubeGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+    const frontCubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Bright red
+    const frontCube = new THREE.Mesh(frontCubeGeometry, frontCubeMaterial);
+    frontCube.position.set(0, 0, 0.6); // Position at the front of the drone (z axis is forward)
+    frontCube.castShadow = true;
+    this.droneMesh.add(frontCube); // Add to drone mesh so it moves with it
 
     // Add propellers
     const propellerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
@@ -68,6 +111,7 @@ class PhysicsDemo {
     propellerPositions.forEach(pos => {
       const propeller = new THREE.Mesh(propellerGeometry, propellerMaterial);
       propeller.position.set(pos.x, 0.1, pos.z);
+      propeller.castShadow = true;
       this.droneMesh.add(propeller);
       this.propellers.push(propeller);
     });
@@ -251,34 +295,19 @@ class PhysicsDemo {
     this.rightStickIndicator.style.left = `${(rightX * 50) + 50}%`;
     this.rightStickIndicator.style.top = `${(rightY * 50) + 50}%`;
 
-    // Apply to drone physics
-    if (leftY !== 0) {
-      // Vertical movement (throttle)
-      this.physics.setThrottle(-leftY); // Invert Y axis
-    } else {
-      this.physics.setThrottle(0);
-    }
+    // Update game state based on inputs
+    this.droneState.controls.throttle = leftY !== 0 ? -leftY : 0;
+    this.droneState.controls.yaw = leftX !== 0 ? -leftX : 0;
+    this.droneState.controls.pitch = rightY !== 0 ? -rightY : 0;
+    this.droneState.controls.roll = rightX !== 0 ? rightX : 0;
+  }
 
-    if (leftX !== 0) {
-      // Yaw (rotate left/right)
-      this.physics.setYaw(-leftX);
-    } else {
-      this.physics.setYaw(0);
-    }
-
-    if (rightY !== 0) {
-      // Pitch (tilt forward/backward)
-      this.physics.setPitch(-rightY);
-    } else {
-      this.physics.setPitch(0);
-    }
-
-    if (rightX !== 0) {
-      // Roll (tilt left/right)
-      this.physics.setRoll(rightX);
-    } else {
-      this.physics.setRoll(0);
-    }
+  updatePhysicsFromState() {
+    // Apply game state to physics
+    this.physics.setThrottle(this.droneState.controls.throttle);
+    this.physics.setYaw(this.droneState.controls.yaw);
+    this.physics.setPitch(this.droneState.controls.pitch);
+    this.physics.setRoll(this.droneState.controls.roll);
   }
 
   updateDiagnostics() {
@@ -308,6 +337,9 @@ class PhysicsDemo {
     this.updateGamepadState();
     this.handleGamepadInput();
 
+    // Update physics from game state
+    this.updatePhysicsFromState();
+
     // Update physics
     this.physics.updatePhysics(0.016); // Assuming 60fps
 
@@ -332,7 +364,7 @@ class PhysicsDemo {
     );
 
     // Animate propellers based on throttle
-    const propellerSpeed = this.physics.throttle * 10;
+    const propellerSpeed = this.physics.throttle * 0.5;
     this.propellers.forEach(propeller => {
       propeller.rotation.y += propellerSpeed;
     });
@@ -343,44 +375,39 @@ class PhysicsDemo {
     this.renderer.render(this.scene, this.camera);
   }
 
-  // Control methods
+  // Control methods now update game state instead of physics directly
   setThrottle(value) {
-    this.physics.setThrottle(value);
+    this.droneState.controls.throttle = value;
   }
 
   setPitch(value) {
-    this.physics.setPitch(value);
+    this.droneState.controls.pitch = value;
   }
 
   setRoll(value) {
-    this.physics.setRoll(value);
+    this.droneState.controls.roll = value;
   }
 
   setYaw(value) {
-    this.physics.setYaw(value);
+    this.droneState.controls.yaw = value;
   }
 
   toggleHoverMode() {
+    this.droneState.controls.hover = !this.droneState.controls.hover;
     this.physics.toggleHoverMode();
   }
 
   reset() {
+    // Reset game state
+    this.droneState.controls = {
+      throttle: 0,
+      yaw: 0,
+      pitch: 0,
+      roll: 0,
+      hover: false
+    };
+    // Reset physics
     this.physics.reset();
-    
-    // Reset drone mesh position
-    this.droneMesh.position.copy(this.physics.position);
-    
-    // Reset camera position relative to drone
-    const offsetY = 15;
-    const offsetZ = 15;
-    this.camera.position.x = this.physics.position.x;
-    this.camera.position.y = this.physics.position.y + offsetY;
-    this.camera.position.z = this.physics.position.z + offsetZ;
-    this.camera.lookAt(
-      this.physics.position.x,
-      this.physics.position.y,
-      this.physics.position.z
-    );
   }
 }
 

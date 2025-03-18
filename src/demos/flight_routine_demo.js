@@ -134,12 +134,32 @@ class RoutineDemo {
     this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
     this.scene.add(this.droneMesh);
 
-    // Add front indicator cube
-    const frontCubeGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-    const frontCubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Bright red
-    const frontCube = new THREE.Mesh(frontCubeGeometry, frontCubeMaterial);
-    frontCube.position.set(0, 0, 0.6); // Position at the front of the drone (z axis is forward)
-    this.droneMesh.add(frontCube); // Add to drone mesh so it moves with it
+    // Add orientation indicators
+    // Front indicator (red)
+    const frontIndicator = new THREE.Mesh(
+      new THREE.ConeGeometry(0.2, 0.4, 8),
+      new THREE.MeshStandardMaterial({ color: 0xff0000 })
+    );
+    frontIndicator.rotation.x = Math.PI / 2; // Point forward
+    frontIndicator.position.z = 0.6;
+    this.droneMesh.add(frontIndicator);
+
+    // Up indicator (blue)
+    const upIndicator = new THREE.Mesh(
+      new THREE.ConeGeometry(0.2, 0.4, 8),
+      new THREE.MeshStandardMaterial({ color: 0x0000ff })
+    );
+    upIndicator.position.y = 0.3;
+    this.droneMesh.add(upIndicator);
+
+    // Right indicator (green)
+    const rightIndicator = new THREE.Mesh(
+      new THREE.ConeGeometry(0.2, 0.4, 8),
+      new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+    );
+    rightIndicator.rotation.z = -Math.PI / 2; // Point right
+    rightIndicator.position.x = 0.6;
+    this.droneMesh.add(rightIndicator);
 
     // Add propellers
     const propellerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
