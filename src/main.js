@@ -36,6 +36,104 @@ const pedestal = new THREE.Mesh(pedestalGeometry, pedestalMaterial);
 pedestal.position.y = 5; // Half of its height
 scene.add(pedestal);
 
+// Function to create a tower
+function createTower(x, z, height, color = 0x808080) {
+    const towerGeometry = new THREE.BoxGeometry(4, height, 4);
+    const towerMaterial = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.7,
+        metalness: 0.2
+    });
+    const tower = new THREE.Mesh(towerGeometry, towerMaterial);
+    tower.position.set(x, height/2, z);
+    
+    // Add some details to the tower
+    const topGeometry = new THREE.CylinderGeometry(3, 3, 4, 8);
+    const topMaterial = new THREE.MeshStandardMaterial({
+        color: 0x606060,
+        roughness: 0.5,
+        metalness: 0.3
+    });
+    const top = new THREE.Mesh(topGeometry, topMaterial);
+    top.position.y = height/2 + 2;
+    tower.add(top);
+    
+    return tower;
+}
+
+// Function to create an obstacle course element
+function createObstacle(x, y, z) {
+    const group = new THREE.Group();
+    
+    // Create a ring to fly through
+    const torusGeometry = new THREE.TorusGeometry(5, 0.5, 16, 32);
+    const torusMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff4400,
+        roughness: 0.6,
+        metalness: 0.3
+    });
+    const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+    torus.position.set(x, y, z);
+    // Rotate the ring to make it vertical
+    torus.rotation.x = Math.PI / 2;
+    group.add(torus);
+    
+    return group;
+}
+
+// Add towers near the edges of the map
+const towerPositions = [
+    { x: -100, z: -100, height: 50 },
+    { x: 100, z: -100, height: 40 },
+    { x: -100, z: 100, height: 45 },
+    { x: 100, z: 100, height: 35 }
+];
+
+towerPositions.forEach(pos => {
+    const tower = createTower(pos.x, pos.z, pos.height);
+    scene.add(tower);
+});
+
+// Add some obstacles for an interesting flight path
+const obstacles = [
+    { x: 20, y: 15, z: 0 },
+    { x: -15, y: 10, z: 20 },
+    { x: 0, y: 20, z: -25 },
+    { x: -30, y: 25, z: -15 }
+];
+
+obstacles.forEach(pos => {
+    const obstacle = createObstacle(pos.x, pos.y, pos.z);
+    scene.add(obstacle);
+});
+
+// Create some additional structures
+function createBuilding(x, z) {
+    const height = 10 + Math.random() * 15;
+    const width = 8 + Math.random() * 6;
+    const depth = 8 + Math.random() * 6;
+    
+    const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+    const buildingMaterial = new THREE.MeshStandardMaterial({
+        color: 0x505050 + Math.random() * 0x202020,
+        roughness: 0.8,
+        metalness: 0.2
+    });
+    const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+    building.position.set(x, height/2, z);
+    return building;
+}
+
+// Add some buildings in the middle area
+for (let i = 0; i < 8; i++) {
+    const angle = (i / 8) * Math.PI * 2;
+    const radius = 30 + Math.random() * 20;
+    const x = Math.cos(angle) * radius;
+    const z = Math.sin(angle) * radius;
+    const building = createBuilding(x, z);
+    scene.add(building);
+}
+
 // Create the landmark cube
 const cubeGeometry = new THREE.BoxGeometry();
 const cubeMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });

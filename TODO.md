@@ -16,8 +16,11 @@
     ```
 
 * [ ] Map Enhancement
+  * extract the map logic to a new file - probably use a class to handle behavior and state
   * Add more objects to the map
   * Add tall towers dispersed near the edges of the map
+  * more realism by fading out the window when we get too close to the edge
+  * make the map larger
 
 * [ ] Physics and Movement
   * Implement physics acceleration on throttle
