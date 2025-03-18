@@ -8,18 +8,53 @@ class RoutineDemo {
     this.isRoutineRunning = false;
     this.currentStep = 0;
     this.stepStartTime = 0;
-    this.routine = [
-      { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
-      { name: 'Hover', duration: 2000, action: () => this.hover() },
-      { name: 'Forward', duration: 2000, action: () => this.moveForward() },
-      { name: 'Backward', duration: 2000, action: () => this.moveBackward() },
-      { name: 'Left', duration: 2000, action: () => this.moveLeft() },
-      { name: 'Right', duration: 2000, action: () => this.moveRight() },
-      { name: 'Rotate Left', duration: 2000, action: () => this.rotateLeft() },
-      { name: 'Rotate Right', duration: 2000, action: () => this.rotateRight() },
-      { name: 'Land', duration: 2000, action: () => this.land() },
-      { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
-    ];
+    
+    // Performance metrics
+    this.fps = 0;
+    this.frameCount = 0;
+    this.lastFpsUpdate = 0;
+    this.isPaused = false;
+    
+    // Basic and advanced routines
+    this.routines = {
+      basic: [
+        { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
+        { name: 'Hover', duration: 2000, action: () => this.hover() },
+        { name: 'Forward', duration: 2000, action: () => this.moveForward() },
+        { name: 'Backward', duration: 2000, action: () => this.moveBackward() },
+        { name: 'Left', duration: 2000, action: () => this.moveLeft() },
+        { name: 'Right', duration: 2000, action: () => this.moveRight() },
+        { name: 'Rotate Left', duration: 2000, action: () => this.rotateLeft() },
+        { name: 'Rotate Right', duration: 2000, action: () => this.rotateRight() },
+        { name: 'Land', duration: 2000, action: () => this.land() },
+        { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
+      ],
+      advanced: [
+        { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
+        { name: 'Circle Left', duration: 4000, action: () => this.circleLeft() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
+        { name: 'Circle Right', duration: 4000, action: () => this.circleRight() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
+        { name: 'Figure Eight', duration: 6000, action: () => this.figureEight() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
+        { name: 'Ascend', duration: 2000, action: () => this.ascend() },
+        { name: 'Descend', duration: 2000, action: () => this.descend() },
+        { name: 'Hover', duration: 1000, action: () => this.hover() },
+        { name: 'Land', duration: 2000, action: () => this.land() },
+        { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
+      ],
+      // Special figure eight pattern
+      figureEight: [
+        { name: 'Start Figure Eight', duration: 1000, action: () => this.startFigureEight() },
+        { name: 'Circle Left Part', duration: 3000, action: () => this.figureEightLeft() },
+        { name: 'Circle Right Part', duration: 3000, action: () => this.figureEightRight() },
+        { name: 'End Figure Eight', duration: 1000, action: () => this.hover() }
+      ]
+    };
+    
+    // Set active routine to basic
+    this.activeRoutineType = 'basic';
+    this.routine = this.routines.basic;
 
     // Check server status
     this.checkServerStatus();
@@ -98,9 +133,38 @@ class RoutineDemo {
     // Get UI elements
     this.overlay = document.getElementById('overlay');
     this.routineSteps = document.querySelectorAll('.routine-step');
-
+    this.routineSelector = document.getElementById('routine-selector');
+    
+    // Setup routine selector
+    if (this.routineSelector) {
+      this.routineSelector.addEventListener('change', (e) => {
+        this.activeRoutineType = e.target.value;
+        this.routine = this.routines[this.activeRoutineType];
+        this.updateRoutineStepsDisplay();
+      });
+    }
+    
     // Start animation loop
     this.animate();
+  }
+  
+  updateRoutineStepsDisplay() {
+    const stepsContainer = document.getElementById('routine-steps');
+    if (!stepsContainer) return;
+    
+    // Clear existing steps
+    stepsContainer.innerHTML = '';
+    
+    // Add current routine steps
+    this.routine.forEach((step, index) => {
+      const stepElement = document.createElement('div');
+      stepElement.className = 'routine-step';
+      stepElement.textContent = `${index + 1}. ${step.name}`;
+      stepsContainer.appendChild(stepElement);
+    });
+    
+    // Update routineSteps reference
+    this.routineSteps = document.querySelectorAll('.routine-step');
   }
 
   onWindowResize() {
@@ -110,29 +174,62 @@ class RoutineDemo {
   }
 
   updateUI() {
-    // Update overlay text
-    if (this.isRoutineRunning) {
-      const currentStep = this.routine[this.currentStep];
-      const timeLeft = Math.ceil((currentStep.duration - (performance.now() - this.stepStartTime)) / 1000);
-      this.overlay.textContent = `Current: ${currentStep.name} (${timeLeft}s)`;
-    } else {
-      this.overlay.textContent = 'Press SPACE to start routine';
+    // Calculate speed
+    const speed = Math.sqrt(
+      Math.pow(this.physics.velocity.x, 2) +
+      Math.pow(this.physics.velocity.y, 2) +
+      Math.pow(this.physics.velocity.z, 2)
+    );
+    
+    // Format position for display
+    const pos = this.physics.position;
+    const vel = this.physics.velocity;
+    
+    let statusText = `FPS: ${this.fps}
+Routine: ${this.activeRoutineType}
+Running: ${this.isRoutineRunning ? 'Yes' : 'No'}
+Step: ${this.isRoutineRunning ? `${this.currentStep + 1}. ${this.routine[this.currentStep].name}` : 'None'}
+
+Position: X: ${pos.x.toFixed(2)}, Y: ${pos.y.toFixed(2)}, Z: ${pos.z.toFixed(2)}
+Velocity: X: ${vel.x.toFixed(2)}, Y: ${vel.y.toFixed(2)}, Z: ${vel.z.toFixed(2)}
+Speed: ${speed.toFixed(2)} m/s
+
+Controls:
+  Throttle: ${this.physics.throttle.toFixed(2)}
+  Pitch: ${this.physics.pitch.toFixed(2)}
+  Roll: ${this.physics.roll.toFixed(2)}
+  Yaw: ${this.physics.yaw.toFixed(2)}`;
+
+    if (this.overlay) {
+      this.overlay.textContent = statusText;
     }
 
-    // Update step highlighting
-    this.routineSteps.forEach((step, index) => {
-      if (this.isRoutineRunning && index === this.currentStep) {
-        step.classList.add('active');
-      } else {
-        step.classList.remove('active');
-      }
-    });
+    // Update active step in UI
+    if (this.routineSteps && this.isRoutineRunning) {
+      this.routineSteps.forEach((el, index) => {
+        if (index === this.currentStep) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+    }
   }
 
   animate() {
+    if (this.isPaused) return;
+    
     requestAnimationFrame(() => this.animate());
-
+    
     const currentTime = performance.now();
+
+    // Update FPS counter
+    this.frameCount++;
+    if (currentTime > this.lastFpsUpdate + 1000) { // Update every second
+      this.fps = Math.round((this.frameCount * 1000) / (currentTime - this.lastFpsUpdate));
+      this.frameCount = 0;
+      this.lastFpsUpdate = currentTime;
+    }
 
     // Log state if enough time has passed
     if (currentTime - this.lastLogTime >= this.logInterval) {
@@ -434,10 +531,89 @@ class RoutineDemo {
         this.logger.disable();
       });
   }
+
+  pauseSimulation() {
+    this.isPaused = true;
+    if (this.isRoutineRunning) {
+      this.isRoutineRunning = false;
+    }
+  }
+  
+  resumeSimulation() {
+    this.isPaused = false;
+    this.lastFpsUpdate = performance.now();
+    this.frameCount = 0;
+    this.animate();
+  }
+
+  // Advanced flight routines
+  circleLeft() {
+    console.log('Executing circle left');
+    this.setThrottle(0.5);
+    this.setPitch(0.3);
+    this.setRoll(-0.3);
+    this.setYaw(-0.2);
+  }
+  
+  circleRight() {
+    console.log('Executing circle right');
+    this.setThrottle(0.5);
+    this.setPitch(0.3);
+    this.setRoll(0.3);
+    this.setYaw(0.2);
+  }
+  
+  figureEight() {
+    console.log('Executing figure eight');
+    this.startFigureEight();
+  }
+  
+  startFigureEight() {
+    console.log('Starting figure eight');
+    this.setThrottle(0.6);
+    this.setPitch(0.3);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+  
+  figureEightLeft() {
+    console.log('Figure eight - left turn');
+    this.setThrottle(0.6);
+    this.setPitch(0.3);
+    this.setRoll(-0.4);
+    this.setYaw(-0.2);
+  }
+  
+  figureEightRight() {
+    console.log('Figure eight - right turn');
+    this.setThrottle(0.6);
+    this.setPitch(0.3);
+    this.setRoll(0.4);
+    this.setYaw(0.2);
+  }
+  
+  ascend() {
+    console.log('Executing ascend');
+    this.setThrottle(0.8);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+  
+  descend() {
+    console.log('Executing descend');
+    this.setThrottle(0.3);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
 }
 
 // Create demo instance
 const demo = new RoutineDemo();
+
+// Make demo available globally for the menu
+window.demo = demo;
 
 // Add keyboard controls
 document.addEventListener('keydown', (event) => {
@@ -456,6 +632,21 @@ document.addEventListener('keydown', (event) => {
       console.log('Resetting drone');
       demo.reset();
       break;
+    case 'Escape':
+      // Menu handled in HTML
+      if (demo.isRoutineRunning || !demo.isPaused) {
+        console.log('Pausing simulation');
+        demo.pauseSimulation();
+      }
+      break;
+  }
+});
+
+// Listen for menu resume event
+document.getElementById('close-menu-button')?.addEventListener('click', () => {
+  if (demo.isPaused) {
+    console.log('Resuming simulation');
+    demo.resumeSimulation();
   }
 });
 
