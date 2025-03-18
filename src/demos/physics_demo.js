@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DronePhysics } from './physics.js';
+import { DronePhysics } from '../physics.js';
 
 class PhysicsDemo {
   constructor() {
@@ -81,7 +81,11 @@ class PhysicsDemo {
 
     // Update drone mesh position and rotation
     this.droneMesh.position.copy(this.physics.position);
-    this.droneMesh.rotation.copy(this.physics.rotation);
+    
+    // Convert plain object rotation to THREE.Euler rotation
+    this.droneMesh.rotation.x = this.physics.rotation.x;
+    this.droneMesh.rotation.y = this.physics.rotation.y;
+    this.droneMesh.rotation.z = this.physics.rotation.z;
 
     // Animate propellers based on throttle
     const propellerSpeed = this.physics.throttle * 10;

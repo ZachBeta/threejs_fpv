@@ -108,7 +108,7 @@ npm run preview
 
 ## Project Structure
 
-- `index.html` - Main HTML file
+- `home.html` - Main HTML file (previously index.html)
 - `src/main.js` - Main JavaScript file containing Three.js scene setup and animation
 - `src/logger.js` - Telemetry logging system implementation
 - `src/demos/` - Demo-specific code and implementations
@@ -153,8 +153,8 @@ Please read our [RULES.md](RULES.md) for guidelines on contributing to this proj
 ## TODO and Progress
 
 ### Completed Items
-- Index.html points to demos
-- Pulled demo JS closer to index
+- Home page (home.html) points to demos
+- Pulled demo JS closer to demo pages
 - Renamed logging demo to game state demo
 - Resolved issue with multiple logging_demo.js files by renaming to game_state_demo.js
 - Basic FPV drone controls implementation
