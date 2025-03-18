@@ -131,9 +131,7 @@
             <div class="controls-group">
                 <button id="start-demo">Start Demo Routine</button>
                 <button id="stop-demo">Stop Demo Routine</button>
-                <button id="check-logs">Check Log Files</button>
                 <button id="clear-logs">Clear Logs</button>
-                <button id="toggle-live">Start Live Updates</button>
             </div>
         </div>
 
@@ -143,13 +141,6 @@
                 Ready to start
             </div>
             <div id="demo-status" class="status"></div>
-        </div>
-
-        <div class="section">
-            <h3>Saved Log Files</h3>
-            <div id="log-files" class="log-display">
-                <div id="files-list"></div>
-            </div>
         </div>
 
         <div class="section">
@@ -166,7 +157,6 @@
         console.log('Demo integration module loaded');
         
         const API_BASE = 'http://localhost:3000/api';
-        let isLiveUpdatesEnabled = false;
         let updateInterval;
 
         // Check server status
@@ -185,30 +175,9 @@
             }
         }
 
-        // List saved log files
-        async function listLogFiles() {
-            console.log('Fetching log files...');
-            try {
-                const response = await fetch(`${API_BASE}/logs`);
-                const data = await response.json();
-                console.log('Log files response:', data);
-                const filesList = document.getElementById('files-list');
-                if (data.success && data.logs) {
-                    filesList.innerHTML = data.logs.map(log => 
-                        `<div>${log.filename} (${(log.size / 1024).toFixed(2)} KB)</div>`
-                    ).join('');
-                } else {
-                    filesList.innerHTML = '<div>No log files available</div>';
-                }
-            } catch (error) {
-                console.error('Error listing logs:', error);
-                document.getElementById('files-list').innerHTML = '<div>Error loading log files</div>';
-            }
-        }
-
         // Format number for display
         function formatNumber(num) {
-            return typeof num === 'number' ? num.toFixed(2) : '0.00';
+            return typeof num === 'number' ? num.toFixed(2) : num;
         }
 
         // Update game states display
@@ -240,20 +209,6 @@
             } catch (error) {
                 console.error('Error updating game states:', error);
                 document.getElementById('states-list').innerHTML = '<div>Error loading game states</div>';
-            }
-        }
-
-        // Toggle live updates
-        function toggleLiveUpdates() {
-            isLiveUpdatesEnabled = !isLiveUpdatesEnabled;
-            const button = document.getElementById('toggle-live');
-            button.textContent = isLiveUpdatesEnabled ? 'Stop Live Updates' : 'Start Live Updates';
-            
-            if (isLiveUpdatesEnabled) {
-                updateGameStates();
-                updateInterval = setInterval(updateGameStates, 1000); // Update every second
-            } else {
-                clearInterval(updateInterval);
             }
         }
 
@@ -321,9 +276,7 @@
             updateDemoStatus();
         });
 
-        document.getElementById('check-logs').addEventListener('click', listLogFiles);
         document.getElementById('clear-logs').addEventListener('click', clearLogs);
-        document.getElementById('toggle-live').addEventListener('click', toggleLiveUpdates);
         console.log('Event listeners set up');
 
         // Add clear logs function
@@ -337,7 +290,7 @@
                 if (data.success) {
                     console.log('Logs cleared successfully');
                     // Refresh the logs list
-                    listLogFiles();
+                    updateGameStates();
                 } else {
                     console.error('Failed to clear logs:', data.error);
                 }
@@ -349,7 +302,6 @@
         // Initial setup
         console.log('Running initial setup...');
         checkServerStatus();
-        listLogFiles();
         updateGameStates(); // Initial game states load
         console.log('Initial setup complete');
     </script>
