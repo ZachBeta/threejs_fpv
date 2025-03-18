@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "analyze-logs": "node src/analyze_routine_logs.js",
+    "server": "node src/server.js"
   },
   "repository": {
     "type": "git",
@@ -23,6 +25,8 @@
   "homepage": "https://github.com/ZachBeta/threejs_fpv#readme",
   "dependencies": {
     "better-sqlite3": "^9.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "three": "^0.162.0",
     "vite": "^6.2.2"
   },

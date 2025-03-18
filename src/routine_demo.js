@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { DronePhysics } from './physics.js';
-import Logger from './utils/logger.js';
 
 class RoutineDemo {
   constructor() {
@@ -10,6 +9,11 @@ class RoutineDemo {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
+
+    // Initialize logging
+    this.logs = [];
+    this.lastLogTime = 0;
+    this.logInterval = 100; // Log every 100ms
 
     // Initialize control stick displays
     this.leftStickIndicator = document.querySelector('.stick-display[data-label="Left Stick"] .stick-indicator');
@@ -125,6 +129,12 @@ class RoutineDemo {
 
     const currentTime = performance.now();
 
+    // Log state if enough time has passed
+    if (currentTime - this.lastLogTime >= this.logInterval) {
+      this.logState();
+      this.lastLogTime = currentTime;
+    }
+
     // Update routine
     if (this.isRoutineRunning) {
       if (currentTime - this.stepStartTime >= this.routine[this.currentStep].duration) {
@@ -165,28 +175,6 @@ class RoutineDemo {
     // Update control stick visualization
     this.updateControlSticks();
 
-    // Log drone state and inputs
-    Logger.logPerformance('RoutineDemo', {
-      position: {
-        x: this.physics.position.x,
-        y: this.physics.position.y,
-        z: this.physics.position.z
-      },
-      rotation: {
-        x: this.physics.rotation.x,
-        y: this.physics.rotation.y,
-        z: this.physics.rotation.z
-      },
-      inputs: {
-        throttle: this.physics.throttle,
-        pitch: this.physics.pitch,
-        roll: this.physics.roll,
-        yaw: this.physics.yaw
-      },
-      currentStep: this.currentStep,
-      stepTimeLeft: this.stepTimeLeft
-    });
-
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -205,12 +193,6 @@ class RoutineDemo {
 
     this.rightStickIndicator.style.left = `${50 + rightX * 50}%`;
     this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
-
-    // Log control stick positions
-    Logger.logInteraction('ControlSticks', {
-      left: { x: leftX, y: leftY },
-      right: { x: rightX, y: rightY }
-    });
   }
 
   // Control methods
@@ -238,21 +220,75 @@ class RoutineDemo {
     this.physics.reset();
   }
 
+  logState() {
+    const state = {
+      timestamp: performance.now(),
+      position: {
+        x: this.physics.position.x.toFixed(2),
+        y: this.physics.position.y.toFixed(2),
+        z: this.physics.position.z.toFixed(2)
+      },
+      rotation: {
+        x: this.physics.rotation.x.toFixed(2),
+        y: this.physics.rotation.y.toFixed(2),
+        z: this.physics.rotation.z.toFixed(2)
+      },
+      controls: {
+        throttle: this.physics.throttle.toFixed(2),
+        pitch: this.physics.pitch.toFixed(2),
+        roll: this.physics.roll.toFixed(2),
+        yaw: this.physics.yaw.toFixed(2)
+      },
+      currentStep: this.isRoutineRunning ? this.routine[this.currentStep].name : 'Idle'
+    };
+
+    this.logs.push(state);
+    console.log(JSON.stringify(state));
+  }
+
   startRoutine() {
     this.isRoutineRunning = true;
     this.currentStep = 0;
     this.stepStartTime = performance.now();
-    this.routine[0].action();
+    this.logs = []; // Clear previous logs
+    this.routine[this.currentStep].action();
     this.updateUI();
   }
 
   stopRoutine() {
     this.isRoutineRunning = false;
+    // Reset controls
     this.setThrottle(0);
     this.setPitch(0);
     this.setRoll(0);
     this.setYaw(0);
-    this.updateUI();
+
+    // Save logs to file
+    this.saveLogs();
+  }
+
+  saveLogs() {
+    const logData = JSON.stringify(this.logs, null, 2);
+    
+    // Send logs to server
+    fetch('http://localhost:3000/api/save-logs', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: logData
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log('Logs saved successfully:', data.filename);
+      } else {
+        console.error('Failed to save logs:', data.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error sending logs to server:', error);
+    });
   }
 }
 
