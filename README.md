@@ -7,8 +7,13 @@ A simple 3D demo using Three.js that features a first-person view (FPV) drone-li
 - FPV drone-like controls for intuitive navigation
 - Large open map with a central landmark
   - Rotating green cube on a tall pedestal as a reference point
-  - 1000x1000 unit ground plane
-- Directional and ambient lighting
+  - 1000x1000 unit ground plane with edge fade-out effect
+  - Tall towers dispersed near the edges for better depth perception
+  - Checkerboard textures and improved shading for better visual feedback
+- Enhanced lighting system
+  - Multiple directional lights
+  - Adjusted light intensities for better depth perception
+  - Ambient lighting for improved visibility
 - Responsive design that adapts to window resizing
 - Modern development setup using Vite
 - SQLite-based telemetry logging system
@@ -17,6 +22,7 @@ A simple 3D demo using Three.js that features a first-person view (FPV) drone-li
   - Stores system information
 - Real-time performance monitoring
 - Automatic error handling and logging
+- Gamepad support with traditional FPV drone controls
 
 ## Controls
 
@@ -31,11 +37,15 @@ The demo supports both keyboard and gamepad controls:
 
 ### Gamepad Controls
 - Left Stick:
-  - Up/Down: Throttle (vertical movement)
-  - Left/Right: Yaw (rotate left/right)
+  - Up: Throttle up (move drone vertically up)
+  - Down: Throttle down to 0
+  - Left: Rotate drone left
+  - Right: Rotate drone right
 - Right Stick:
-  - Up/Down: Pitch (tilt forward/backward)
-  - Left/Right: Roll (tilt left/right)
+  - Up: Tilt forward
+  - Down: Tilt backward
+  - Left: Tilt left
+  - Right: Tilt right
 - L Button: Reset drone to starting position and orientation
 
 The control scheme follows traditional FPV drone controls for intuitive flying.
@@ -101,6 +111,8 @@ npm run preview
 - `index.html` - Main HTML file
 - `src/main.js` - Main JavaScript file containing Three.js scene setup and animation
 - `src/logger.js` - Telemetry logging system implementation
+- `src/demos/` - Demo-specific code and implementations
+- `demos/` - Demo HTML files and assets
 - `package.json` - Project configuration and dependencies
 - `logs.db` - SQLite database for storing telemetry data
 
@@ -133,6 +145,10 @@ You can query the logs using any SQLite client. For example:
 # Using sqlite3 command line tool
 sqlite3 logs.db "SELECT * FROM frame_metrics LIMIT 5;"
 ```
+
+## Contributing
+
+Please read our [RULES.md](RULES.md) for guidelines on contributing to this project.
 
 ## License
 
