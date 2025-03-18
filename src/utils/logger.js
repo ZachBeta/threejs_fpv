@@ -41,7 +41,7 @@ export function logRequest(req) {
     const timestamp = formatTimestamp();
     const request = formatRequest(req);
     
-    const logEntry = `\n[${timestamp}] REQUEST:\n${JSON.stringify(request, null, 2)}\n`;
+    const logEntry = `[${timestamp}] REQUEST:${JSON.stringify(request, null, 2)}`;
     fs.appendFileSync(logFile, logEntry);
 }
 
@@ -49,7 +49,7 @@ export function logResponse(req, res) {
     const timestamp = formatTimestamp();
     const response = formatResponse(res);
     
-    const logEntry = `\n[${timestamp}] RESPONSE:\n${JSON.stringify(response, null, 2)}\n`;
+    const logEntry = `[${timestamp}] RESPONSE:${JSON.stringify(response, null, 2)}`;
     fs.appendFileSync(logFile, logEntry);
 }
 
@@ -60,7 +60,7 @@ export function logError(error) {
         stack: error.stack
     };
     
-    const logEntry = `\n[${timestamp}] ERROR:\n${JSON.stringify(errorLog, null, 2)}\n`;
+    const logEntry = `[${timestamp}] ERROR:${JSON.stringify(errorLog, null, 2)}`;
     fs.appendFileSync(logFile, logEntry);
 }
 
@@ -107,6 +107,17 @@ class Logger {
   static logCollision(component, details = {}) {
     logEvent('collision', component, {
       ...details,
+      timestamp: performance.now()
+    });
+  }
+
+  static logError(component, error = {}) {
+    // Log to file
+    logError(error);
+    // Also log to database
+    logEvent('error', component, {
+      message: error.message || 'Unknown error',
+      stack: error.stack || '',
       timestamp: performance.now()
     });
   }

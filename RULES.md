@@ -2,6 +2,10 @@
 
 Simple guidelines for working with this project.
 
+## Manual overrides
+* NEVER DELETE INBOX.md - it's SACRED
+* It is also untracked intentionally leave it alone
+
 ## Development Environment Rules
 
 1. **Node.js Requirements**
