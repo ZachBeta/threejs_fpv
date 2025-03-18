@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DronePhysics } from '../physics.js';
+import { DroneModel } from '../models/drone_model.js';
 import { GameStateApi } from '../game_state_api.js';
 
 class RoutineDemo {
@@ -125,68 +125,12 @@ class RoutineDemo {
     this.landingPad.receiveShadow = true;
     this.scene.add(this.landingPad);
 
-    // Create drone mesh
-    const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
-    const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
-    this.droneMesh.position.y = 10; // Match initial physics position
-    this.droneMesh.castShadow = true;
-    this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
-    this.scene.add(this.droneMesh);
-
-    // Add orientation indicators
-    // Front indicator (red)
-    const frontIndicator = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2, 0.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0xff0000 })
-    );
-    frontIndicator.rotation.x = Math.PI / 2; // Point forward
-    frontIndicator.position.z = 0.6;
-    this.droneMesh.add(frontIndicator);
-
-    // Up indicator (blue)
-    const upIndicator = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2, 0.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0x0000ff })
-    );
-    upIndicator.position.y = 0.3;
-    this.droneMesh.add(upIndicator);
-
-    // Right indicator (green)
-    const rightIndicator = new THREE.Mesh(
-      new THREE.ConeGeometry(0.2, 0.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0x00ff00 })
-    );
-    rightIndicator.rotation.z = -Math.PI / 2; // Point right
-    rightIndicator.position.x = 0.6;
-    this.droneMesh.add(rightIndicator);
-
-    // Add propellers
-    const propellerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
-    const propellerMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
-    
-    this.propellers = [];
-    const propellerPositions = [
-      { x: -0.5, z: -0.5 },
-      { x: 0.5, z: -0.5 },
-      { x: -0.5, z: 0.5 },
-      { x: 0.5, z: 0.5 }
-    ];
-
-    propellerPositions.forEach(pos => {
-      const propeller = new THREE.Mesh(propellerGeometry, propellerMaterial);
-      propeller.position.set(pos.x, 0.1, pos.z);
-      this.droneMesh.add(propeller);
-      this.propellers.push(propeller);
-    });
-
-    // Initialize physics
-    this.physics = new DronePhysics();
-    this.physics.groundLevel = 0; // Set the ground level to match our scene
+    // Create drone using DroneModel
+    this.drone = new DroneModel(this.scene);
     
     // Set up camera position
     this.camera.position.set(0, 20, 20);
-    this.camera.lookAt(this.physics.position);
+    this.camera.lookAt(this.drone.position);
 
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
@@ -246,14 +190,14 @@ class RoutineDemo {
   updateUI() {
     // Calculate speed
     const speed = Math.sqrt(
-      Math.pow(this.physics.velocity.x, 2) +
-      Math.pow(this.physics.velocity.y, 2) +
-      Math.pow(this.physics.velocity.z, 2)
+      Math.pow(this.drone.physics.velocity.x, 2) +
+      Math.pow(this.drone.physics.velocity.y, 2) +
+      Math.pow(this.drone.physics.velocity.z, 2)
     );
     
     // Format position for display
-    const pos = this.physics.position;
-    const vel = this.physics.velocity;
+    const pos = this.drone.position;
+    const vel = this.drone.physics.velocity;
     
     let statusText = `FPS: ${this.fps}
 Routine: ${this.activeRoutineType}
@@ -265,10 +209,10 @@ Velocity: X: ${vel.x.toFixed(2)}, Y: ${vel.y.toFixed(2)}, Z: ${vel.z.toFixed(2)}
 Speed: ${speed.toFixed(2)} m/s
 
 Controls:
-  Throttle: ${this.physics.throttle.toFixed(2)}
-  Pitch: ${this.physics.pitch.toFixed(2)}
-  Roll: ${this.physics.roll.toFixed(2)}
-  Yaw: ${this.physics.yaw.toFixed(2)}`;
+  Throttle: ${this.drone.physics.throttle.toFixed(2)}
+  Pitch: ${this.drone.physics.pitch.toFixed(2)}
+  Roll: ${this.drone.physics.roll.toFixed(2)}
+  Yaw: ${this.drone.physics.yaw.toFixed(2)}`;
 
     if (this.overlay) {
       this.overlay.textContent = statusText;
@@ -301,40 +245,20 @@ Controls:
       this.lastFpsUpdate = currentTime;
     }
 
-    // Update physics
-    this.physics.updatePhysics(0.016); // Assuming 60fps
+    // Update drone
+    this.drone.update(0.016); // Assuming 60fps
 
-    // Update drone mesh position 
-    this.droneMesh.position.x = this.physics.position.x;
-    this.droneMesh.position.y = this.physics.position.y;
-    this.droneMesh.position.z = this.physics.position.z;
-    
-    // Update drone rotation - use rotation from physics
-    const droneRotation = new THREE.Euler(
-      this.physics.rotation.x,
-      this.physics.rotation.y + Math.PI, // Add 180 degrees to keep facing away from camera
-      this.physics.rotation.z,
-      'XYZ'
-    );
-    this.droneMesh.rotation.copy(droneRotation);
-    
     // Update camera to follow drone
     const offsetY = 15; // Height above drone
     const offsetZ = 15; // Distance behind drone
-    this.camera.position.x = this.physics.position.x;
-    this.camera.position.y = this.physics.position.y + offsetY;
-    this.camera.position.z = this.physics.position.z + offsetZ;
+    this.camera.position.x = this.drone.position.x;
+    this.camera.position.y = this.drone.position.y + offsetY;
+    this.camera.position.z = this.drone.position.z + offsetZ;
     this.camera.lookAt(
-      this.physics.position.x,
-      this.physics.position.y,
-      this.physics.position.z
+      this.drone.position.x,
+      this.drone.position.y,
+      this.drone.position.z
     );
-
-    // Animate propellers based on throttle
-    const propellerSpeed = this.physics.throttle * 0.5;
-    this.propellers.forEach(propeller => {
-      propeller.rotation.y += propellerSpeed;
-    });
 
     // Update control stick displays
     this.updateControlSticks();
@@ -371,45 +295,48 @@ Controls:
 
   updateControlSticks() {
     // Left stick - Throttle and Yaw
-    const leftX = this.physics.yaw;
-    const leftY = this.physics.throttle;
+    const leftX = this.drone.physics.yaw;
+    const leftY = this.drone.physics.throttle;
     
     // Right stick - Pitch and Roll
-    const rightX = this.physics.roll;
-    const rightY = this.physics.pitch;
+    const rightX = this.drone.physics.roll;
+    const rightY = this.drone.physics.pitch;
 
     // Update stick positions (scale from -1,1 to 0,100)
-    this.leftStickIndicator.style.left = `${50 + leftX * 50}%`;
-    this.leftStickIndicator.style.top = `${50 + leftY * 50}%`;
+    if (this.leftStickIndicator) {
+      this.leftStickIndicator.style.left = `${50 + leftX * 50}%`;
+      this.leftStickIndicator.style.top = `${50 + leftY * 50}%`;
+    }
 
-    this.rightStickIndicator.style.left = `${50 + rightX * 50}%`;
-    this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
+    if (this.rightStickIndicator) {
+      this.rightStickIndicator.style.left = `${50 + rightX * 50}%`;
+      this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
+    }
   }
 
-  // Control methods
+  // Control methods now delegate to drone
   setThrottle(value) {
-    this.physics.setThrottle(value);
+    this.drone.setThrottle(value);
   }
 
   setPitch(value) {
-    this.physics.setPitch(value);
+    this.drone.setPitch(value);
   }
 
   setRoll(value) {
-    this.physics.setRoll(value);
+    this.drone.setRoll(value);
   }
 
   setYaw(value) {
-    this.physics.setYaw(value);
+    this.drone.setYaw(value);
   }
 
   toggleHoverMode() {
-    this.physics.toggleHoverMode();
+    this.drone.toggleHoverMode();
   }
 
-  reset() {
-    // Delegate to resetDrone method for consistency
-    this.resetDrone();
+  resetDrone() {
+    this.drone.reset();
   }
 
   logState() {
@@ -418,20 +345,20 @@ Controls:
     const state = {
       timestamp: performance.now(),
       position: {
-        x: this.physics.position.x.toFixed(2),
-        y: this.physics.position.y.toFixed(2),
-        z: this.physics.position.z.toFixed(2)
+        x: this.drone.position.x.toFixed(2),
+        y: this.drone.position.y.toFixed(2),
+        z: this.drone.position.z.toFixed(2)
       },
       rotation: {
-        x: this.physics.rotation.x.toFixed(2),
-        y: this.physics.rotation.y.toFixed(2),
-        z: this.physics.rotation.z.toFixed(2)
+        x: this.drone.physics.rotation.x.toFixed(2),
+        y: this.drone.physics.rotation.y.toFixed(2),
+        z: this.drone.physics.rotation.z.toFixed(2)
       },
       controls: {
-        throttle: this.physics.throttle.toFixed(2),
-        pitch: this.physics.pitch.toFixed(2),
-        roll: this.physics.roll.toFixed(2),
-        yaw: this.physics.yaw.toFixed(2)
+        throttle: this.drone.physics.throttle.toFixed(2),
+        pitch: this.drone.physics.pitch.toFixed(2),
+        roll: this.drone.physics.roll.toFixed(2),
+        yaw: this.drone.physics.yaw.toFixed(2)
       },
       currentStep: this.isRoutineRunning ? this.routine[this.currentStep].name : 'Idle'
     };
@@ -525,8 +452,8 @@ Controls:
     
     // Reset the physics rotation to ensure the drone is flat
     // This will be helpful in case there's any accumulated rotation
-    this.physics.rotation.x = 0;
-    this.physics.rotation.z = 0;
+    this.drone.physics.rotation.x = 0;
+    this.drone.physics.rotation.z = 0;
   }
 
   moveForward() {
@@ -583,24 +510,6 @@ Controls:
     this.setPitch(0);
     this.setRoll(0);
     this.setYaw(0);
-  }
-
-  resetDrone() {
-    this.physics.reset(); // Use the reset method from physics
-    
-    // Reset drone mesh position
-    this.droneMesh.position.x = 0;
-    this.droneMesh.position.y = 10;
-    this.droneMesh.position.z = 0;
-    
-    // Reset camera
-    this.camera.position.set(0, 20, 20);
-    this.camera.lookAt(0, 10, 0);
-    
-    this.resetControls();
-    
-    // Rotate drone to face away from camera (180 degrees around y-axis)
-    this.droneMesh.rotation.y = Math.PI;
   }
 
   checkServerStatus() {

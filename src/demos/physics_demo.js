@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DronePhysics } from '../physics.js';
+import { DroneModel } from '../models/drone_model.js';
 
 class PhysicsDemo {
   constructor() {
@@ -79,45 +79,8 @@ class PhysicsDemo {
     this.landingPad.receiveShadow = true;
     this.scene.add(this.landingPad);
 
-    // Create drone mesh
-    const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
-    const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
-    this.droneMesh.position.y = 10;
-    this.droneMesh.castShadow = true;
-    this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
-    this.scene.add(this.droneMesh);
-
-    // Add front indicator cube
-    const frontCubeGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-    const frontCubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Bright red
-    const frontCube = new THREE.Mesh(frontCubeGeometry, frontCubeMaterial);
-    frontCube.position.set(0, 0, 0.6); // Position at the front of the drone (z axis is forward)
-    frontCube.castShadow = true;
-    this.droneMesh.add(frontCube); // Add to drone mesh so it moves with it
-
-    // Add propellers
-    const propellerGeometry = new THREE.CylinderGeometry(0.2, 0.2, 0.1, 8);
-    const propellerMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
-    
-    this.propellers = [];
-    const propellerPositions = [
-      { x: -0.5, z: -0.5 },
-      { x: 0.5, z: -0.5 },
-      { x: -0.5, z: 0.5 },
-      { x: 0.5, z: 0.5 }
-    ];
-
-    propellerPositions.forEach(pos => {
-      const propeller = new THREE.Mesh(propellerGeometry, propellerMaterial);
-      propeller.position.set(pos.x, 0.1, pos.z);
-      propeller.castShadow = true;
-      this.droneMesh.add(propeller);
-      this.propellers.push(propeller);
-    });
-
-    // Initialize physics
-    this.physics = new DronePhysics();
+    // Create drone using DroneModel
+    this.drone = new DroneModel(this.scene);
     
     // Set up camera position
     this.camera.position.set(0, 15, 15);
@@ -298,25 +261,25 @@ class PhysicsDemo {
     // Update game state based on inputs
     this.droneState.controls.throttle = leftY !== 0 ? -leftY : 0;
     this.droneState.controls.yaw = leftX !== 0 ? -leftX : 0;
-    this.droneState.controls.pitch = rightY !== 0 ? -rightY : 0;
+    this.droneState.controls.pitch = rightY !== 0 ? rightY : 0;
     this.droneState.controls.roll = rightX !== 0 ? rightX : 0;
   }
 
   updatePhysicsFromState() {
-    // Apply game state to physics
-    this.physics.setThrottle(this.droneState.controls.throttle);
-    this.physics.setYaw(this.droneState.controls.yaw);
-    this.physics.setPitch(this.droneState.controls.pitch);
-    this.physics.setRoll(this.droneState.controls.roll);
+    // Apply game state to drone
+    this.drone.setThrottle(this.droneState.controls.throttle);
+    this.drone.setYaw(this.droneState.controls.yaw);
+    this.drone.setPitch(this.droneState.controls.pitch);
+    this.drone.setRoll(this.droneState.controls.roll);
   }
 
   updateDiagnostics() {
     // Calculate speed from physics velocity
-    const velocity = this.physics.velocity;
+    const velocity = this.drone.velocity;
     this.droneState.diagnostics.speed = Math.sqrt(
       velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z
     );
-    this.droneState.diagnostics.altitude = this.physics.position.y;
+    this.droneState.diagnostics.altitude = this.drone.position.y;
     
     // Update overlay text
     this.diagnosticOverlay.innerHTML = `
@@ -325,8 +288,8 @@ class PhysicsDemo {
       <div>Last Input: ${this.droneState.diagnostics.lastInput}</div>
       <div>Speed: ${this.droneState.diagnostics.speed.toFixed(2)} m/s</div>
       <div>Altitude: ${this.droneState.diagnostics.altitude.toFixed(2)} m</div>
-      <div>Throttle: ${this.physics.throttle.toFixed(2)}</div>
-      <div>Hover Mode: ${this.physics.hoverMode ? 'ON' : 'OFF'}</div>
+      <div>Throttle: ${this.drone.throttle.toFixed(2)}</div>
+      <div>Hover Mode: ${this.drone.hoverMode ? 'ON' : 'OFF'}</div>
     `;
   }
 
@@ -340,34 +303,20 @@ class PhysicsDemo {
     // Update physics from game state
     this.updatePhysicsFromState();
 
-    // Update physics
-    this.physics.updatePhysics(0.016); // Assuming 60fps
-
-    // Update drone mesh position and rotation
-    this.droneMesh.position.copy(this.physics.position);
-    
-    // Convert plain object rotation to THREE.Euler rotation
-    this.droneMesh.rotation.x = this.physics.rotation.x;
-    this.droneMesh.rotation.y = this.physics.rotation.y;
-    this.droneMesh.rotation.z = this.physics.rotation.z;
+    // Update drone
+    this.drone.update(0.016); // Assuming 60fps
 
     // Update camera to follow drone
     const offsetY = 15; // Height above drone
     const offsetZ = 15; // Distance behind drone
-    this.camera.position.x = this.physics.position.x;
-    this.camera.position.y = this.physics.position.y + offsetY;
-    this.camera.position.z = this.physics.position.z + offsetZ;
+    this.camera.position.x = this.drone.position.x;
+    this.camera.position.y = this.drone.position.y + offsetY;
+    this.camera.position.z = this.drone.position.z + offsetZ;
     this.camera.lookAt(
-      this.physics.position.x,
-      this.physics.position.y,
-      this.physics.position.z
+      this.drone.position.x,
+      this.drone.position.y,
+      this.drone.position.z
     );
-
-    // Animate propellers based on throttle
-    const propellerSpeed = this.physics.throttle * 0.5;
-    this.propellers.forEach(propeller => {
-      propeller.rotation.y += propellerSpeed;
-    });
 
     // Update diagnostics
     this.updateDiagnostics();
@@ -375,7 +324,7 @@ class PhysicsDemo {
     this.renderer.render(this.scene, this.camera);
   }
 
-  // Control methods now update game state instead of physics directly
+  // Control methods now delegate to drone
   setThrottle(value) {
     this.droneState.controls.throttle = value;
   }
@@ -394,7 +343,7 @@ class PhysicsDemo {
 
   toggleHoverMode() {
     this.droneState.controls.hover = !this.droneState.controls.hover;
-    this.physics.toggleHoverMode();
+    this.drone.toggleHoverMode();
   }
 
   reset() {
@@ -406,8 +355,8 @@ class PhysicsDemo {
       roll: 0,
       hover: false
     };
-    // Reset physics
-    this.physics.reset();
+    // Reset drone
+    this.drone.reset();
   }
 }
 
@@ -417,27 +366,35 @@ const demo = new PhysicsDemo();
 // Add keyboard controls
 document.addEventListener('keydown', (event) => {
   switch(event.key) {
-    case ' ': // Spacebar for throttle
+    // Left stick (WASD)
+    case 'w': // Throttle up
       demo.setThrottle(1.0);
       break;
-    case 'w':
-      demo.setPitch(1.0);
+    case 's': // Throttle down
+      demo.setThrottle(-1.0);
       break;
-    case 's':
-      demo.setPitch(-1.0);
-      break;
-    case 'a':
-      demo.setRoll(-1.0);
-      break;
-    case 'd':
-      demo.setRoll(1.0);
-      break;
-    case 'q':
+    case 'a': // Yaw left
       demo.setYaw(-1.0);
       break;
-    case 'e':
+    case 'd': // Yaw right
       demo.setYaw(1.0);
       break;
+    
+    // Right stick (IJKL)
+    case 'i': // Pitch forward
+      demo.setPitch(-1.0);
+      break;
+    case 'k': // Pitch backward
+      demo.setPitch(1.0);
+      break;
+    case 'j': // Roll left
+      demo.setRoll(-1.0);
+      break;
+    case 'l': // Roll right
+      demo.setRoll(1.0);
+      break;
+    
+    // Other controls
     case 'h':
       demo.toggleHoverMode();
       break;
@@ -449,20 +406,24 @@ document.addEventListener('keydown', (event) => {
 
 document.addEventListener('keyup', (event) => {
   switch(event.key) {
-    case ' ':
-      demo.setThrottle(0);
-      break;
+    // Left stick (WASD)
     case 'w':
     case 's':
-      demo.setPitch(0);
+      demo.setThrottle(0);
       break;
     case 'a':
     case 'd':
-      demo.setRoll(0);
-      break;
-    case 'q':
-    case 'e':
       demo.setYaw(0);
+      break;
+    
+    // Right stick (IJKL)
+    case 'i':
+    case 'k':
+      demo.setPitch(0);
+      break;
+    case 'j':
+    case 'l':
+      demo.setRoll(0);
       break;
   }
 });
