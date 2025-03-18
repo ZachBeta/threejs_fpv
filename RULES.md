@@ -2,6 +2,9 @@
 
 Simple guidelines for working with this project.
 
+## Dev tool rules
+* handle git commits with appropriate flags to commit from a single line with new lines in the commit message
+
 ## Code Rules
 
 1. **Keep It Clean**
