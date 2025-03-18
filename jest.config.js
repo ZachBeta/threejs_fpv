@@ -1,10 +1,10 @@
 export default {
-  testEnvironment: 'jsdom',
   transform: {},
   moduleNameMapper: {
-    '^three$': '<rootDir>/node_modules/three/build/three.module.js'
+    '^(\\.{1,2}/.*)\\.js$': '$1'
   },
-  transformIgnorePatterns: [
-    'node_modules/(?!(three)/)'
-  ]
+  testEnvironment: 'jest-environment-jsdom',
+  testMatch: ['**/tests/**/*.test.js'],
+  verbose: true,
+  setupFiles: ['./jest.setup.js']
 }; 

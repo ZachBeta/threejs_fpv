@@ -1,4 +1,9 @@
 import fetch from 'node-fetch';
+import { TextDecoder, TextEncoder } from 'util';
+
+// Add TextDecoder and TextEncoder to global scope for node-fetch
+global.TextDecoder = TextDecoder;
+global.TextEncoder = TextEncoder;
 
 const API_BASE = 'http://localhost:3001/api';
 

@@ -7,6 +7,8 @@ import { CircleRoutine } from '../flight_routines/circle_routine.js';
 import { FigureEightRoutine } from '../flight_routines/figure_eight_routine.js';
 import { OrientationTestRoutine } from '../flight_routines/orientation_test_routine.js';
 import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
+import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js';
+import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
 import { Controls } from '../controls.js';
 
 class RoutineDemo {
@@ -31,7 +33,9 @@ class RoutineDemo {
       circle: new CircleRoutine().steps,
       figureEight: new FigureEightRoutine().steps,
       orientationTest: new OrientationTestRoutine().steps,
-      physicsTest: new PhysicsTestRoutine().steps
+      physicsTest: new PhysicsTestRoutine().steps,
+      throttleTest: new ThrottleTestRoutine().steps,
+      advancedManeuvers: new AdvancedManeuversRoutine().steps
     };
 
     // Set default routine

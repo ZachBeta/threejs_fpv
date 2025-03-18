@@ -1,4 +1,5 @@
 import { Controls } from '../controls.js';
+import { jest } from '@jest/globals';
 
 describe('Controls', () => {
   let controls;
