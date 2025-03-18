@@ -9,17 +9,20 @@ class RoutineDemo {
     this.currentStep = 0;
     this.stepStartTime = 0;
     this.routine = [
-      { name: 'Takeoff', duration: 2000 },
-      { name: 'Hover', duration: 2000 },
-      { name: 'Forward', duration: 2000 },
-      { name: 'Backward', duration: 2000 },
-      { name: 'Left', duration: 2000 },
-      { name: 'Right', duration: 2000 },
-      { name: 'Rotate Left', duration: 2000 },
-      { name: 'Rotate Right', duration: 2000 },
-      { name: 'Land', duration: 2000 },
-      { name: 'Reset', duration: 1000 }
+      { name: 'Takeoff', duration: 2000, action: () => this.takeoff() },
+      { name: 'Hover', duration: 2000, action: () => this.hover() },
+      { name: 'Forward', duration: 2000, action: () => this.moveForward() },
+      { name: 'Backward', duration: 2000, action: () => this.moveBackward() },
+      { name: 'Left', duration: 2000, action: () => this.moveLeft() },
+      { name: 'Right', duration: 2000, action: () => this.moveRight() },
+      { name: 'Rotate Left', duration: 2000, action: () => this.rotateLeft() },
+      { name: 'Rotate Right', duration: 2000, action: () => this.rotateRight() },
+      { name: 'Land', duration: 2000, action: () => this.land() },
+      { name: 'Reset', duration: 1000, action: () => this.resetDrone() }
     ];
+
+    // Check server status
+    this.checkServerStatus();
 
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
@@ -30,6 +33,7 @@ class RoutineDemo {
 
     // Initialize logging
     this.logger = new GameStateApi();
+    this.logger.enable(); // Enable logging by default
     this.logs = [];
     this.lastLogTime = 0;
     this.logInterval = 100; // Log every 100ms
@@ -165,7 +169,14 @@ class RoutineDemo {
 
     // Update drone mesh position and rotation
     this.droneMesh.position.copy(this.physics.position);
-    this.droneMesh.rotation.copy(this.physics.rotation);
+    // Create a proper THREE.Euler object with XYZ order
+    const droneRotation = new THREE.Euler(
+      this.physics.rotation.x,
+      this.physics.rotation.y,
+      this.physics.rotation.z,
+      'XYZ'
+    );
+    this.droneMesh.rotation.copy(droneRotation);
 
     // Animate propellers based on throttle
     const propellerSpeed = this.physics.throttle * 10;
@@ -276,7 +287,8 @@ class RoutineDemo {
     const logData = JSON.stringify(this.logs, null, 2);
     
     // Send logs to server
-    fetch('http://localhost:3000/api/save-logs', {
+    const API_BASE = 'http://localhost:3000/api';
+    fetch(`${API_BASE}/save-logs`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -317,6 +329,111 @@ class RoutineDemo {
       setTimeout(() => this.updateRoutine(), 100);
     }
   }
+
+  // Routine step implementations
+  takeoff() {
+    console.log('Executing takeoff');
+    this.setThrottle(0.8);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+
+  hover() {
+    console.log('Executing hover');
+    this.setThrottle(0.5);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+
+  moveForward() {
+    console.log('Executing forward movement');
+    this.setThrottle(0.5);
+    this.setPitch(-0.5);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+
+  moveBackward() {
+    console.log('Executing backward movement');
+    this.setThrottle(0.5);
+    this.setPitch(0.5);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+
+  moveLeft() {
+    console.log('Executing left movement');
+    this.setThrottle(0.5);
+    this.setPitch(0);
+    this.setRoll(-0.5);
+    this.setYaw(0);
+  }
+
+  moveRight() {
+    console.log('Executing right movement');
+    this.setThrottle(0.5);
+    this.setPitch(0);
+    this.setRoll(0.5);
+    this.setYaw(0);
+  }
+
+  rotateLeft() {
+    console.log('Executing left rotation');
+    this.setThrottle(0.5);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(-0.5);
+  }
+
+  rotateRight() {
+    console.log('Executing right rotation');
+    this.setThrottle(0.5);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0.5);
+  }
+
+  land() {
+    console.log('Executing landing');
+    this.setThrottle(0.2);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
+  }
+
+  resetDrone() {
+    console.log('Resetting drone');
+    this.reset();
+  }
+
+  checkServerStatus() {
+    const API_BASE = 'http://localhost:3000/api';
+    const statusElement = document.getElementById('server-status');
+    
+    if (!statusElement) {
+      console.error('Server status element not found');
+      return;
+    }
+    
+    statusElement.textContent = 'Checking server connection...';
+    
+    fetch(`${API_BASE}/test`)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Server status response:', data);
+        statusElement.textContent = `Server connected: ${data.message}`;
+        statusElement.style.color = '#00FF00';
+        this.logger.enable();
+      })
+      .catch(error => {
+        console.error('Server connection failed:', error);
+        statusElement.textContent = `Server not connected: ${error.message}`;
+        statusElement.style.color = '#FF0000';
+        this.logger.disable();
+      });
+  }
 }
 
 // Create demo instance
@@ -324,15 +441,19 @@ const demo = new RoutineDemo();
 
 // Add keyboard controls
 document.addEventListener('keydown', (event) => {
+  console.log('Key pressed:', event.key);
   switch(event.key) {
     case ' ': // Spacebar to start/stop routine
       if (demo.isRoutineRunning) {
+        console.log('Stopping routine');
         demo.stopRoutine();
       } else {
+        console.log('Starting routine');
         demo.startRoutine();
       }
       break;
     case 'r':
+      console.log('Resetting drone');
       demo.reset();
       break;
   }
