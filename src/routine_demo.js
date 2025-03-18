@@ -166,26 +166,30 @@ class RoutineDemo {
     this.updateControlSticks();
 
     // Log drone state and inputs
-    Logger.logPerformance('RoutineDemo', {
-      position: {
-        x: this.physics.position.x,
-        y: this.physics.position.y,
-        z: this.physics.position.z
-      },
-      rotation: {
-        x: this.physics.rotation.x,
-        y: this.physics.rotation.y,
-        z: this.physics.rotation.z
-      },
-      inputs: {
-        throttle: this.physics.throttle,
-        pitch: this.physics.pitch,
-        roll: this.physics.roll,
-        yaw: this.physics.yaw
-      },
-      currentStep: this.currentStep,
-      stepTimeLeft: this.stepTimeLeft
-    });
+    try {
+      Logger.logPerformance('RoutineDemo', {
+        position: {
+          x: this.physics.position.x,
+          y: this.physics.position.y,
+          z: this.physics.position.z
+        },
+        rotation: {
+          x: this.physics.rotation.x,
+          y: this.physics.rotation.y,
+          z: this.physics.rotation.z
+        },
+        inputs: {
+          throttle: this.physics.throttle,
+          pitch: this.physics.pitch,
+          roll: this.physics.roll,
+          yaw: this.physics.yaw
+        },
+        currentStep: this.currentStep,
+        stepTimeLeft: this.stepTimeLeft
+      });
+    } catch (error) {
+      console.warn('Failed to log performance:', error);
+    }
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -207,10 +211,14 @@ class RoutineDemo {
     this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
 
     // Log control stick positions
-    Logger.logInteraction('ControlSticks', {
-      left: { x: leftX, y: leftY },
-      right: { x: rightX, y: rightY }
-    });
+    try {
+      Logger.logInteraction('ControlSticks', {
+        left: { x: leftX, y: leftY },
+        right: { x: rightX, y: rightY }
+      });
+    } catch (error) {
+      console.warn('Failed to log control sticks:', error);
+    }
   }
 
   // Control methods
