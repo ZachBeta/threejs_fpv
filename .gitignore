@@ -27,4 +27,7 @@ build/
 Thumbs.db
 
 # Personal notes and TODOs
-INBOX.md coverage/
+INBOX.md 
+
+# Test converage
+coverage/
