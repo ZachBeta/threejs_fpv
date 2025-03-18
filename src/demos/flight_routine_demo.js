@@ -7,6 +7,7 @@ import { CircleRoutine } from '../flight_routines/circle_routine.js';
 import { FigureEightRoutine } from '../flight_routines/figure_eight_routine.js';
 import { OrientationTestRoutine } from '../flight_routines/orientation_test_routine.js';
 import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
+import { Controls } from '../controls.js';
 
 class RoutineDemo {
   constructor() {
@@ -20,6 +21,9 @@ class RoutineDemo {
     this.frameCount = 0;
     this.lastFpsUpdate = 0;
     this.isPaused = false;
+    
+    // Initialize controls
+    this.controls = new Controls();
     
     // Initialize available routines
     this.routines = {
@@ -132,6 +136,7 @@ class RoutineDemo {
     // Format position for display
     const pos = this.drone.position;
     const vel = this.drone.physics.velocity;
+    const controls = this.controls.getControls();
     
     let statusText = `FPS: ${this.fps}
 Routine: ${this.activeRoutineType}
@@ -143,10 +148,10 @@ Velocity: X: ${vel.x.toFixed(2)}, Y: ${vel.y.toFixed(2)}, Z: ${vel.z.toFixed(2)}
 Speed: ${speed.toFixed(2)} m/s
 
 Controls:
-  Throttle: ${this.drone.physics.throttle.toFixed(2)}
-  Pitch: ${this.drone.physics.pitch.toFixed(2)}
-  Roll: ${this.drone.physics.roll.toFixed(2)}
-  Yaw: ${this.drone.physics.yaw.toFixed(2)}`;
+  Throttle: ${controls.throttle.toFixed(2)}
+  Pitch: ${controls.pitch.toFixed(2)}
+  Roll: ${controls.roll.toFixed(2)}
+  Yaw: ${controls.yaw.toFixed(2)}`;
 
     if (this.overlay) {
       this.overlay.textContent = statusText;
@@ -178,6 +183,17 @@ Controls:
       this.frameCount = 0;
       this.lastFpsUpdate = currentTime;
     }
+
+    // Update controls state
+    this.controls.updateGamepadState();
+    this.controls.handleGamepadInput();
+
+    // Apply controls to drone
+    const controls = this.controls.getControls();
+    this.drone.setThrottle(controls.throttle);
+    this.drone.setPitch(controls.pitch);
+    this.drone.setRoll(controls.roll);
+    this.drone.setYaw(controls.yaw);
 
     // Update drone
     this.drone.update(0.016); // Assuming 60fps
@@ -228,49 +244,51 @@ Controls:
   }
 
   updateControlSticks() {
+    const controls = this.controls.getControls();
+    
     // Left stick - Throttle and Yaw
-    const leftX = this.drone.physics.yaw;
-    const leftY = this.drone.physics.throttle;
+    const leftX = controls.yaw;
+    const leftY = controls.throttle;
     
     // Right stick - Pitch and Roll
-    const rightX = this.drone.physics.roll;
-    const rightY = this.drone.physics.pitch;
+    const rightX = controls.roll;
+    const rightY = controls.pitch;
 
     // Update stick positions (scale from -1,1 to 0,100)
     if (this.leftStickIndicator) {
       this.leftStickIndicator.style.left = `${50 + leftX * 50}%`;
-      this.leftStickIndicator.style.top = `${50 + leftY * 50}%`;
+      this.leftStickIndicator.style.top = `${50 - leftY * 50}%`;
     }
 
     if (this.rightStickIndicator) {
       this.rightStickIndicator.style.left = `${50 + rightX * 50}%`;
-      this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
+      this.rightStickIndicator.style.top = `${50 - rightY * 50}%`;
     }
   }
 
-  // Control methods now delegate to drone
+  // Control methods
   setThrottle(value) {
-    this.drone.setThrottle(value);
+    this.controls.setThrottle(value);
   }
 
   setPitch(value) {
-    this.drone.setPitch(value);
+    this.controls.setPitch(value);
   }
 
   setRoll(value) {
-    this.drone.setRoll(value);
+    this.controls.setRoll(value);
   }
 
   setYaw(value) {
-    this.drone.setYaw(value);
+    this.controls.setYaw(value);
   }
 
   toggleHoverMode() {
-    this.drone.toggleHoverMode();
+    this.controls.toggleHoverMode();
   }
 
-  resetDrone() {
-    this.drone.reset();
+  resetControls() {
+    this.controls.reset();
   }
 
   logState() {
@@ -288,12 +306,7 @@ Controls:
         y: this.drone.physics.rotation.y.toFixed(2),
         z: this.drone.physics.rotation.z.toFixed(2)
       },
-      controls: {
-        throttle: this.drone.physics.throttle.toFixed(2),
-        pitch: this.drone.physics.pitch.toFixed(2),
-        roll: this.drone.physics.roll.toFixed(2),
-        yaw: this.drone.physics.yaw.toFixed(2)
-      },
+      controls: this.controls.getControls(),
       currentStep: this.isRoutineRunning ? this.routine[this.currentStep].name : 'Idle'
     };
 
@@ -418,14 +431,6 @@ Controls:
     this.frameCount = 0;
     this.animate();
   }
-
-  // Helper method to reset all controls to neutral position
-  resetControls() {
-    this.setThrottle(0);
-    this.setPitch(0);
-    this.setRoll(0);
-    this.setYaw(0);
-  }
 }
 
 // Create demo instance
@@ -448,8 +453,9 @@ document.addEventListener('keydown', (event) => {
       }
       break;
     case 'r':
-      console.log('Resetting drone');
-      demo.resetDrone();
+      console.log('Resetting drone and controls');
+      demo.drone.reset();
+      demo.controls.reset();
       break;
     case 'Escape':
       // Menu handled in HTML
