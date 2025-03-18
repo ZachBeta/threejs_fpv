@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DronePhysics } from './physics.js';
+import Logger from './utils/logger.js';
 
 class RoutineDemo {
   constructor() {
@@ -164,6 +165,28 @@ class RoutineDemo {
     // Update control stick visualization
     this.updateControlSticks();
 
+    // Log drone state and inputs
+    Logger.logPerformance('RoutineDemo', {
+      position: {
+        x: this.physics.position.x,
+        y: this.physics.position.y,
+        z: this.physics.position.z
+      },
+      rotation: {
+        x: this.physics.rotation.x,
+        y: this.physics.rotation.y,
+        z: this.physics.rotation.z
+      },
+      inputs: {
+        throttle: this.physics.throttle,
+        pitch: this.physics.pitch,
+        roll: this.physics.roll,
+        yaw: this.physics.yaw
+      },
+      currentStep: this.currentStep,
+      stepTimeLeft: this.stepTimeLeft
+    });
+
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -182,6 +205,12 @@ class RoutineDemo {
 
     this.rightStickIndicator.style.left = `${50 + rightX * 50}%`;
     this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
+
+    // Log control stick positions
+    Logger.logInteraction('ControlSticks', {
+      left: { x: leftX, y: leftY },
+      right: { x: rightX, y: rightY }
+    });
   }
 
   // Control methods
