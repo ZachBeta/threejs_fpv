@@ -12,7 +12,7 @@ jest.unstable_mockModule('../demos/game_state_demo.js', () => ({
 // Import the mocked functions
 import { startDemo, stopDemo, initializeDemo, isDemoRunning } from '../demos/game_state_demo.js';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = 'http://localhost:3001/api';
 
 describe('Game State API Integration Tests', () => {
   // Add a global timeout to ensure tests finish

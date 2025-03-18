@@ -287,7 +287,7 @@ class RoutineDemo {
     const logData = JSON.stringify(this.logs, null, 2);
     
     // Send logs to server
-    const API_BASE = 'http://localhost:3000/api';
+    const API_BASE = 'http://localhost:3001/api';
     fetch(`${API_BASE}/save-logs`, {
       method: 'POST',
       headers: {
@@ -409,7 +409,7 @@ class RoutineDemo {
   }
 
   checkServerStatus() {
-    const API_BASE = 'http://localhost:3000/api';
+    const API_BASE = 'http://localhost:3001/api';
     const statusElement = document.getElementById('server-status');
     
     if (!statusElement) {

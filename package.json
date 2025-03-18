@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "concurrently --kill-others-on-fail --handle-input \"npm run dev-client\" \"npm run dev-server\"",
     "dev-client": "vite",
-    "dev-server": "nodemon src/server.js",
+    "dev-server": "nodemon --config nodemon.json",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
