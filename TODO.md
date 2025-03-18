@@ -10,10 +10,12 @@
   * display a simple x/y render on the bottom of the screen with the current controller state
 
 * [ ] Physics and Movement
+  * [ ] create a demo render of the phsyics engine, maybe simulate simple inputs, this can copy the map and renderer from main.js
+
+* Use physics engine in main game
   * Implement physics acceleration on throttle
   * Add floating mechanics
   * Match feeling of FPV drone sims (focus on playability and transferability over exact realism)
-  * create a demo render of the phsyics engine, maybe simulate simple inputs
   * add hover toggle for QOL
 
 ## Soon
