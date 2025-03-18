@@ -12,36 +12,109 @@
             background-color: #f5f5f5;
         }
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        h1 {
+        h1, h3 {
             color: #333;
             margin-bottom: 20px;
         }
         .status {
-            background-color: #ffd700;
-            color: #000;
             padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
         }
         .description {
             color: #666;
             line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .log-display {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .step {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        .game-state {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .state-card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 3px solid #007bff;
+        }
+        .state-value {
+            font-family: monospace;
+            margin: 5px 0;
+            color: #444;
+        }
+        .controls-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Logging Demo</h1>
-        <div class="status">🚧 Under Development</div>
+        
         <div class="description">
-            <p>This demo will showcase the logging functionality for system test demonstrations. Features will include:</p>
+            <p>This demo showcases the logging functionality for system test demonstrations, including:</p>
             <ul>
                 <li>Real-time logging of drone state and controls</li>
                 <li>Database integration for persistent storage</li>
@@ -49,6 +122,171 @@
                 <li>System test demonstrations</li>
             </ul>
         </div>
+
+        <div class="section">
+            <div id="server-status" class="status">
+                Checking server status...
+            </div>
+
+            <div class="controls-group">
+                <button id="start-demo">Start Demo Routine</button>
+                <button id="check-logs">Check Log Files</button>
+                <button id="toggle-live">Start Live Updates</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Current Operation</h3>
+            <div id="current-step" class="step">
+                Ready to start
+            </div>
+            <div id="demo-status" class="status"></div>
+        </div>
+
+        <div class="section">
+            <h3>Saved Log Files</h3>
+            <div id="log-files" class="log-display">
+                <div id="files-list"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Latest Game States</h3>
+            <div id="game-states" class="game-state">
+                <div id="states-list"></div>
+            </div>
+        </div>
     </div>
+
+    <script type="module">
+        console.log('Loading logging demo...');
+        import { startDemo, stopDemo, isDemoRunning } from '../../src/demos/logging/logging_demo.js';
+        console.log('Demo integration module loaded');
+        
+        const API_BASE = 'http://localhost:3000/api';
+        let isLiveUpdatesEnabled = false;
+        let updateInterval;
+
+        // Check server status
+        async function checkServerStatus() {
+            console.log('Checking server status...');
+            try {
+                const response = await fetch(`${API_BASE}/test`);
+                const data = await response.json();
+                console.log('Server status response:', data);
+                document.getElementById('server-status').innerHTML = 
+                    `<div class="success">Server is running: ${data.message}</div>`;
+            } catch (error) {
+                console.error('Server status check failed:', error);
+                document.getElementById('server-status').innerHTML = 
+                    `<div class="error">Server is not running: ${error.message}</div>`;
+            }
+        }
+
+        // List saved log files
+        async function listLogFiles() {
+            console.log('Fetching log files...');
+            try {
+                const response = await fetch(`${API_BASE}/logs`);
+                const data = await response.json();
+                console.log('Log files response:', data);
+                const filesList = document.getElementById('files-list');
+                filesList.innerHTML = data.files.map(file => 
+                    `<div>${file.name} (${(file.size / 1024).toFixed(2)} KB)</div>`
+                ).join('');
+            } catch (error) {
+                console.error('Error listing logs:', error);
+            }
+        }
+
+        // Format number for display
+        function formatNumber(num) {
+            return typeof num === 'number' ? num.toFixed(2) : '0.00';
+        }
+
+        // Update game states display
+        async function updateGameStates() {
+            console.log('Updating game states...');
+            try {
+                const response = await fetch(`${API_BASE}/game-states?limit=10`);
+                const data = await response.json();
+                console.log('Game states response:', data);
+                if (data.success && data.states) {
+                    const statesList = document.getElementById('states-list');
+                    statesList.innerHTML = data.states.map(state => `
+                        <div class="state-card">
+                            <div class="state-value">Time: ${new Date(state.timestamp).toLocaleTimeString()}</div>
+                            <div class="state-value">Position: (${formatNumber(state.position.x)}, ${formatNumber(state.position.y)}, ${formatNumber(state.position.z)})</div>
+                            <div class="state-value">Rotation: (${formatNumber(state.rotation.x)}, ${formatNumber(state.rotation.y)}, ${formatNumber(state.rotation.z)})</div>
+                            <div class="state-value">Controls: T:${formatNumber(state.controls.throttle)} P:${formatNumber(state.controls.pitch)} R:${formatNumber(state.controls.roll)} Y:${formatNumber(state.controls.yaw)}</div>
+                            <div class="state-value">Step: ${state.currentStep}</div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error updating game states:', error);
+            }
+        }
+
+        // Toggle live updates
+        function toggleLiveUpdates() {
+            isLiveUpdatesEnabled = !isLiveUpdatesEnabled;
+            const button = document.getElementById('toggle-live');
+            button.textContent = isLiveUpdatesEnabled ? 'Stop Live Updates' : 'Start Live Updates';
+            
+            if (isLiveUpdatesEnabled) {
+                updateGameStates();
+                updateInterval = setInterval(updateGameStates, 1000); // Update every second
+            } else {
+                clearInterval(updateInterval);
+            }
+        }
+
+        // Run demo routine
+        async function runDemo() {
+            console.log('Run demo button clicked');
+            if (isDemoRunning()) {
+                console.log('Demo is already running, skipping');
+                return;
+            }
+            
+            document.getElementById('demo-status').innerHTML = '';
+            document.getElementById('start-demo').disabled = true;
+
+            try {
+                console.log('Starting the routine demo...');
+                startDemo();
+                console.log('Demo started, waiting for completion...');
+
+                // Wait for the routine to complete
+                while (isDemoRunning()) {
+                    console.log('Demo is still running, waiting...');
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+
+                console.log('Demo completed');
+            } catch (error) {
+                console.error('Error during demo execution:', error);
+                document.getElementById('demo-status').innerHTML = 
+                    `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                document.getElementById('start-demo').disabled = false;
+            }
+        }
+
+        // Event listeners
+        console.log('Setting up event listeners...');
+        document.getElementById('start-demo').addEventListener('click', runDemo);
+        document.getElementById('check-logs').addEventListener('click', listLogFiles);
+        document.getElementById('toggle-live').addEventListener('click', toggleLiveUpdates);
+        console.log('Event listeners set up');
+
+        // Initial setup
+        console.log('Running initial setup...');
+        checkServerStatus();
+        listLogFiles();
+        updateGameStates(); // Initial game states load
+        console.log('Initial setup complete');
+    </script>
 </body>
 </html> 
