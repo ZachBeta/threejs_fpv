@@ -12,9 +12,25 @@
         canvas {
             display: block;
         }
+        #overlay {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            z-index: 1000;
+            white-space: pre;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+    <div id="overlay"></div>
     <script type="module" src="/src/main.js"></script>
 </body>
 </html> 
