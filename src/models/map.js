@@ -8,7 +8,7 @@ export class Map {
     this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     
     // Add fog for edge fade-out effect
-    this.scene.fog = new THREE.Fog(0x87CEEB, 100, 400);
+    this.scene.fog = new THREE.Fog(0x87CEEB, 1000, 4000);
     
     // Setup lighting
     this.setupLighting();
@@ -34,7 +34,7 @@ export class Map {
   
   setupGround() {
     // Create ground
-    const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
+    const groundGeometry = new THREE.PlaneGeometry(1000, 1000, 50, 50);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
       color: 0xffffff,
       side: THREE.DoubleSide
@@ -45,7 +45,7 @@ export class Map {
     this.scene.add(this.ground);
 
     // Add grid lines to create checkered floor
-    const gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x000000);
+    const gridHelper = new THREE.GridHelper(1000, 100, 0x000000, 0x000000);
     this.scene.add(gridHelper);
   }
   
