@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DroneModel } from '../models/drone_model.js';
+import { Map } from '../models/map.js';
 
 class PhysicsDemo {
   constructor() {
@@ -32,52 +33,14 @@ class PhysicsDemo {
 
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x87CEEB); // Sky blue background
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
     document.body.appendChild(this.renderer.domElement);
 
-    // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    this.scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 1024;
-    directionalLight.shadow.mapSize.height = 1024;
-    this.scene.add(directionalLight);
-
-    // Create ground
-    const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
-    const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0xffffff,
-      side: THREE.DoubleSide
-    });
-    this.ground = new THREE.Mesh(groundGeometry, groundMaterial);
-    this.ground.rotation.x = -Math.PI / 2;
-    this.ground.receiveShadow = true;
-    this.scene.add(this.ground);
-
-    // Add grid lines to create checkered floor
-    const gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x000000);
-    this.scene.add(gridHelper);
-
-    // Add fog for edge fade-out effect
-    this.scene.fog = new THREE.Fog(0x87CEEB, 100, 400);
-
-    // Add landing pad to mark start/end position
-    const landingPadGeometry = new THREE.CylinderGeometry(2, 2, 0.1, 32);
-    const landingPadMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0xff0000,
-      transparent: true,
-      opacity: 0.7
-    });
-    this.landingPad = new THREE.Mesh(landingPadGeometry, landingPadMaterial);
-    this.landingPad.position.y = 0.05; // Position slightly above ground to prevent z-fighting
-    this.landingPad.receiveShadow = true;
-    this.scene.add(this.landingPad);
+    // Initialize map
+    this.map = new Map(this.scene);
 
     // Create drone using DroneModel
     this.drone = new DroneModel(this.scene);
