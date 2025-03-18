@@ -135,7 +135,7 @@ class PhysicsDemo {
     this.drone.setRoll(controls.roll);
 
     // Update controls diagnostics with drone orientation
-    this.controls.updateDroneOrientation(this.drone.rotation);
+    this.controls.updateDroneOrientation(this.drone.droneMesh.rotation);
   }
 
   updateDiagnostics() {
