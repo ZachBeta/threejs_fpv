@@ -261,7 +261,10 @@ const droneState = {
         controllerConnected: false,
         controllerName: '',
         lastInput: 'None'
-    }
+    },
+    // Add initial position and rotation for reset
+    initialPosition: new THREE.Vector3(0, 5, 15),
+    initialLookAt: new THREE.Vector3(0, 5, 0)
 };
 
 // Handle keyboard controls
@@ -321,6 +324,15 @@ function updateGamepadState() {
     }
 }
 
+// Function to reset drone to initial position and rotation
+function resetDrone() {
+    camera.position.copy(droneState.initialPosition);
+    camera.lookAt(droneState.initialLookAt);
+    // Reset velocity and rotation
+    droneState.velocity.set(0, 0, 0);
+    droneState.rotation.set(0, 0, 0);
+}
+
 function handleGamepadInput() {
     if (!droneState.gamepad) {
         droneState.diagnostics.controllerConnected = false;
@@ -332,6 +344,12 @@ function handleGamepadInput() {
     droneState.diagnostics.controllerConnected = true;
     droneState.diagnostics.controllerName = gamepad.id;
     const deadzone = droneState.deadzone;
+
+    // Check for L button press (button 4)
+    if (gamepad.buttons[4].pressed) {
+        resetDrone();
+        return; // Skip other inputs this frame
+    }
 
     // Left stick - Throttle and Yaw
     const leftX = Math.abs(gamepad.axes[0]) > deadzone ? gamepad.axes[0] : 0;
