@@ -11,8 +11,20 @@ A simple 3D demo using Three.js that displays a rotating cube with proper lighti
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js LTS (v20.x recommended, currently using v20.19.0)
 - npm (comes with Node.js)
+
+If you're using a different Node.js version and encounter issues, especially with `better-sqlite3`, we recommend switching to Node.js 20 LTS. You can install it via:
+
+```bash
+# Using homebrew on macOS
+brew install node@20
+brew link --overwrite --force node@20
+
+# Using nvm (Node Version Manager)
+nvm install 20
+nvm use 20
+```
 
 ## Installation
 
