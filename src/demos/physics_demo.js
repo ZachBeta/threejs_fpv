@@ -319,6 +319,18 @@ class PhysicsDemo {
     this.droneMesh.rotation.y = this.physics.rotation.y;
     this.droneMesh.rotation.z = this.physics.rotation.z;
 
+    // Update camera to follow drone
+    const offsetY = 15; // Height above drone
+    const offsetZ = 15; // Distance behind drone
+    this.camera.position.x = this.physics.position.x;
+    this.camera.position.y = this.physics.position.y + offsetY;
+    this.camera.position.z = this.physics.position.z + offsetZ;
+    this.camera.lookAt(
+      this.physics.position.x,
+      this.physics.position.y,
+      this.physics.position.z
+    );
+
     // Animate propellers based on throttle
     const propellerSpeed = this.physics.throttle * 10;
     this.propellers.forEach(propeller => {
@@ -354,6 +366,21 @@ class PhysicsDemo {
 
   reset() {
     this.physics.reset();
+    
+    // Reset drone mesh position
+    this.droneMesh.position.copy(this.physics.position);
+    
+    // Reset camera position relative to drone
+    const offsetY = 15;
+    const offsetZ = 15;
+    this.camera.position.x = this.physics.position.x;
+    this.camera.position.y = this.physics.position.y + offsetY;
+    this.camera.position.z = this.physics.position.z + offsetZ;
+    this.camera.lookAt(
+      this.physics.position.x,
+      this.physics.position.y,
+      this.physics.position.z
+    );
   }
 }
 
