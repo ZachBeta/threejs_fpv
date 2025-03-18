@@ -1,13 +1,10 @@
-- [ ] is there an npm clean we can use? previous build can cause issues
+# TODO
 
+## projects
 * [ ] Map Enhancement
-  * More realism by fading out the window when we get too close to the edge
-  * floating demo cube is clipping, raise its height
-  * we want to better be able to visualize each side of an object, we need a simple approach to handle this
-    * maybe add some simple shading so we can discern each side of a building
-* OUT OF SCOPE
-  * separate out map and map data when it starts to become an issue
-  * Extract the map logic to a new file - probably use a class to handle behavior and state
+  * OUT OF SCOPE
+    * separate out map and map data when it starts to become an issue
+    * Extract the map logic to a new file - probably use a class to handle behavior and state
 
 * game state display
   * display a simple x/y render on the botton of the screen with the current controller state
@@ -20,6 +17,8 @@
 * [ ] Development Tasks
   * Test rendering logging
   * Move completed items from TODO.md to DONE.md
+
+## Soon
 
 * [ ] Controller Support
   * Fix controller mapping to match traditional controls:
@@ -37,3 +36,5 @@
       - Left: Tilt left
       - Right: Tilt right
     ```
+- [ ] is there an npm clean we can use? previous build can cause issues
+  * might be irrelevant after turning off browser cache

@@ -4,3 +4,7 @@
   * Add more objects to the map
   * Add tall towers dispersed near the edges of the map
   * Make the map larger
+  * Add edge fade-out effect with fog for better realism
+  * Fix floating demo cube clipping by raising its height
+  * Add checkerboard texture and improved shading to building sides for better depth perception
+  * Enhance lighting with additional directional light and adjusted intensities
