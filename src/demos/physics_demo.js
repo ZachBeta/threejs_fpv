@@ -3,6 +3,25 @@ import { DronePhysics } from '../physics.js';
 
 class PhysicsDemo {
   constructor() {
+    // Initialize drone state
+    this.droneState = {
+      gamepad: null,
+      deadzone: 0.1,
+      diagnostics: {
+        speed: 0,
+        altitude: 0,
+        controllerConnected: false,
+        controllerName: '',
+        lastInput: 'None'
+      }
+    };
+
+    // Create controller display
+    this.setupControllerDisplay();
+
+    // Create diagnostic overlay
+    this.setupDiagnosticOverlay();
+
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -60,11 +79,106 @@ class PhysicsDemo {
     this.camera.position.set(0, 15, 15);
     this.camera.lookAt(0, 0, 0);
 
+    // Setup gamepad event listeners
+    window.addEventListener("gamepadconnected", (e) => {
+      console.log("Gamepad connected:", e.gamepad);
+      this.droneState.gamepad = e.gamepad;
+      this.droneState.diagnostics.controllerConnected = true;
+      this.droneState.diagnostics.controllerName = e.gamepad.id;
+    });
+
+    window.addEventListener("gamepaddisconnected", (e) => {
+      console.log("Gamepad disconnected");
+      this.droneState.gamepad = null;
+      this.droneState.diagnostics.controllerConnected = false;
+      this.droneState.diagnostics.controllerName = '';
+    });
+
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
 
     // Start animation loop
     this.animate();
+  }
+
+  setupControllerDisplay() {
+    // Create controller display
+    const controllerDisplay = document.createElement('div');
+    controllerDisplay.style.position = 'fixed';
+    controllerDisplay.style.bottom = '20px';
+    controllerDisplay.style.left = '50%';
+    controllerDisplay.style.transform = 'translateX(-50%)';
+    controllerDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    controllerDisplay.style.color = '#00ff00';
+    controllerDisplay.style.fontFamily = 'monospace';
+    controllerDisplay.style.padding = '10px';
+    controllerDisplay.style.borderRadius = '5px';
+    controllerDisplay.style.zIndex = '1000';
+    controllerDisplay.style.display = 'flex';
+    controllerDisplay.style.gap = '20px';
+
+    // Create stick displays
+    const leftStickDisplay = document.createElement('div');
+    leftStickDisplay.style.width = '100px';
+    leftStickDisplay.style.height = '100px';
+    leftStickDisplay.style.border = '1px solid #00ff00';
+    leftStickDisplay.style.position = 'relative';
+    leftStickDisplay.innerHTML = '<div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%);">Left Stick</div>';
+
+    const rightStickDisplay = document.createElement('div');
+    rightStickDisplay.style.width = '100px';
+    rightStickDisplay.style.height = '100px';
+    rightStickDisplay.style.border = '1px solid #00ff00';
+    rightStickDisplay.style.position = 'relative';
+    rightStickDisplay.innerHTML = '<div style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%);">Right Stick</div>';
+
+    // Create stick indicators
+    const leftStickIndicator = document.createElement('div');
+    leftStickIndicator.style.width = '10px';
+    leftStickIndicator.style.height = '10px';
+    leftStickIndicator.style.backgroundColor = '#00ff00';
+    leftStickIndicator.style.borderRadius = '50%';
+    leftStickIndicator.style.position = 'absolute';
+    leftStickIndicator.style.left = '50%';
+    leftStickIndicator.style.top = '50%';
+    leftStickIndicator.style.transform = 'translate(-50%, -50%)';
+    leftStickDisplay.appendChild(leftStickIndicator);
+
+    const rightStickIndicator = document.createElement('div');
+    rightStickIndicator.style.width = '10px';
+    rightStickIndicator.style.height = '10px';
+    rightStickIndicator.style.backgroundColor = '#00ff00';
+    rightStickIndicator.style.borderRadius = '50%';
+    rightStickIndicator.style.position = 'absolute';
+    rightStickIndicator.style.left = '50%';
+    rightStickIndicator.style.top = '50%';
+    rightStickIndicator.style.transform = 'translate(-50%, -50%)';
+    rightStickDisplay.appendChild(rightStickIndicator);
+
+    controllerDisplay.appendChild(leftStickDisplay);
+    controllerDisplay.appendChild(rightStickDisplay);
+    document.body.appendChild(controllerDisplay);
+
+    this.controllerDisplay = controllerDisplay;
+    this.leftStickIndicator = leftStickIndicator;
+    this.rightStickIndicator = rightStickIndicator;
+  }
+
+  setupDiagnosticOverlay() {
+    // Create diagnostic overlay
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '10px';
+    overlay.style.left = '10px';
+    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+    overlay.style.color = '#00ff00';
+    overlay.style.fontFamily = 'monospace';
+    overlay.style.padding = '10px';
+    overlay.style.borderRadius = '5px';
+    overlay.style.zIndex = '1000';
+    document.body.appendChild(overlay);
+
+    this.diagnosticOverlay = overlay;
   }
 
   onWindowResize() {
@@ -73,8 +187,126 @@ class PhysicsDemo {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
+  updateGamepadState() {
+    const gamepads = navigator.getGamepads();
+    
+    if (!this.droneState.gamepad) {
+      for (const gamepad of gamepads) {
+        if (gamepad) {
+          this.droneState.gamepad = gamepad;
+          this.droneState.diagnostics.controllerConnected = true;
+          this.droneState.diagnostics.controllerName = gamepad.id;
+          break;
+        }
+      }
+      return;
+    }
+
+    // Get fresh gamepad state
+    const freshGamepad = navigator.getGamepads()[this.droneState.gamepad.index];
+    
+    if (!freshGamepad) {
+      this.droneState.gamepad = null;
+      this.droneState.diagnostics.controllerConnected = false;
+      this.droneState.diagnostics.controllerName = '';
+    } else {
+      this.droneState.gamepad = freshGamepad;
+    }
+  }
+
+  handleGamepadInput() {
+    if (!this.droneState.gamepad) {
+      this.droneState.diagnostics.controllerConnected = false;
+      this.droneState.diagnostics.controllerName = '';
+      return;
+    }
+
+    const gamepad = this.droneState.gamepad;
+    this.droneState.diagnostics.controllerConnected = true;
+    this.droneState.diagnostics.controllerName = gamepad.id;
+    const deadzone = this.droneState.deadzone;
+
+    // Check for L button press (button 4) to reset the drone
+    if (gamepad.buttons[4] && gamepad.buttons[4].pressed) {
+      this.reset();
+      return;
+    }
+
+    // Left stick - Throttle and Yaw
+    const leftX = Math.abs(gamepad.axes[0]) > deadzone ? gamepad.axes[0] : 0;
+    const leftY = Math.abs(gamepad.axes[1]) > deadzone ? gamepad.axes[1] : 0;
+    
+    // Right stick - Pitch and Roll
+    const rightX = Math.abs(gamepad.axes[2]) > deadzone ? gamepad.axes[2] : 0;
+    const rightY = Math.abs(gamepad.axes[3]) > deadzone ? gamepad.axes[3] : 0;
+
+    // Update last input for diagnostics
+    if (leftX !== 0 || leftY !== 0 || rightX !== 0 || rightY !== 0) {
+      this.droneState.diagnostics.lastInput = `L:(${leftX.toFixed(2)},${leftY.toFixed(2)}) R:(${rightX.toFixed(2)},${rightY.toFixed(2)})`;
+    }
+
+    // Update controller display
+    this.leftStickIndicator.style.left = `${(leftX * 50) + 50}%`;
+    this.leftStickIndicator.style.top = `${(leftY * 50) + 50}%`;
+    this.rightStickIndicator.style.left = `${(rightX * 50) + 50}%`;
+    this.rightStickIndicator.style.top = `${(rightY * 50) + 50}%`;
+
+    // Apply to drone physics
+    if (leftY !== 0) {
+      // Vertical movement (throttle)
+      this.physics.setThrottle(-leftY); // Invert Y axis
+    } else {
+      this.physics.setThrottle(0);
+    }
+
+    if (leftX !== 0) {
+      // Yaw (rotate left/right)
+      this.physics.setYaw(-leftX);
+    } else {
+      this.physics.setYaw(0);
+    }
+
+    if (rightY !== 0) {
+      // Pitch (tilt forward/backward)
+      this.physics.setPitch(-rightY);
+    } else {
+      this.physics.setPitch(0);
+    }
+
+    if (rightX !== 0) {
+      // Roll (tilt left/right)
+      this.physics.setRoll(rightX);
+    } else {
+      this.physics.setRoll(0);
+    }
+  }
+
+  updateDiagnostics() {
+    // Calculate speed from physics velocity
+    const velocity = this.physics.velocity;
+    this.droneState.diagnostics.speed = Math.sqrt(
+      velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z
+    );
+    this.droneState.diagnostics.altitude = this.physics.position.y;
+    
+    // Update overlay text
+    this.diagnosticOverlay.innerHTML = `
+      <div>Controller: ${this.droneState.diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
+      <div>Controller Name: ${this.droneState.diagnostics.controllerName || 'None'}</div>
+      <div>Last Input: ${this.droneState.diagnostics.lastInput}</div>
+      <div>Speed: ${this.droneState.diagnostics.speed.toFixed(2)} m/s</div>
+      <div>Altitude: ${this.droneState.diagnostics.altitude.toFixed(2)} m</div>
+      <div>Throttle: ${this.physics.throttle.toFixed(2)}</div>
+      <div>Hover Mode: ${this.physics.hoverMode ? 'ON' : 'OFF'}</div>
+    `;
+  }
+
   animate() {
     requestAnimationFrame(() => this.animate());
+
+    // Update gamepad state
+    this.updateGamepadState();
+    this.handleGamepadInput();
 
     // Update physics
     this.physics.updatePhysics(0.016); // Assuming 60fps
@@ -92,6 +324,9 @@ class PhysicsDemo {
     this.propellers.forEach(propeller => {
       propeller.rotation.y += propellerSpeed;
     });
+
+    // Update diagnostics
+    this.updateDiagnostics();
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -176,4 +411,4 @@ document.addEventListener('keyup', (event) => {
       demo.setYaw(0);
       break;
   }
-}); 
+});
