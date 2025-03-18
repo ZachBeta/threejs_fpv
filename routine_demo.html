@@ -55,6 +55,43 @@
             background: rgba(0, 255, 0, 0.2);
             color: #00ff00;
         }
+        #controller-display {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #00ff00;
+            font-family: monospace;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: flex;
+            gap: 20px;
+        }
+        .stick-display {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #00ff00;
+            position: relative;
+        }
+        .stick-display::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .stick-indicator {
+            width: 10px;
+            height: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 <body>
@@ -77,6 +114,14 @@
             <div class="routine-step">8. Rotate Right</div>
             <div class="routine-step">9. Land</div>
             <div class="routine-step">10. Reset</div>
+        </div>
+    </div>
+    <div id="controller-display">
+        <div class="stick-display" data-label="Left Stick">
+            <div class="stick-indicator"></div>
+        </div>
+        <div class="stick-display" data-label="Right Stick">
+            <div class="stick-indicator"></div>
         </div>
     </div>
     <div id="overlay">Press SPACE to start routine</div>

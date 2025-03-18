@@ -10,6 +10,10 @@ class RoutineDemo {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(this.renderer.domElement);
 
+    // Initialize control stick displays
+    this.leftStickIndicator = document.querySelector('.stick-display[data-label="Left Stick"] .stick-indicator');
+    this.rightStickIndicator = document.querySelector('.stick-display[data-label="Right Stick"] .stick-indicator');
+
     // Add lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(ambientLight);
@@ -157,7 +161,27 @@ class RoutineDemo {
       propeller.rotation.y += propellerSpeed;
     });
 
+    // Update control stick visualization
+    this.updateControlSticks();
+
     this.renderer.render(this.scene, this.camera);
+  }
+
+  updateControlSticks() {
+    // Left stick - Throttle and Yaw
+    const leftX = this.physics.yaw;
+    const leftY = this.physics.throttle;
+    
+    // Right stick - Pitch and Roll
+    const rightX = this.physics.roll;
+    const rightY = this.physics.pitch;
+
+    // Update stick positions (scale from -1,1 to 0,100)
+    this.leftStickIndicator.style.left = `${50 + leftX * 50}%`;
+    this.leftStickIndicator.style.top = `${50 + leftY * 50}%`;
+
+    this.rightStickIndicator.style.left = `${50 + rightX * 50}%`;
+    this.rightStickIndicator.style.top = `${50 + rightY * 50}%`;
   }
 
   // Control methods
