@@ -1,5 +1,18 @@
 import * as THREE from 'three';
 
+// Create diagnostic overlay
+const overlay = document.createElement('div');
+overlay.style.position = 'fixed';
+overlay.style.top = '10px';
+overlay.style.left = '10px';
+overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+overlay.style.color = '#00ff00';
+overlay.style.fontFamily = 'monospace';
+overlay.style.padding = '10px';
+overlay.style.borderRadius = '5px';
+overlay.style.zIndex = '1000';
+document.body.appendChild(overlay);
+
 // Create scene
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87CEEB); // Sky blue background
@@ -157,7 +170,14 @@ const droneState = {
     rotationSpeed: 0.02,
     keys: {},
     gamepad: null,
-    deadzone: 0.1 // Ignore small stick movements
+    deadzone: 0.1, // Ignore small stick movements
+    diagnostics: {
+        speed: 0,
+        altitude: 0,
+        controllerConnected: false,
+        controllerName: '',
+        lastInput: 'None'
+    }
 };
 
 // Handle keyboard controls
@@ -184,8 +204,10 @@ window.addEventListener("gamepaddisconnected", (e) => {
 function updateGamepadState() {
     if (!droneState.gamepad) {
         const gamepads = navigator.getGamepads();
+        console.log("Checking for gamepads:", gamepads);
         for (const gamepad of gamepads) {
             if (gamepad) {
+                console.log("Found gamepad:", gamepad);
                 droneState.gamepad = gamepad;
                 break;
             }
@@ -198,9 +220,15 @@ function updateGamepadState() {
 }
 
 function handleGamepadInput() {
-    if (!droneState.gamepad) return;
+    if (!droneState.gamepad) {
+        droneState.diagnostics.controllerConnected = false;
+        droneState.diagnostics.controllerName = '';
+        return;
+    }
 
     const gamepad = droneState.gamepad;
+    droneState.diagnostics.controllerConnected = true;
+    droneState.diagnostics.controllerName = gamepad.id;
     const deadzone = droneState.deadzone;
 
     // Left stick - Throttle and Yaw
@@ -210,6 +238,11 @@ function handleGamepadInput() {
     // Right stick - Pitch and Roll
     const rightX = Math.abs(gamepad.axes[2]) > deadzone ? gamepad.axes[2] : 0;
     const rightY = Math.abs(gamepad.axes[3]) > deadzone ? gamepad.axes[3] : 0;
+
+    // Update last input
+    if (leftX !== 0 || leftY !== 0 || rightX !== 0 || rightY !== 0) {
+        droneState.diagnostics.lastInput = `L:(${leftX.toFixed(2)},${leftY.toFixed(2)}) R:(${rightX.toFixed(2)},${rightY.toFixed(2)})`;
+    }
 
     // Left stick controls
     if (leftY !== 0) {
@@ -287,6 +320,24 @@ function updateDroneMovement() {
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+
+    // Update diagnostics
+    droneState.diagnostics.speed = Math.sqrt(
+        Math.pow(camera.position.x, 2) + 
+        Math.pow(camera.position.y, 2) + 
+        Math.pow(camera.position.z, 2)
+    );
+    droneState.diagnostics.altitude = camera.position.y;
+
+    // Update overlay with diagnostics
+    overlay.innerHTML = `
+        <div>Controller: ${droneState.diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
+        <div>Controller Name: ${droneState.diagnostics.controllerName || 'None'}</div>
+        <div>Last Input: ${droneState.diagnostics.lastInput}</div>
+        <div>Speed: ${droneState.diagnostics.speed.toFixed(2)} m/s</div>
+        <div>Altitude: ${droneState.diagnostics.altitude.toFixed(2)} m</div>
+        <div>Position: (${camera.position.x.toFixed(2)}, ${camera.position.y.toFixed(2)}, ${camera.position.z.toFixed(2)})</div>
+    `;
 
     // Rotate the cube
     cube.rotation.x += 0.01;
