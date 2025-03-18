@@ -131,6 +131,7 @@
             <div class="controls-group">
                 <button id="start-demo">Start Demo Routine</button>
                 <button id="check-logs">Check Log Files</button>
+                <button id="clear-logs">Clear Logs</button>
                 <button id="toggle-live">Start Live Updates</button>
             </div>
         </div>
@@ -160,7 +161,7 @@
 
     <script type="module">
         console.log('Loading logging demo...');
-        import { startDemo, stopDemo, isDemoRunning } from '../../src/demos/logging/logging_demo.js';
+        import { startDemo, stopDemo, isDemoRunning } from '../../src/demos/logging_demo.js';
         console.log('Demo integration module loaded');
         
         const API_BASE = 'http://localhost:3000/api';
@@ -175,7 +176,7 @@
                 const data = await response.json();
                 console.log('Server status response:', data);
                 document.getElementById('server-status').innerHTML = 
-                    `<div class="success">Server is running: ${data.message}</div>`;
+                    `<div class="success">${data.message}</div>`;
             } catch (error) {
                 console.error('Server status check failed:', error);
                 document.getElementById('server-status').innerHTML = 
@@ -191,11 +192,16 @@
                 const data = await response.json();
                 console.log('Log files response:', data);
                 const filesList = document.getElementById('files-list');
-                filesList.innerHTML = data.files.map(file => 
-                    `<div>${file.name} (${(file.size / 1024).toFixed(2)} KB)</div>`
-                ).join('');
+                if (data.success && data.logs) {
+                    filesList.innerHTML = data.logs.map(log => 
+                        `<div>${log.filename} (${(log.size / 1024).toFixed(2)} KB)</div>`
+                    ).join('');
+                } else {
+                    filesList.innerHTML = '<div>No log files available</div>';
+                }
             } catch (error) {
                 console.error('Error listing logs:', error);
+                document.getElementById('files-list').innerHTML = '<div>Error loading log files</div>';
             }
         }
 
@@ -213,18 +219,26 @@
                 console.log('Game states response:', data);
                 if (data.success && data.states) {
                     const statesList = document.getElementById('states-list');
-                    statesList.innerHTML = data.states.map(state => `
-                        <div class="state-card">
-                            <div class="state-value">Time: ${new Date(state.timestamp).toLocaleTimeString()}</div>
-                            <div class="state-value">Position: (${formatNumber(state.position.x)}, ${formatNumber(state.position.y)}, ${formatNumber(state.position.z)})</div>
-                            <div class="state-value">Rotation: (${formatNumber(state.rotation.x)}, ${formatNumber(state.rotation.y)}, ${formatNumber(state.rotation.z)})</div>
-                            <div class="state-value">Controls: T:${formatNumber(state.controls.throttle)} P:${formatNumber(state.controls.pitch)} R:${formatNumber(state.controls.roll)} Y:${formatNumber(state.controls.yaw)}</div>
-                            <div class="state-value">Step: ${state.currentStep}</div>
-                        </div>
-                    `).join('');
+                    statesList.innerHTML = data.states.map(state => {
+                        if (!state || !state.position || !state.rotation || !state.controls) {
+                            return '<div class="state-card">Invalid state data</div>';
+                        }
+                        return `
+                            <div class="state-card">
+                                <div class="state-value">Time: ${new Date(state.timestamp).toLocaleTimeString()}</div>
+                                <div class="state-value">Position: (${formatNumber(state.position.x)}, ${formatNumber(state.position.y)}, ${formatNumber(state.position.z)})</div>
+                                <div class="state-value">Rotation: (${formatNumber(state.rotation.x)}, ${formatNumber(state.rotation.y)}, ${formatNumber(state.rotation.z)})</div>
+                                <div class="state-value">Controls: T:${formatNumber(state.controls.throttle)} P:${formatNumber(state.controls.pitch)} R:${formatNumber(state.controls.roll)} Y:${formatNumber(state.controls.yaw)}</div>
+                                <div class="state-value">Step: ${state.currentStep || 'Unknown'}</div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    document.getElementById('states-list').innerHTML = '<div>No game states available</div>';
                 }
             } catch (error) {
                 console.error('Error updating game states:', error);
+                document.getElementById('states-list').innerHTML = '<div>Error loading game states</div>';
             }
         }
 
@@ -278,8 +292,29 @@
         console.log('Setting up event listeners...');
         document.getElementById('start-demo').addEventListener('click', runDemo);
         document.getElementById('check-logs').addEventListener('click', listLogFiles);
+        document.getElementById('clear-logs').addEventListener('click', clearLogs);
         document.getElementById('toggle-live').addEventListener('click', toggleLiveUpdates);
         console.log('Event listeners set up');
+
+        // Add clear logs function
+        async function clearLogs() {
+            console.log('Clearing logs...');
+            try {
+                const response = await fetch(`${API_BASE}/clear-logs`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                if (data.success) {
+                    console.log('Logs cleared successfully');
+                    // Refresh the logs list
+                    listLogFiles();
+                } else {
+                    console.error('Failed to clear logs:', data.error);
+                }
+            } catch (error) {
+                console.error('Error clearing logs:', error);
+            }
+        }
 
         // Initial setup
         console.log('Running initial setup...');
