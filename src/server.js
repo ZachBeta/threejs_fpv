@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates } from './db.js';
+import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates, clearAllLogs, clearAllData } from './db.js';
 import { logRequest, logResponse, logError } from './utils/logger.js';
 
 const app = express();
@@ -97,6 +97,17 @@ app.get('/api/game-states', (req, res) => {
     res.json({ success: true, states });
   } catch (error) {
     console.error('Error getting game states:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Clear all logs
+app.post('/api/clear-logs', (req, res) => {
+  try {
+    const result = clearAllData();
+    res.json(result);
+  } catch (error) {
+    console.error('Error clearing data:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

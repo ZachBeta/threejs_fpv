@@ -4,9 +4,14 @@ export class GameStateLogger {
     constructor() {
         this.lastUpdateTime = 0;
         this.updateInterval = 100; // Update every 100ms
+        this.isEnabled = false;
     }
 
     async logGameState(state) {
+        if (!this.isEnabled) {
+            return; // Skip if logging is not enabled
+        }
+
         const currentTime = Date.now();
         if (currentTime - this.lastUpdateTime < this.updateInterval) {
             return; // Skip if too soon since last update
@@ -39,5 +44,14 @@ export class GameStateLogger {
 
     setUpdateInterval(interval) {
         this.updateInterval = interval;
+    }
+
+    enable() {
+        this.isEnabled = true;
+        this.lastUpdateTime = 0; // Reset the last update time
+    }
+
+    disable() {
+        this.isEnabled = false;
     }
 } 

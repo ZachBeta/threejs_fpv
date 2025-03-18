@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DronePhysics } from './physics.js';
+import { GameStateLogger } from './game_state_logger.js';
 
 class RoutineDemo {
   constructor() {
@@ -28,6 +29,7 @@ class RoutineDemo {
     document.body.appendChild(this.renderer.domElement);
 
     // Initialize logging
+    this.logger = new GameStateLogger();
     this.logs = [];
     this.lastLogTime = 0;
     this.logInterval = 100; // Log every 100ms
@@ -220,6 +222,8 @@ class RoutineDemo {
   }
 
   logState() {
+    if (!this.isRoutineRunning) return;
+
     const state = {
       timestamp: performance.now(),
       position: {
@@ -242,27 +246,27 @@ class RoutineDemo {
     };
 
     this.logs.push(state);
-    console.log(JSON.stringify(state));
+    this.logger.logGameState(state);
   }
 
   startRoutine() {
-    console.log('Starting routine...');
     this.isRoutineRunning = true;
     this.currentStep = 0;
     this.stepStartTime = performance.now();
     this.logs = []; // Clear previous logs
+    this.logger.enable(); // Enable logging
     this.routine[this.currentStep].action();
     this.updateUI();
   }
 
   stopRoutine() {
-    console.log('Stopping routine...');
     this.isRoutineRunning = false;
     // Reset controls
     this.setThrottle(0);
     this.setPitch(0);
     this.setRoll(0);
     this.setYaw(0);
+    this.logger.disable(); // Disable logging
 
     // Save logs to file
     this.saveLogs();
