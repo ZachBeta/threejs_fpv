@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone Routine Demo</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #overlay {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            z-index: 1000;
+            white-space: pre;
+            text-align: center;
+        }
+        #instructions {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        #instructions h2 {
+            margin-top: 0;
+            color: #00ff00;
+        }
+        .key {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .routine-step {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .routine-step.active {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <h2>Drone Routine Demo</h2>
+        <p>Controls:</p>
+        <ul>
+            <li><span class="key">Space</span> - Start/Stop routine</li>
+            <li><span class="key">R</span> - Reset drone</li>
+        </ul>
+        <p>Routine Steps:</p>
+        <div id="routine-steps">
+            <div class="routine-step">1. Takeoff</div>
+            <div class="routine-step">2. Hover</div>
+            <div class="routine-step">3. Forward</div>
+            <div class="routine-step">4. Backward</div>
+            <div class="routine-step">5. Left</div>
+            <div class="routine-step">6. Right</div>
+            <div class="routine-step">7. Rotate Left</div>
+            <div class="routine-step">8. Rotate Right</div>
+            <div class="routine-step">9. Land</div>
+            <div class="routine-step">10. Reset</div>
+        </div>
+    </div>
+    <div id="overlay">Press SPACE to start routine</div>
+    <script type="module" src="/src/routine_demo.js"></script>
+</body>
+</html> 
