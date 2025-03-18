@@ -113,7 +113,7 @@ npm run preview
 - `home.html` - Main HTML file (previously index.html)
 - `demos/` - Demo HTML files and assets
 - `src/demos/drone_flight_demo.js` - Drone flight simulation with Three.js scene setup and animation
-- `src/demos/routine_demo.js` - Programmatic flight routines demo implementation
+- `src/demos/flight_routine_demo.js` - Programmatic flight routines demo implementation
 - `src/demos/game_state_demo.js` - Game state and telemetry display demo
 - `src/demos/physics_demo.js` - Physics engine demonstration
 - `src/logger.js` - Telemetry logging system implementation
@@ -203,7 +203,7 @@ Please read our [RULES.md](RULES.md) for guidelines on contributing to this proj
 - Display the drone camera at the front of the drone in flight routine demo
 
 ### Todo
-- Add more complex flight routines to the game state demo
+- Add more complex flight routines to the flight routine demo
 - Physics/controls: implement toggle hover feature
 - Migrate to TypeScript
 - Upgrade logo and the drone model used in the demo
