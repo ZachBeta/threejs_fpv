@@ -191,24 +191,32 @@ window.addEventListener('keyup', (e) => {
 
 // Handle gamepad connection/disconnection
 window.addEventListener("gamepadconnected", (e) => {
-    console.log("Gamepad connected:", e.gamepad);
+    console.log("Gamepad connected event:", e.gamepad);
     droneState.gamepad = e.gamepad;
+    droneState.diagnostics.controllerConnected = true;
+    droneState.diagnostics.controllerName = e.gamepad.id;
 });
 
 window.addEventListener("gamepaddisconnected", (e) => {
-    console.log("Gamepad disconnected:", e.gamepad);
+    console.log("Gamepad disconnected event:", e.gamepad);
     droneState.gamepad = null;
+    droneState.diagnostics.controllerConnected = false;
+    droneState.diagnostics.controllerName = '';
 });
 
 // Update gamepad state
 function updateGamepadState() {
+    const gamepads = navigator.getGamepads();
+    console.log("All gamepads:", gamepads);
+    
     if (!droneState.gamepad) {
-        const gamepads = navigator.getGamepads();
-        console.log("Checking for gamepads:", gamepads);
+        console.log("No gamepad in state, searching for available gamepads...");
         for (const gamepad of gamepads) {
             if (gamepad) {
-                console.log("Found gamepad:", gamepad);
+                console.log("Found available gamepad:", gamepad);
                 droneState.gamepad = gamepad;
+                droneState.diagnostics.controllerConnected = true;
+                droneState.diagnostics.controllerName = gamepad.id;
                 break;
             }
         }
@@ -216,7 +224,17 @@ function updateGamepadState() {
     }
 
     // Get fresh gamepad state
-    droneState.gamepad = navigator.getGamepads()[droneState.gamepad.index];
+    const freshGamepad = navigator.getGamepads()[droneState.gamepad.index];
+    console.log("Fresh gamepad state:", freshGamepad);
+    
+    if (!freshGamepad) {
+        console.log("Gamepad no longer available");
+        droneState.gamepad = null;
+        droneState.diagnostics.controllerConnected = false;
+        droneState.diagnostics.controllerName = '';
+    } else {
+        droneState.gamepad = freshGamepad;
+    }
 }
 
 function handleGamepadInput() {
@@ -242,6 +260,7 @@ function handleGamepadInput() {
     // Update last input
     if (leftX !== 0 || leftY !== 0 || rightX !== 0 || rightY !== 0) {
         droneState.diagnostics.lastInput = `L:(${leftX.toFixed(2)},${leftY.toFixed(2)}) R:(${rightX.toFixed(2)},${rightY.toFixed(2)})`;
+        console.log("Active gamepad input:", droneState.diagnostics.lastInput);
     }
 
     // Left stick controls
