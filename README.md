@@ -20,12 +20,22 @@ A simple 3D demo using Three.js that features a first-person view (FPV) drone-li
 
 ## Controls
 
-The demo implements drone-like FPV controls:
+The demo supports both keyboard and gamepad controls:
+
+### Keyboard Controls
 - `W/S`: Move forward/backward
 - `A/D`: Strafe left/right
 - `Space`: Move up
 - `Shift`: Move down
 - `Arrow Keys`: Rotate the view (left/right/up/down)
+
+### Gamepad Controls
+- Left Stick: Move forward/backward and strafe left/right
+- Right Stick: Rotate view (pitch and yaw)
+- Y Button: Move up
+- A Button: Move down
+
+Note: The gamepad controls will automatically activate when a controller is connected. Keyboard controls remain available as a fallback.
 
 ## Prerequisites
 
