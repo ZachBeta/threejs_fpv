@@ -9,45 +9,51 @@ const __dirname = path.dirname(__filename);
 const db = new Database(path.join(__dirname, '..', 'logs.db'));
 
 // Initialize database tables with improved schema
-db.exec(`
-  -- Drop existing tables to clean up schema
-  DROP TABLE IF EXISTS routine_logs;
-  DROP TABLE IF EXISTS game_states;
+function initializeDatabase() {
+  // Create tables one by one to ensure proper initialization
+  db.exec('DROP TABLE IF EXISTS routine_logs');
+  db.exec('DROP TABLE IF EXISTS game_states');
+  
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS event_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp INTEGER NOT NULL,
+      event_type TEXT NOT NULL,
+      event_name TEXT NOT NULL,
+      metadata TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
-  -- Event logs for all system events (including routine steps)
-  CREATE TABLE IF NOT EXISTS event_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp INTEGER NOT NULL,
-    event_type TEXT NOT NULL,  -- 'routine_step', 'game_state', 'system_event'
-    event_name TEXT NOT NULL,  -- step name for routines, event name for system events
-    metadata TEXT,            -- Additional JSON metadata
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS state_snapshots (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp INTEGER NOT NULL,
+      state_type TEXT NOT NULL,
+      position_x REAL,
+      position_y REAL,
+      position_z REAL,
+      rotation_x REAL,
+      rotation_y REAL,
+      rotation_z REAL,
+      throttle REAL,
+      pitch REAL,
+      roll REAL,
+      yaw REAL,
+      additional_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
 
-  -- State snapshots for tracking system state
-  CREATE TABLE IF NOT EXISTS state_snapshots (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    timestamp INTEGER NOT NULL,
-    state_type TEXT NOT NULL,  -- 'drone_state', 'game_state', 'system_state'
-    position_x REAL,
-    position_y REAL,
-    position_z REAL,
-    rotation_x REAL,
-    rotation_y REAL,
-    rotation_z REAL,
-    throttle REAL,
-    pitch REAL,
-    roll REAL,
-    yaw REAL,
-    additional_data TEXT,     -- JSON field for flexible additional data
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+  // Create indices
+  db.exec('CREATE INDEX IF NOT EXISTS idx_event_logs_timestamp ON event_logs(timestamp)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_event_logs_type ON event_logs(event_type)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_state_snapshots_timestamp ON state_snapshots(timestamp)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_state_snapshots_type ON state_snapshots(state_type)');
+}
 
-  CREATE INDEX IF NOT EXISTS idx_event_logs_timestamp ON event_logs(timestamp);
-  CREATE INDEX IF NOT EXISTS idx_event_logs_type ON event_logs(event_type);
-  CREATE INDEX IF NOT EXISTS idx_state_snapshots_timestamp ON state_snapshots(timestamp);
-  CREATE INDEX IF NOT EXISTS idx_state_snapshots_type ON state_snapshots(state_type);
-`);
+// Initialize database on module load
+initializeDatabase();
 
 // Save an event log
 export function saveEvent(event) {
@@ -77,6 +83,11 @@ export function saveStateSnapshot(state) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
+  const additionalData = {
+    ...(state.additionalData || {}),
+    currentStep: state.currentStep || 'Unknown'
+  };
+
   stmt.run(
     state.timestamp,
     state.type,
@@ -90,7 +101,7 @@ export function saveStateSnapshot(state) {
     parseFloat(state.controls.pitch),
     parseFloat(state.controls.roll),
     parseFloat(state.controls.yaw),
-    JSON.stringify(state.additionalData || {})
+    JSON.stringify(additionalData)
   );
 
   return { success: true };
@@ -157,7 +168,29 @@ export function getStateSnapshots(options = {}) {
   query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
   params.push(limit, offset);
 
-  return db.prepare(query).all(...params);
+  const rows = db.prepare(query).all(...params);
+
+  // Transform the flat database rows into nested state objects
+  return rows.map(row => ({
+    timestamp: row.timestamp,
+    position: {
+      x: row.position_x.toFixed(2),
+      y: row.position_y.toFixed(2),
+      z: row.position_z.toFixed(2)
+    },
+    rotation: {
+      x: row.rotation_x.toFixed(2),
+      y: row.rotation_y.toFixed(2),
+      z: row.rotation_z.toFixed(2)
+    },
+    controls: {
+      throttle: row.throttle.toFixed(2),
+      pitch: row.pitch.toFixed(2),
+      roll: row.roll.toFixed(2),
+      yaw: row.yaw.toFixed(2)
+    },
+    currentStep: JSON.parse(row.additional_data || '{}').currentStep || 'Unknown'
+  }));
 }
 
 // Get statistics for events
@@ -175,18 +208,33 @@ export function getEventStats() {
   `).all();
 }
 
-// Clear all data
+// Clear all data with error handling
 export function clearAllData() {
-  const transaction = db.transaction(() => {
-    db.prepare('DELETE FROM event_logs').run();
-    db.prepare('DELETE FROM state_snapshots').run();
-    // Reset auto-increment counters
-    db.prepare('DELETE FROM sqlite_sequence WHERE name IN ("event_logs", "state_snapshots")').run();
-  });
-
-  transaction();
-  return { success: true, message: 'All data cleared successfully' };
+  try {
+    // Simple direct queries with individual try-catches to handle errors for each table
+    try {
+      db.exec('DELETE FROM event_logs');
+      console.log('Cleared event_logs table');
+    } catch (err) {
+      console.warn('Error clearing event_logs:', err.message);
+    }
+    
+    try {
+      db.exec('DELETE FROM state_snapshots');
+      console.log('Cleared state_snapshots table');
+    } catch (err) {
+      console.warn('Error clearing state_snapshots:', err.message);
+    }
+    
+    return { success: true, message: 'Data cleared successfully' };
+  } catch (error) {
+    console.error('Error in clearAllData:', error);
+    return { success: false, message: error.message };
+  }
 }
+
+// Export the initialize function for explicit initialization
+export { initializeDatabase };
 
 // For backward compatibility
 export const saveLogs = (logs) => {

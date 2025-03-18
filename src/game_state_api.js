@@ -1,6 +1,6 @@
 const API_BASE = 'http://localhost:3000/api';
 
-export class GameStateLogger {
+export class GameStateApi {
     constructor() {
         this.lastUpdateTime = 0;
         this.updateInterval = 100; // Update every 100ms
@@ -27,7 +27,8 @@ export class GameStateLogger {
                     timestamp: currentTime,
                     position: state.position,
                     rotation: state.rotation,
-                    controls: state.controls
+                    controls: state.controls,
+                    currentStep: state.currentStep
                 })
             });
 

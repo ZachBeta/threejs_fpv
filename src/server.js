@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates, clearAllLogs, clearAllData } from './db.js';
+import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates, clearAllLogs, clearAllData, initializeDatabase } from './db.js';
 import { logRequest, logResponse, logError } from './utils/logger.js';
+
+// Initialize database before setting up the server
+initializeDatabase();
 
 const app = express();
 app.use(cors());
@@ -92,7 +95,7 @@ app.post('/api/game-state', (req, res) => {
 // Get latest game states
 app.get('/api/game-states', (req, res) => {
   try {
-    const limit = req.query.limit ? parseInt(req.query.limit) : 100;
+    const limit = req.query.limit ? parseInt(req.query.limit) || 100 : 100;
     const states = getLatestGameStates(limit);
     res.json({ success: true, states });
   } catch (error) {
@@ -113,6 +116,10 @@ app.post('/api/clear-logs', (req, res) => {
 });
 
 const PORT = 3000;
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  // Clear all logs after server starts
+  clearAllData();
+  console.log('Cleared all previous logs and data');
 }); 

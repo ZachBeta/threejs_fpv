@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { DronePhysics } from './physics.js';
-import { GameStateLogger } from './game_state_logger.js';
+import { GameStateApi } from './game_state_api.js';
 
 class RoutineDemo {
   constructor() {
@@ -29,7 +29,7 @@ class RoutineDemo {
     document.body.appendChild(this.renderer.domElement);
 
     // Initialize logging
-    this.logger = new GameStateLogger();
+    this.logger = new GameStateApi();
     this.logs = [];
     this.lastLogTime = 0;
     this.logInterval = 100; // Log every 100ms
