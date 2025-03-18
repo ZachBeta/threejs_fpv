@@ -61,9 +61,11 @@ class RoutineDemo {
 
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x87CEEB); // Add sky blue background
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.shadowMap.enabled = true;
     document.body.appendChild(this.renderer.domElement);
 
     // Initialize logging
@@ -78,27 +80,49 @@ class RoutineDemo {
     this.rightStickIndicator = document.querySelector('.stick-display[data-label="Right Stick"] .stick-indicator');
 
     // Add lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     this.scene.add(ambientLight);
+    
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 5, 5);
+    directionalLight.position.set(5, 10, 5);
+    directionalLight.castShadow = true;
+    directionalLight.shadow.mapSize.width = 1024;
+    directionalLight.shadow.mapSize.height = 1024;
     this.scene.add(directionalLight);
 
     // Create ground
-    const groundGeometry = new THREE.PlaneGeometry(20, 20);
+    const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x808080,
+      color: 0xffffff,
       side: THREE.DoubleSide
     });
     this.ground = new THREE.Mesh(groundGeometry, groundMaterial);
     this.ground.rotation.x = -Math.PI / 2;
+    this.ground.receiveShadow = true;
     this.scene.add(this.ground);
+
+    // Add grid lines to create checkered floor
+    const gridHelper = new THREE.GridHelper(100, 100, 0x000000, 0x000000);
+    this.scene.add(gridHelper);
+
+    // Create landing pad to mark start/end position
+    const landingPadGeometry = new THREE.CylinderGeometry(2, 2, 0.1, 32);
+    const landingPadMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0.7
+    });
+    this.landingPad = new THREE.Mesh(landingPadGeometry, landingPadMaterial);
+    this.landingPad.position.y = 0.05; // Position slightly above ground to prevent z-fighting
+    this.landingPad.receiveShadow = true;
+    this.scene.add(this.landingPad);
 
     // Create drone mesh
     const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
     const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
-    this.droneMesh.position.y = 10;
+    this.droneMesh.position.y = 10; // Match initial physics position
+    this.droneMesh.castShadow = true;
     this.scene.add(this.droneMesh);
 
     // Add propellers
@@ -122,10 +146,11 @@ class RoutineDemo {
 
     // Initialize physics
     this.physics = new DronePhysics();
+    this.physics.groundLevel = 0; // Set the ground level to match our scene
     
     // Set up camera position
-    this.camera.position.set(0, 15, 15);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.set(0, 20, 20);
+    this.camera.lookAt(this.physics.position);
 
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
@@ -231,6 +256,47 @@ Controls:
       this.lastFpsUpdate = currentTime;
     }
 
+    // Update physics
+    this.physics.updatePhysics(0.016); // Assuming 60fps
+
+    // Update drone mesh position 
+    this.droneMesh.position.x = this.physics.position.x;
+    this.droneMesh.position.y = this.physics.position.y;
+    this.droneMesh.position.z = this.physics.position.z;
+    
+    // Update drone rotation - use rotation from physics
+    const droneRotation = new THREE.Euler(
+      this.physics.rotation.x,
+      this.physics.rotation.y,
+      this.physics.rotation.z,
+      'XYZ'
+    );
+    this.droneMesh.rotation.copy(droneRotation);
+    
+    // Update camera to follow drone
+    const offsetY = 15; // Height above drone
+    const offsetZ = 15; // Distance behind drone
+    this.camera.position.x = this.physics.position.x;
+    this.camera.position.y = this.physics.position.y + offsetY;
+    this.camera.position.z = this.physics.position.z + offsetZ;
+    this.camera.lookAt(
+      this.physics.position.x,
+      this.physics.position.y,
+      this.physics.position.z
+    );
+
+    // Animate propellers based on throttle
+    const propellerSpeed = this.physics.throttle * 0.5;
+    this.propellers.forEach(propeller => {
+      propeller.rotation.y += propellerSpeed;
+    });
+
+    // Update control stick displays
+    this.updateControlSticks();
+    
+    // Update UI information
+    this.updateUI();
+
     // Log state if enough time has passed
     if (currentTime - this.lastLogTime >= this.logInterval) {
       this.logState();
@@ -257,32 +323,6 @@ Controls:
         }
       }
     }
-
-    // Update UI
-    this.updateUI();
-
-    // Update physics
-    this.physics.updatePhysics(0.016); // Assuming 60fps
-
-    // Update drone mesh position and rotation
-    this.droneMesh.position.copy(this.physics.position);
-    // Create a proper THREE.Euler object with XYZ order
-    const droneRotation = new THREE.Euler(
-      this.physics.rotation.x,
-      this.physics.rotation.y,
-      this.physics.rotation.z,
-      'XYZ'
-    );
-    this.droneMesh.rotation.copy(droneRotation);
-
-    // Animate propellers based on throttle
-    const propellerSpeed = this.physics.throttle * 10;
-    this.propellers.forEach(propeller => {
-      propeller.rotation.y += propellerSpeed;
-    });
-
-    // Update control stick visualization
-    this.updateControlSticks();
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -326,7 +366,8 @@ Controls:
   }
 
   reset() {
-    this.physics.reset();
+    // Delegate to resetDrone method for consistency
+    this.resetDrone();
   }
 
   logState() {
@@ -501,8 +542,21 @@ Controls:
   }
 
   resetDrone() {
-    console.log('Resetting drone');
-    this.reset();
+    this.physics.reset(); // Use the reset method from physics
+    
+    // Reset drone mesh position
+    this.droneMesh.position.x = 0;
+    this.droneMesh.position.y = 10;
+    this.droneMesh.position.z = 0;
+    
+    // Reset camera
+    this.camera.position.set(0, 20, 20);
+    this.camera.lookAt(0, 10, 0);
+    
+    this.setThrottle(0);
+    this.setPitch(0);
+    this.setRoll(0);
+    this.setYaw(0);
   }
 
   checkServerStatus() {
@@ -630,7 +684,7 @@ document.addEventListener('keydown', (event) => {
       break;
     case 'r':
       console.log('Resetting drone');
-      demo.reset();
+      demo.resetDrone();
       break;
     case 'Escape':
       // Menu handled in HTML
