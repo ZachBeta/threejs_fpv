@@ -133,6 +133,9 @@ class LoggingDemo {
       this.stepStartTime = performance.now();
       this.logger.enable();
       this.routine[this.currentStep].action();
+      
+      // Store the routine interval ID so we can clear it later
+      this.routineInterval = setInterval(() => this.simulate(), 16); // ~60fps
     }
   }
 
@@ -145,6 +148,12 @@ class LoggingDemo {
       this.setPitch(0);
       this.setRoll(0);
       this.setYaw(0);
+      
+      // Clear the interval to prevent memory leaks
+      if (this.routineInterval) {
+        clearInterval(this.routineInterval);
+        this.routineInterval = null;
+      }
     }
   }
 
@@ -183,6 +192,8 @@ export function startDemo() {
 export function stopDemo() {
     if (demo) {
         demo.stopRoutine();
+        // Clear any potential demo references to allow garbage collection
+        demo = null;
     }
 }
 
