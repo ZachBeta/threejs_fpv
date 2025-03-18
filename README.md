@@ -1,6 +1,6 @@
 # Three.js FPV Demo
 
-A simple 3D demo using Three.js that displays a rotating cube with proper lighting.
+A simple 3D demo using Three.js that displays a rotating cube with proper lighting and includes telemetry logging capabilities.
 
 ## Features
 
@@ -8,6 +8,12 @@ A simple 3D demo using Three.js that displays a rotating cube with proper lighti
 - Directional and ambient lighting
 - Responsive design that adapts to window resizing
 - Modern development setup using Vite
+- SQLite-based telemetry logging system
+  - Captures frame timing data
+  - Records performance metrics
+  - Stores system information
+- Real-time performance monitoring
+- Automatic error handling and logging
 
 ## Prerequisites
 
@@ -67,12 +73,39 @@ npm run preview
 
 - `index.html` - Main HTML file
 - `src/main.js` - Main JavaScript file containing Three.js scene setup and animation
+- `src/logger.js` - Telemetry logging system implementation
 - `package.json` - Project configuration and dependencies
+- `logs.db` - SQLite database for storing telemetry data
 
 ## Technologies Used
 
 - [Three.js](https://threejs.org/) - 3D graphics library
 - [Vite](https://vitejs.dev/) - Next generation frontend tooling
+- [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) - Fast and simple SQLite3 library
+
+## Telemetry Logging
+
+The project includes a comprehensive telemetry logging system that captures performance metrics and system information:
+
+### Logged Data
+- Frame timing and FPS metrics
+- System information
+- Error events and stack traces
+- Performance bottlenecks
+
+### Database Structure
+The telemetry data is stored in a SQLite database (`logs.db`) with tables for:
+- Frame metrics
+- System information
+- Error logs
+
+### Accessing Logs
+You can query the logs using any SQLite client. For example:
+
+```bash
+# Using sqlite3 command line tool
+sqlite3 logs.db "SELECT * FROM frame_metrics LIMIT 5;"
+```
 
 ## License
 
