@@ -23,6 +23,8 @@ A simple 3D demo using Three.js that features a first-person view (FPV) drone-li
 - Real-time performance monitoring
 - Automatic error handling and logging
 - Gamepad support with traditional FPV drone controls
+- Flight routine demo with programmable drone movements
+- SVG favicon representing a racing drone
 
 ## Controls
 
@@ -109,12 +111,15 @@ npm run preview
 ## Project Structure
 
 - `home.html` - Main HTML file (previously index.html)
-- `src/demos/drone_flight_demo.js` - Drone flight simulation with Three.js scene setup and animation
-- `src/logger.js` - Telemetry logging system implementation
-- `src/demos/` - Demo-specific code and implementations
 - `demos/` - Demo HTML files and assets
+- `src/demos/drone_flight_demo.js` - Drone flight simulation with Three.js scene setup and animation
+- `src/demos/routine_demo.js` - Programmatic flight routines demo implementation
+- `src/demos/game_state_demo.js` - Game state and telemetry display demo
+- `src/demos/physics_demo.js` - Physics engine demonstration
+- `src/logger.js` - Telemetry logging system implementation
 - `package.json` - Project configuration and dependencies
 - `logs.db` - SQLite database for storing telemetry data
+- `public/favicon.svg` - SVG favicon representing a racing drone
 
 ## Technologies Used
 
@@ -172,6 +177,8 @@ Please read our [RULES.md](RULES.md) for guidelines on contributing to this proj
 - Confirm logging database tests only interface with our code
 - Set up Vite development environment
 - Implement basic telemetry logging system
+- Basic flight routine demo implementation
+- Implemented SVG favicon representing a racing drone
 
 ### In Progress
 - Investigating issues with sending game state
@@ -193,10 +200,14 @@ Please read our [RULES.md](RULES.md) for guidelines on contributing to this proj
   - Display controller state information
   - Show position and orientation data
   - Add performance metrics overlay
+- Display the drone camera at the front of the drone in flight routine demo
 
 ### Todo
+- Add more complex flight routines to the game state demo
+- Physics/controls: implement toggle hover feature
+- Migrate to TypeScript
+- Upgrade logo and the drone model used in the demo
 - Profile database to determine which code paths are dead
-- Switch to TypeScript
 - Clean up markdown, remove excess content
 - Rename game state logger to game_state_api
 - Evaluate need to flush server logs
