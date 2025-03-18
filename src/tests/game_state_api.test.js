@@ -1,64 +1,16 @@
 import fetch from 'node-fetch';
-import { jest } from '@jest/globals';
 
-// Mock the demo module instead of importing the real implementations
-jest.unstable_mockModule('../demos/game_state_demo.js', () => ({
-  startDemo: jest.fn(),
-  stopDemo: jest.fn(),
-  initializeDemo: jest.fn(),
-  isDemoRunning: jest.fn().mockReturnValue(false)
-}));
-
-// Import the mocked functions
-import { startDemo, stopDemo, initializeDemo, isDemoRunning } from '../demos/game_state_demo.js';
-
-const API_BASE = 'http://localhost:5173/api';
+const API_BASE = 'http://localhost:3001/api';
 
 describe('Game State API Integration Tests', () => {
-  // Add a global timeout to ensure tests finish
-  jest.setTimeout(10000);
-  
-  // Store original fetch for restoration
-  let originalFetch;
-  
-  beforeAll(() => {
-    // Save original
-    originalFetch = global.fetch;
-    
-    // Mock fetch
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ 
-          success: true, 
-          states: []
-        })
-      })
-    );
+  beforeEach(async () => {
+    // Clear existing game states before each test
+    await fetch(`${API_BASE}/clear-logs`, {
+      method: 'POST'
+    });
   });
 
-  beforeEach(() => {
-    // Reset mocks before each test
-    jest.clearAllMocks();
-  });
-
-  afterAll(() => {
-    // Restore the original fetch
-    global.fetch = originalFetch;
-  });
-
-  test('should handle empty game states when demo is not running', async () => {
-    // Setup mock return value for this test
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ 
-          success: true, 
-          states: []
-        })
-      })
-    );
-    
+  test('should handle empty game states initially', async () => {
     const response = await fetch(`${API_BASE}/game-states?limit=10`);
     const data = await response.json();
 
@@ -68,127 +20,7 @@ describe('Game State API Integration Tests', () => {
     expect(data.states.length).toBe(0);
   });
 
-  test('should record and retrieve valid game states when demo is running', async () => {
-    // Setup mock to return game states
-    const mockStates = [
-      {
-        timestamp: Date.now(),
-        position: { x: '0.00', y: '10.00', z: '0.00' },
-        rotation: { x: '0.00', y: '0.00', z: '0.00' },
-        controls: { throttle: '0.50', pitch: '0.00', roll: '0.00', yaw: '0.00' },
-        currentStep: 'Hover'
-      }
-    ];
-    
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ 
-          success: true, 
-          states: mockStates
-        })
-      })
-    );
-    
-    // Start the demo (mocked)
-    startDemo();
-
-    const response = await fetch(`${API_BASE}/game-states?limit=5`);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(Array.isArray(data.states)).toBe(true);
-    expect(data.states.length).toBeGreaterThan(0);
-
-    // Verify the structure of each state
-    data.states.forEach(state => {
-      expect(state).toHaveProperty('timestamp');
-      expect(state).toHaveProperty('position');
-      expect(state.position).toHaveProperty('x');
-      expect(state.position).toHaveProperty('y');
-      expect(state.position).toHaveProperty('z');
-      expect(state).toHaveProperty('rotation');
-      expect(state.rotation).toHaveProperty('x');
-      expect(state.rotation).toHaveProperty('y');
-      expect(state.rotation).toHaveProperty('z');
-      expect(state).toHaveProperty('controls');
-      expect(state.controls).toHaveProperty('throttle');
-      expect(state.controls).toHaveProperty('pitch');
-      expect(state.controls).toHaveProperty('roll');
-      expect(state.controls).toHaveProperty('yaw');
-      expect(state).toHaveProperty('currentStep');
-    });
-
-    // Stop the demo (mocked)
-    stopDemo();
-    expect(stopDemo).toHaveBeenCalled();
-  });
-
-  test('should respect the limit parameter', async () => {
-    // Setup mock for this test
-    const mockStates = Array(5).fill({
-      timestamp: Date.now(),
-      position: { x: '0.00', y: '10.00', z: '0.00' },
-      rotation: { x: '0.00', y: '0.00', z: '0.00' },
-      controls: { throttle: '0.50', pitch: '0.00', roll: '0.00', yaw: '0.00' },
-      currentStep: 'Hover'
-    });
-    
-    const limit = 3;
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ 
-          success: true, 
-          states: mockStates.slice(0, limit)
-        })
-      })
-    );
-    
-    // Start the demo (mocked)
-    startDemo();
-
-    const response = await fetch(`${API_BASE}/game-states?limit=${limit}`);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.states.length).toBeLessThanOrEqual(limit);
-
-    // Stop the demo (mocked)
-    stopDemo();
-  });
-
-  test('should handle invalid limit parameter gracefully', async () => {
-    // Setup mock for this test
-    const mockStates = Array(5).fill({
-      timestamp: Date.now(),
-      position: { x: '0.00', y: '10.00', z: '0.00' },
-      rotation: { x: '0.00', y: '0.00', z: '0.00' },
-      controls: { throttle: '0.50', pitch: '0.00', roll: '0.00', yaw: '0.00' },
-      currentStep: 'Hover'
-    });
-    
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ 
-          success: true, 
-          states: mockStates
-        })
-      })
-    );
-
-    const response = await fetch(`${API_BASE}/game-states?limit=invalid`);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(Array.isArray(data.states)).toBe(true);
-  });
-
-  test('should save game state through POST endpoint', async () => {
+  test('should save and retrieve game states', async () => {
     const testState = {
       timestamp: Date.now(),
       position: { x: '1.00', y: '2.00', z: '3.00' },
@@ -202,14 +34,7 @@ describe('Game State API Integration Tests', () => {
       currentStep: 'Test'
     };
 
-    // First mock for POST
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ success: true })
-      })
-    );
-
+    // Save state
     const postResponse = await fetch(`${API_BASE}/game-state`, {
       method: 'POST',
       headers: {
@@ -222,25 +47,58 @@ describe('Game State API Integration Tests', () => {
     expect(postResponse.status).toBe(200);
     expect(postData.success).toBe(true);
 
-    // Then mock for GET to verify
-    global.fetch = jest.fn(() => 
-      Promise.resolve({
-        status: 200,
-        json: () => Promise.resolve({ 
-          success: true, 
-          states: [testState]
-        })
-      })
-    );
-
-    // Verify the state was saved by retrieving it
+    // Retrieve state
     const getResponse = await fetch(`${API_BASE}/game-states?limit=1`);
     const getData = await getResponse.json();
     
     expect(getData.success).toBe(true);
     expect(getData.states.length).toBe(1);
-    expect(getData.states[0].position.x).toBe(testState.position.x);
-    expect(getData.states[0].position.y).toBe(testState.position.y);
-    expect(getData.states[0].position.z).toBe(testState.position.z);
+    
+    const savedState = getData.states[0];
+    expect(savedState.position.x).toBe(testState.position.x);
+    expect(savedState.position.y).toBe(testState.position.y);
+    expect(savedState.position.z).toBe(testState.position.z);
+    expect(savedState.rotation.x).toBe(testState.rotation.x);
+    expect(savedState.rotation.y).toBe(testState.rotation.y);
+    expect(savedState.rotation.z).toBe(testState.rotation.z);
+    expect(savedState.controls.throttle).toBe(testState.controls.throttle);
+    expect(savedState.currentStep).toBe(testState.currentStep);
+  });
+
+  test('should respect the limit parameter', async () => {
+    // Save multiple states
+    const states = Array(5).fill(null).map((_, i) => ({
+      timestamp: Date.now() + i,
+      position: { x: i.toString(), y: '0.00', z: '0.00' },
+      rotation: { x: '0.00', y: '0.00', z: '0.00' },
+      controls: { throttle: '0.50', pitch: '0.00', roll: '0.00', yaw: '0.00' },
+      currentStep: `Step ${i}`
+    }));
+
+    // Save all states
+    for (const state of states) {
+      await fetch(`${API_BASE}/game-state`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(state)
+      });
+    }
+
+    const limit = 3;
+    const response = await fetch(`${API_BASE}/game-states?limit=${limit}`);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.states.length).toBeLessThanOrEqual(limit);
+  });
+
+  test('should handle invalid limit parameter gracefully', async () => {
+    const response = await fetch(`${API_BASE}/game-states?limit=invalid`);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(Array.isArray(data.states)).toBe(true);
   });
 }); 
