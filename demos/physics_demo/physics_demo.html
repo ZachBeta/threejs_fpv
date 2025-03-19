@@ -23,10 +23,36 @@
             font-size: 14px;
             line-height: 1.5;
             z-index: 1000;
+            max-width: 400px;
+        }
+        #instructions.collapsed {
+            transform: none;
         }
         #instructions h2 {
             margin-top: 0;
+            margin-bottom: 10px;
             color: #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        #instructions h2 .toggle-btn {
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+        #instructions.collapsed h2 {
+            margin-bottom: 0;
+        }
+        #instructions-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            max-height: 1000px;
+            opacity: 1;
+        }
+        #instructions.collapsed #instructions-content {
+            max-height: 0;
+            opacity: 0;
         }
         .key {
             background: #333;
@@ -122,36 +148,41 @@
     </div>
     <div id="hover-indicator" title="Hover Mode">H</div>
     <div id="instructions">
-        <h2>Drone Physics Demo</h2>
-        <p>Controls:</p>
-        <ul>
-            <li>Left Stick (WASD or Gamepad Left Stick):
-                <ul>
-                    <li><span class="key">W</span>/<span class="key">S</span> or <span class="key">↑</span>/<span class="key">↓</span> - Throttle (up/down)</li>
-                    <li><span class="key">A</span>/<span class="key">D</span> or <span class="key">←</span>/<span class="key">→</span> - Yaw (rotate left/right)</li>
-                </ul>
-            </li>
-            <li>Right Stick (IJKL or Gamepad Right Stick):
-                <ul>
-                    <li><span class="key">I</span>/<span class="key">K</span> or <span class="key">↑</span>/<span class="key">↓</span> - Pitch (forward/backward)</li>
-                    <li><span class="key">J</span>/<span class="key">L</span> or <span class="key">←</span>/<span class="key">→</span> - Roll (left/right)</li>
-                </ul>
-            </li>
-            <li>Other Controls:
-                <ul>
-                    <li><span class="key">H</span> or <span class="key">R Button</span> - Toggle hover mode</li>
-                    <li><span class="key">R</span> or <span class="key">L Button</span> - Reset drone</li>
-                    <li><span class="key">ESC</span> - Menu</li>
-                </ul>
-            </li>
-        </ul>
-        <p>Features:</p>
-        <ul>
-            <li>Realistic physics with gravity and air resistance</li>
-            <li>Non-linear throttle response</li>
-            <li>Hover mode for stable flight</li>
-            <li>Animated propellers</li>
-        </ul>
+        <h2>
+            Drone Physics Demo
+            <span class="toggle-btn">▲</span>
+        </h2>
+        <div id="instructions-content">
+            <p>Controls:</p>
+            <ul>
+                <li>Left Stick (WASD or Gamepad Left Stick):
+                    <ul>
+                        <li><span class="key">W</span>/<span class="key">S</span> or <span class="key">↑</span>/<span class="key">↓</span> - Throttle (up/down)</li>
+                        <li><span class="key">A</span>/<span class="key">D</span> or <span class="key">←</span>/<span class="key">→</span> - Yaw (rotate left/right)</li>
+                    </ul>
+                </li>
+                <li>Right Stick (IJKL or Gamepad Right Stick):
+                    <ul>
+                        <li><span class="key">I</span>/<span class="key">K</span> or <span class="key">↑</span>/<span class="key">↓</span> - Pitch (forward/backward)</li>
+                        <li><span class="key">J</span>/<span class="key">L</span> or <span class="key">←</span>/<span class="key">→</span> - Roll (left/right)</li>
+                    </ul>
+                </li>
+                <li>Other Controls:
+                    <ul>
+                        <li><span class="key">H</span> or <span class="key">R Button</span> - Toggle hover mode</li>
+                        <li><span class="key">R</span> or <span class="key">L Button</span> - Reset drone</li>
+                        <li><span class="key">ESC</span> - Menu</li>
+                    </ul>
+                </li>
+            </ul>
+            <p>Features:</p>
+            <ul>
+                <li>Realistic physics with gravity and air resistance</li>
+                <li>Non-linear throttle response</li>
+                <li>Hover mode for stable flight</li>
+                <li>Animated propellers</li>
+            </ul>
+        </div>
     </div>
     <div id="menu">
         <h2>MENU</h2>
@@ -182,6 +213,31 @@
             closeMenuButton.addEventListener('click', () => {
                 toggleMenu();
             });
+            
+            // Instructions panel toggle
+            const instructionsPanel = document.getElementById('instructions');
+            const instructionsHeader = instructionsPanel.querySelector('h2');
+            const toggleBtn = instructionsHeader.querySelector('.toggle-btn');
+            
+            function updateToggleButton() {
+                if (instructionsPanel.classList.contains('collapsed')) {
+                    toggleBtn.textContent = '▼';
+                } else {
+                    toggleBtn.textContent = '▲';
+                }
+            }
+            
+            instructionsHeader.addEventListener('click', () => {
+                instructionsPanel.classList.toggle('collapsed');
+                updateToggleButton();
+                localStorage.setItem('physicsDemoInstructionsCollapsed', instructionsPanel.classList.contains('collapsed'));
+            });
+            
+            // Check if panel was previously collapsed
+            if (localStorage.getItem('physicsDemoInstructionsCollapsed') === 'true') {
+                instructionsPanel.classList.add('collapsed');
+                updateToggleButton();
+            }
         });
     </script>
 </body>
