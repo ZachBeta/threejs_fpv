@@ -66,6 +66,10 @@ export class DronePhysics {
     // Momentum tracking
     this.previousThrottle = 0;
     this.throttleChangeRate = 8.0;
+    
+    // Safety mode - when false, allows full acrobatic flight
+    this.safetyMode = true;
+    this.maxTiltAngle = Math.PI / 4; // 45 degrees maximum tilt when safety is enabled
   }
 
   updatePhysics(deltaTime) {
@@ -103,6 +107,13 @@ export class DronePhysics {
     // Update pitch and roll
     this.localRotation.x += this.pitch * this.tiltSpeed * deltaTime; // Pitch
     this.localRotation.z += this.roll * this.tiltSpeed * deltaTime; // Roll
+    
+    // Apply safety limits if enabled
+    if (this.safetyMode) {
+      // Limit pitch and roll angles
+      this.localRotation.x = Math.max(Math.min(this.localRotation.x, this.maxTiltAngle), -this.maxTiltAngle);
+      this.localRotation.z = Math.max(Math.min(this.localRotation.z, this.maxTiltAngle), -this.maxTiltAngle);
+    }
     
     // Apply angular damping
     this.localRotation.x *= this.angularDamping;
@@ -342,6 +353,19 @@ export class DronePhysics {
     console.log("Altitude hold disabled");
   }
 
+  toggleSafetyMode() {
+    this.safetyMode = !this.safetyMode;
+    return this.safetyMode;
+  }
+  
+  enableSafetyMode() {
+    this.safetyMode = true;
+  }
+  
+  disableSafetyMode() {
+    this.safetyMode = false;
+  }
+
   reset() {
     // Maintain scene reference
     const scene = this.scene;
@@ -360,6 +384,7 @@ export class DronePhysics {
     this.roll = 0;
     this.yaw = 0;
     this.altitudeHoldActive = false;
+    this.safetyMode = true; // Reset to safe mode by default
     
     // Restore scene reference
     this.scene = scene;

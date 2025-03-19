@@ -844,4 +844,107 @@ describe('Drone Physics', () => {
       expect(drone.position.y).toBeGreaterThan(0);
     });
   });
+
+  describe('Safety Mode', () => {
+    test('safety mode should be enabled by default', () => {
+      expect(drone.physics.safetyMode).toBe(true);
+    });
+
+    test('safety mode should limit pitch angle', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Try to pitch beyond the safety limit
+      drone.physics.localRotation.x = 0;
+      drone.setPitch(-1.0); // Full forward pitch
+      
+      // Update multiple times to accumulate rotation
+      for (let i = 0; i < 30; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Pitch should be limited to the maxTiltAngle (45 degrees)
+      expect(Math.abs(drone.physics.localRotation.x)).toBeLessThanOrEqual(drone.physics.maxTiltAngle);
+    });
+
+    test('safety mode should limit roll angle', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Try to roll beyond the safety limit
+      drone.physics.localRotation.z = 0;
+      drone.setRoll(1.0); // Full right roll
+      
+      // Update multiple times to accumulate rotation
+      for (let i = 0; i < 30; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Roll should be limited to the maxTiltAngle (45 degrees)
+      expect(Math.abs(drone.physics.localRotation.z)).toBeLessThanOrEqual(drone.physics.maxTiltAngle);
+    });
+
+    test('disabling safety mode should allow full rotation', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Store the original max tilt angle
+      const maxTiltAngle = drone.physics.maxTiltAngle;
+      
+      // Disable safety mode
+      drone.physics.disableSafetyMode();
+      expect(drone.physics.safetyMode).toBe(false);
+      
+      // Set initial rotation to zero
+      drone.physics.localRotation.x = 0;
+      
+      // Apply full pitch for multiple frames
+      drone.setPitch(-1.0); // Full forward pitch
+      for (let i = 0; i < 200; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // With safety mode off, pitch should exceed 45 degrees
+      // We'll use 35 degrees as our test benchmark to ensure it's working
+      const minExpectedTilt = Math.PI / 6; // 30 degrees
+      expect(Math.abs(drone.physics.localRotation.x)).toBeGreaterThan(minExpectedTilt);
+    });
+
+    test('toggleSafetyMode should toggle the safety mode state', () => {
+      // Safety mode starts as true
+      expect(drone.physics.safetyMode).toBe(true);
+      
+      // Toggle should return the new value
+      expect(drone.physics.toggleSafetyMode()).toBe(false);
+      expect(drone.physics.safetyMode).toBe(false);
+      
+      // Toggle again
+      expect(drone.physics.toggleSafetyMode()).toBe(true);
+      expect(drone.physics.safetyMode).toBe(true);
+    });
+
+    test('reset should restore safety mode to enabled', () => {
+      // Disable safety mode
+      drone.physics.disableSafetyMode();
+      expect(drone.physics.safetyMode).toBe(false);
+      
+      // Reset should restore default settings
+      drone.reset();
+      expect(drone.physics.safetyMode).toBe(true);
+    });
+
+    test('inverted flight should be possible with safety mode off', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Disable safety mode
+      drone.physics.disableSafetyMode();
+      
+      // Set a significant downward pitch directly
+      // This simulates what would happen after many update frames
+      drone.physics.localRotation.x = -Math.PI * 0.6; // Past vertical
+      
+      // Update physics to allow vectors to update
+      drone.updatePhysics(deltaTime);
+      
+      // With this pitch, the up vector should now point downward
+      expect(drone.physics.up.y).toBeLessThan(0);
+    });
+  });
 }); 

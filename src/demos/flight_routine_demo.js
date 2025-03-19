@@ -12,6 +12,8 @@ import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_
 import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
 import { FreefallRoutine } from '../flight_routines/freefall_routine.js';
 import { Controls } from '../controls.js';
+import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
+import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
 
 class FlightRoutineDemo {
   constructor() {
@@ -51,7 +53,24 @@ class FlightRoutineDemo {
       throttleTest: new ThrottleTestRoutine().steps,
       advancedManeuvers: new AdvancedManeuversRoutine().steps,
       yawTest: new YawTestRoutine().steps,
-      freefall: new FreefallRoutine().steps
+      freefall: new FreefallRoutine().steps,
+      yawRotation: new YawRotationRoutine().steps,
+      acrobatics: new AcrobaticsRoutine().steps
+    };
+    
+    // Store full routine objects for validation
+    this.routineObjects = {
+      basic: new BasicRoutine(),
+      circle: new CircleRoutine(),
+      figureEight: new FigureEightRoutine(),
+      orientationTest: new OrientationTestRoutine(),
+      physicsTest: new PhysicsTestRoutine(),
+      throttleTest: new ThrottleTestRoutine(),
+      advancedManeuvers: new AdvancedManeuversRoutine(),
+      yawTest: new YawTestRoutine(),
+      freefall: new FreefallRoutine(),
+      yawRotation: new YawRotationRoutine(),
+      acrobatics: new AcrobaticsRoutine()
     };
 
     // Set default routine
@@ -99,8 +118,17 @@ class FlightRoutineDemo {
     // Setup event listeners
     this.setupEventListeners();
     
+    // Initialize safety mode toggle with actual drone physics value
+    if (this.safeModeToggle && this.drone && this.drone.physics) {
+      this.safeModeToggle.checked = this.drone.physics.safetyMode;
+      console.log('Safety mode initialized to:', this.drone.physics.safetyMode);
+    }
+    
     // Initialize routine steps display
     this.updateRoutineStepsDisplay();
+    
+    // Check routine availability
+    this.updateRoutineAvailability();
     
     // Start animation loop
     this.animate();
@@ -118,13 +146,18 @@ class FlightRoutineDemo {
     // Get UI elements
     this.overlay = document.getElementById('overlay');
     this.routineSteps = document.querySelectorAll('.routine-step');
-    this.routineSelector = document.getElementById('routine-selector');
+    this.routineSelect = document.getElementById('routine-select');
+    this.startButton = document.getElementById('start-button');
+    this.stopButton = document.getElementById('stop-button');
+    this.pauseButton = document.getElementById('pause-button');
+    this.resumeButton = document.getElementById('resume-button');
+    this.safeModeToggle = document.getElementById('safe-mode-toggle');
     this.leftStickIndicator = document.querySelector('.stick-display[data-label="Left Stick"] .stick-indicator');
     this.rightStickIndicator = document.querySelector('.stick-display[data-label="Right Stick"] .stick-indicator');
     
     // Log any missing elements for debugging
     if (!this.overlay) console.warn('Overlay element not found');
-    if (!this.routineSelector) console.warn('Routine selector not found');
+    if (!this.routineSelect) console.warn('Routine selector not found');
     if (!this.leftStickIndicator) console.warn('Left stick indicator not found');
     if (!this.rightStickIndicator) console.warn('Right stick indicator not found');
   }
@@ -133,11 +166,14 @@ class FlightRoutineDemo {
     console.log('Setting up event listeners');
     
     // Setup routine selector
-    if (this.routineSelector) {
-      this.routineSelector.addEventListener('change', (e) => {
+    if (this.routineSelect) {
+      this.routineSelect.addEventListener('change', (e) => {
         this.activeRoutineType = e.target.value;
         this.routine = this.routines[this.activeRoutineType];
         this.updateRoutineStepsDisplay();
+        this.updateRoutineAvailability();
+        this.updateSafetyRequirements();
+        this.debugSafetyModeStatus();
       });
     }
 
@@ -176,6 +212,54 @@ class FlightRoutineDemo {
           console.log('Resuming simulation');
           this.resumeSimulation();
         }
+      });
+    }
+
+    // Toggle safety mode
+    this.safeModeToggle.addEventListener('change', () => {
+      if (this.safeModeToggle.checked) {
+        console.log('Enabling safety mode');
+        this.drone.physics.enableSafetyMode();
+      } else {
+        console.log('Disabling safety mode');
+        this.drone.physics.disableSafetyMode();
+      }
+      
+      // Log the actual safety mode state for debugging
+      console.log('Safety mode state:', this.drone.physics.safetyMode);
+      
+      // Update UI and check routine availability
+      this.updateRoutineAvailability();
+      this.updateSafetyRequirements();
+      this.debugSafetyModeStatus();
+    });
+    
+    // Add button event listeners
+    if (this.startButton) {
+      this.startButton.addEventListener('click', () => {
+        console.log('Start button clicked');
+        this.startRoutine();
+      });
+    }
+    
+    if (this.stopButton) {
+      this.stopButton.addEventListener('click', () => {
+        console.log('Stop button clicked');
+        this.stopRoutine();
+      });
+    }
+    
+    if (this.pauseButton) {
+      this.pauseButton.addEventListener('click', () => {
+        console.log('Pause button clicked');
+        this.pauseSimulation();
+      });
+    }
+    
+    if (this.resumeButton) {
+      this.resumeButton.addEventListener('click', () => {
+        console.log('Resume button clicked');
+        this.resumeSimulation();
       });
     }
   }
@@ -266,6 +350,37 @@ class FlightRoutineDemo {
           step.classList.remove('active');
         }
       });
+    }
+
+    // Update safety mode toggle
+    if (this.safeModeToggle) {
+      this.safeModeToggle.checked = this.drone.physics.safetyMode;
+      
+      // Update safety status text
+      const safetyStatus = document.getElementById('safety-status');
+      if (safetyStatus) {
+        const currentRoutine = this.routineObjects[this.activeRoutineType];
+        const requiresSafetyOff = currentRoutine && currentRoutine.requiresSafetyOff;
+        
+        if (this.drone.physics.safetyMode) {
+          safetyStatus.textContent = 'ON';
+          safetyStatus.style.color = '#00ff00';
+          
+          if (requiresSafetyOff) {
+            // When safety is on but routine requires it off
+            safetyStatus.textContent += ' (OFF needed)';
+            safetyStatus.style.color = '#ff9900';
+          }
+        } else {
+          safetyStatus.textContent = 'OFF';
+          safetyStatus.style.color = '#ff0000';
+          
+          if (requiresSafetyOff) {
+            // When safety is off and routine requires it off - show checkmark
+            safetyStatus.textContent += ' ✓';
+          }
+        }
+      }
     }
   }
 
@@ -424,6 +539,17 @@ class FlightRoutineDemo {
     this.stepStartTime = performance.now();
     this.logs = []; // Clear previous logs
     this.logger.enable(); // Enable logging
+
+    // Check if routine has requirements
+    const currentRoutine = this.routineObjects[this.activeRoutineType];
+    if (currentRoutine && currentRoutine.validateRequirements) {
+      const status = currentRoutine.validateRequirements(this.drone);
+      if (!status.canRun) {
+        console.warn(status.message);
+        return; // Don't start the routine
+      }
+    }
+
     this.applyStepControls(this.routine[this.currentStep]);
     this.updateUI();
   }
@@ -571,6 +697,98 @@ class FlightRoutineDemo {
     }
     return routine.steps;
   }
+
+  updateRoutineAvailability() {
+    // Check if current routine has requirements
+    const currentRoutine = this.routineObjects[this.activeRoutineType];
+    
+    if (currentRoutine && currentRoutine.validateRequirements) {
+      const status = currentRoutine.validateRequirements(this.drone);
+      
+      // Only disable the start button if requirements aren't met
+      if (this.startButton) {
+        this.startButton.disabled = !status.canRun;
+        
+        // Add clear visual indication to start button
+        if (!status.canRun) {
+          this.startButton.style.opacity = "0.5";
+          this.startButton.title = "Toggle safety mode to OFF to enable this routine";
+        } else {
+          this.startButton.style.opacity = "1";
+          this.startButton.title = "";
+        }
+      }
+      
+      // Remove warning if exists - we don't need it anymore
+      const warningMsg = document.getElementById('routine-warning');
+      if (warningMsg) {
+        warningMsg.remove();
+      }
+    } else {
+      // No requirements, make sure start button is enabled if it exists
+      if (this.startButton) {
+        this.startButton.disabled = false;
+        this.startButton.style.opacity = "1";
+        this.startButton.title = "";
+      }
+      
+      // Remove warning if exists
+      const warningMsg = document.getElementById('routine-warning');
+      if (warningMsg) {
+        warningMsg.remove();
+      }
+    }
+  }
+
+  // Add debug function for safety mode status
+  debugSafetyModeStatus() {
+    console.log('========= SAFETY MODE DEBUG =========');
+    console.log('UI toggle checked:', this.safeModeToggle ? this.safeModeToggle.checked : 'N/A');
+    console.log('Drone physics safety mode:', this.drone.physics.safetyMode);
+    console.log('Active routine:', this.activeRoutineType);
+    
+    const routine = this.routineObjects[this.activeRoutineType];
+    if (routine && routine.requiresSafetyOff) {
+      console.log('This routine requires safety off:', routine.requiresSafetyOff);
+      console.log('Validation result:', routine.validateRequirements(this.drone));
+    } else {
+      console.log('No safety mode requirements for this routine');
+    }
+    console.log('====================================');
+  }
+
+  // Function to update safety requirements notice
+  updateSafetyRequirements() {
+    const routineSelector = document.querySelector('.routine-selector');
+    if (!routineSelector) return;
+    
+    // Remove any existing notices
+    const existingNotice = document.getElementById('safety-notice');
+    if (existingNotice) {
+      existingNotice.remove();
+    }
+    
+    // Instead of adding a large warning, we'll just color the option in the dropdown
+    const routineOption = this.routineSelect?.querySelector(`option[value="${this.activeRoutineType}"]`);
+    if (routineOption) {
+      // Reset all options to default color first
+      Array.from(this.routineSelect.options).forEach(opt => {
+        opt.style.color = '';
+      });
+      
+      // Check if selected routine requires safety off
+      const routine = this.routineObjects[this.activeRoutineType];
+      if (routine && routine.requiresSafetyOff) {
+        if (this.drone.physics.safetyMode) {
+          // If safety is on but routine needs it off, colorize the option
+          routineOption.style.color = '#ff9900';
+        } else {
+          // If safety is already off, colorize green
+          routineOption.style.color = '#00ff00';
+        }
+      }
+    }
+  }
 }
 
 // Create demo instance
@@ -586,6 +804,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     if (demo) {
       demo.updateRoutineStepsDisplay();
+      demo.updateRoutineAvailability();
+      demo.updateSafetyRequirements();
     }
   }, 100);
 });

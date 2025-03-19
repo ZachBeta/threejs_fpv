@@ -7,6 +7,8 @@ import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js
 import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
 import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
 import { BasicSteps } from '../flight_routines/routine_steps.js';
+import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
+import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
 
 describe('Flight Routines', () => {
   // Helper function to validate basic step structure
@@ -300,6 +302,113 @@ describe('Flight Routines', () => {
 
       expect(quickChange.duration).toBe(500); // Quick changes should be 500ms
       expect(fallTest.duration).toBe(1000); // Fall test should be 1000ms
+    });
+  });
+
+  describe('YawRotationRoutine', () => {
+    let routine;
+
+    beforeEach(() => {
+      routine = new YawRotationRoutine();
+    });
+
+    test('should have valid structure', () => {
+      validateRoutine(routine);
+    });
+
+    test('should include 180 and 360 degree yaw steps', () => {
+      const stepNames = routine.steps.map(step => step.name);
+      expect(stepNames).toContain('Yaw 180° right');
+      expect(stepNames).toContain('Yaw 180° left');
+      expect(stepNames).toContain('Yaw 360° right');
+      expect(stepNames).toContain('Yaw 360° left');
+    });
+
+    test('should have appropriate durations for different rotations', () => {
+      const yaw180Right = routine.steps.find(step => step.name === 'Yaw 180° right');
+      const yaw360Right = routine.steps.find(step => step.name === 'Yaw 360° right');
+
+      // 360 should take longer than 180
+      expect(yaw360Right.duration).toBeGreaterThan(yaw180Right.duration);
+    });
+
+    test('should have correct yaw control values', () => {
+      const yaw180Right = routine.steps.find(step => step.name === 'Yaw 180° right');
+      const yaw180Left = routine.steps.find(step => step.name === 'Yaw 180° left');
+
+      // Right rotation should have negative yaw
+      expect(yaw180Right.controls.yaw).toBeLessThan(0);
+      // Left rotation should have positive yaw
+      expect(yaw180Left.controls.yaw).toBeGreaterThan(0);
+    });
+  });
+
+  describe('AcrobaticsRoutine', () => {
+    let routine;
+
+    beforeEach(() => {
+      routine = new AcrobaticsRoutine();
+    });
+
+    test('should have valid structure', () => {
+      validateRoutine(routine);
+    });
+
+    test('should require safety off mode', () => {
+      expect(routine.requiresSafetyOff).toBe(true);
+    });
+
+    test('should include barrel roll and loop maneuvers', () => {
+      const stepNames = routine.steps.map(step => step.name);
+      expect(stepNames).toContain('Barrel roll right');
+      expect(stepNames).toContain('Barrel roll left');
+      expect(stepNames).toContain('Forward loop');
+      expect(stepNames).toContain('Backward loop');
+    });
+
+    test('barrel rolls should coordinate roll and yaw', () => {
+      const barrelRollRight = routine.steps.find(step => step.name === 'Barrel roll right');
+      const barrelRollLeft = routine.steps.find(step => step.name === 'Barrel roll left');
+
+      // Barrel roll right should have positive roll and some yaw in the same direction
+      expect(barrelRollRight.controls.roll).toBeGreaterThan(0);
+      expect(barrelRollRight.controls.yaw).toBeGreaterThan(0);
+
+      // Barrel roll left should have negative roll and some yaw in the same direction
+      expect(barrelRollLeft.controls.roll).toBeLessThan(0);
+      expect(barrelRollLeft.controls.yaw).toBeLessThan(0);
+    });
+
+    test('loops should use maximum pitch and throttle', () => {
+      const forwardLoop = routine.steps.find(step => step.name === 'Forward loop');
+      const backwardLoop = routine.steps.find(step => step.name === 'Backward loop');
+
+      // Loops should use max throttle
+      expect(forwardLoop.controls.throttle).toBe(1.0);
+      expect(backwardLoop.controls.throttle).toBe(1.0);
+
+      // Forward loop uses full negative pitch
+      expect(forwardLoop.controls.pitch).toBe(-1.0);
+      // Backward loop uses full positive pitch
+      expect(backwardLoop.controls.pitch).toBe(1.0);
+    });
+
+    test('validateRequirements should check safety mode', () => {
+      const mockDroneWithSafety = {
+        physics: { safetyMode: true }
+      };
+      const mockDroneWithoutSafety = {
+        physics: { safetyMode: false }
+      };
+
+      // Should not allow routine with safety on
+      const resultWithSafety = routine.validateRequirements(mockDroneWithSafety);
+      expect(resultWithSafety.canRun).toBe(false);
+      expect(resultWithSafety.message).toContain("safety mode");
+
+      // Should allow routine with safety off
+      const resultWithoutSafety = routine.validateRequirements(mockDroneWithoutSafety);
+      expect(resultWithoutSafety.canRun).toBe(true);
     });
   });
 }); 

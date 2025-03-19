@@ -157,6 +157,76 @@
             font-family: monospace;
             margin-bottom: 10px;
         }
+        /* Safety mode toggle styles */
+        .safety-toggle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 18px;
+            margin-right: 8px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+            transition: .3s;
+            border-radius: 20px;
+        }
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 1px;
+            background-color: #00ff00;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: rgba(0, 255, 0, 0.6);
+        }
+        .toggle-switch input:not(:checked) + .toggle-slider {
+            background-color: rgba(255, 0, 0, 0.6);
+            border-color: #ff0000;
+        }
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(18px);
+        }
+        .toggle-label {
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        
+        .routine-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .routine-controls .menu-button {
+            margin: 0;
+            padding: 5px 10px;
+            font-size: 12px;
+            width: auto;
+        }
     </style>
 </head>
 <body>
@@ -166,20 +236,38 @@
     <div id="instructions">
         <h2>Flight Routine Demo</h2>
         <p id="server-status">Checking API connection...</p>
+        <div class="safety-toggle">
+            <label class="toggle-switch">
+                <input type="checkbox" id="safe-mode-toggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Safety Mode: <span id="safety-status">ON</span></span>
+        </div>
         <p>
             Routine Type: 
-            <select id="routine-selector">
+            <select id="routine-select">
                 <option value="basic">Basic</option>
                 <option value="orientationTest">Orientation Test</option>
                 <option value="physicsTest">Physics Test</option>
                 <option value="yawTest">Yaw Test</option>
+                <option value="yawRotation">Yaw Rotation (180/360°)</option>
                 <option value="circle">Circle</option>
                 <option value="advancedManeuvers">Advanced Maneuvers</option>
                 <option value="throttleTest">Throttle Test</option>
                 <option value="figureEight">Figure Eight</option>
                 <option value="freefall">Freefall Test</option>
+                <option value="acrobatics">Acrobatic Maneuvers</option>
             </select>
         </p>
+        <div class="routine-selector">
+            <!-- Warning message for routines that require safety off will appear here -->
+        </div>
+        <div class="routine-controls">
+            <button id="start-button" class="menu-button">Start</button>
+            <button id="stop-button" class="menu-button">Stop</button>
+            <button id="pause-button" class="menu-button">Pause</button>
+            <button id="resume-button" class="menu-button">Resume</button>
+        </div>
         <p>Controls:</p>
         <ul>
             <li><span class="key">Space</span> - Start/Stop routine</li>

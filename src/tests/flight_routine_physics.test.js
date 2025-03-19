@@ -8,6 +8,8 @@ import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_
 import { DroneModel } from '../models/drone_model.js';
 import { Map } from '../models/map.js';
 import * as THREE from 'three';
+import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
+import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
 
 describe('Flight Routine Physics', () => {
   let drone;
@@ -208,6 +210,116 @@ describe('Flight Routine Physics', () => {
       // Zero throttle should lose height
       simulatePhysics(zeroThrottle, 2.0);
       expect(drone.physics.position.y).toBeLessThan(maxHeight);
+    });
+  });
+
+  describe('YawRotationRoutine physics', () => {
+    let routine;
+
+    beforeEach(() => {
+      routine = new YawRotationRoutine();
+    });
+
+    test('180 degree yaw right should rotate drone approximately halfway around', () => {
+      const yaw180Step = routine.steps.find(step => 
+        step.name.includes("Yaw 180° right")
+      );
+      expect(yaw180Step).toBeDefined();
+      
+      // Initial heading is 0
+      expect(drone.physics.localRotation.y).toBe(0);
+      
+      // Simulate the 180 degree rotation
+      simulatePhysics(yaw180Step, yaw180Step.duration / 1000);
+      
+      // Should be approximately halfway around (negative PI)
+      expect(drone.physics.localRotation.y).toBeLessThan(-Math.PI / 2);
+      expect(drone.physics.localRotation.y).toBeGreaterThan(-Math.PI * 1.5);
+    });
+
+    test('360 degree yaw left should complete a full rotation', () => {
+      const yaw360Step = routine.steps.find(step => 
+        step.name.includes("Yaw 360° left")
+      );
+      expect(yaw360Step).toBeDefined();
+      
+      // Test the yaw direction rather than final position
+      const initialHeading = drone.physics.localRotation.y;
+      
+      // Simulate a portion of the rotation
+      simulatePhysics(yaw360Step, 0.5); // half a second
+      
+      // Should be rotating counterclockwise (positive direction)
+      const midwayHeading = drone.physics.localRotation.y;
+      expect(midwayHeading).toBeGreaterThan(initialHeading);
+    });
+  });
+
+  describe('AcrobaticsRoutine physics', () => {
+    let routine;
+
+    beforeEach(() => {
+      routine = new AcrobaticsRoutine();
+      // Disable safety mode for acrobatic routines
+      drone.physics.disableSafetyMode();
+    });
+
+    test('barrel roll right should complete a full roll', () => {
+      const barrelRollStep = routine.steps.find(step => 
+        step.name.includes("Barrel roll right")
+      );
+      expect(barrelRollStep).toBeDefined();
+      
+      // Track initial orientation
+      const initialRoll = drone.physics.localRotation.z;
+      
+      // Simulate a portion of the barrel roll
+      simulatePhysics(barrelRollStep, 0.5);
+      
+      // Verify the roll is happening in the right direction
+      // Right roll should have positive roll value
+      expect(drone.physics.localRotation.z).toBeGreaterThan(initialRoll);
+      
+      // Verify throttle is appropriate for the maneuver
+      expect(barrelRollStep.controls.throttle).toBeGreaterThan(0.5);
+    });
+
+    test('forward loop should rotate the drone vertically', () => {
+      const forwardLoopStep = routine.steps.find(step => 
+        step.name.includes("Forward loop")
+      );
+      expect(forwardLoopStep).toBeDefined();
+      
+      // Initial pitch should be 0
+      const initialPitch = drone.physics.localRotation.x;
+      
+      // Simulate the first part of the loop
+      simulatePhysics(forwardLoopStep, 0.5);
+      
+      // Forward loop should create a negative pitch (nose down)
+      expect(drone.physics.localRotation.x).toBeLessThan(initialPitch);
+      
+      // Verify maximum throttle is used for the loop
+      expect(forwardLoopStep.controls.throttle).toBe(1.0);
+      
+      // Verify full forward pitch is used
+      expect(forwardLoopStep.controls.pitch).toBe(-1.0);
+    });
+    
+    test('validateRequirements should prevent routine with safety on', () => {
+      // Re-enable safety mode
+      drone.physics.enableSafetyMode();
+      
+      // Validation should fail
+      const result = routine.validateRequirements(drone);
+      expect(result.canRun).toBe(false);
+      
+      // Disable safety mode
+      drone.physics.disableSafetyMode();
+      
+      // Validation should pass
+      const resultAfter = routine.validateRequirements(drone);
+      expect(resultAfter.canRun).toBe(true);
     });
   });
 }); 
