@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 
 export class DronePhysics {
-  constructor(scene = null) {
+  constructor(scene = null, startPosition = null) {
     // Store reference to scene for collision detection
     this.scene = scene;
     
-    // Position and movement
-    this.position = { x: 0, y: 51.0, z: 0 }; // Start above the higher landing pad at y=50
+    // Default start position if not provided
+    const defaultPosition = { x: 0, y: 51.0, z: 0 };
+    
+    // Position and movement - use provided start position or default
+    this.position = startPosition ? { ...startPosition } : { ...defaultPosition };
+    this.initialPosition = { ...this.position }; // Store initial position for reset
     this.velocity = { x: 0, y: 0, z: 0 };
     
     // Use THREE.js for quaternion math
@@ -342,7 +346,7 @@ export class DronePhysics {
     // Maintain scene reference
     const scene = this.scene;
     
-    this.position = { x: 0, y: 51.0, z: 0 }; // Start above the higher landing pad at y=50
+    this.position = { ...this.initialPosition }; // Reset to initial position
     this.velocity = { x: 0, y: 0, z: 0 };
     this.quaternion.set(0, 0, 0, 1);
     this.localRotation = { x: 0, y: 0, z: 0 };

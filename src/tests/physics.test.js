@@ -29,7 +29,7 @@ describe('Drone Physics', () => {
 
     // Create new drone instance
     drone = {
-      physics: new DronePhysics(),
+      physics: new DronePhysics(null, null),
       velocity: { x: 0, y: 0, z: 0 },
       position: { x: 0, y: 51.0, z: 0 },
       updatePhysics: function(deltaTime) {
@@ -50,7 +50,7 @@ describe('Drone Physics', () => {
         this.physics.setRoll(value);
       },
       reset: function() {
-        this.physics = new DronePhysics();
+        this.physics = new DronePhysics(null, null);
         this.velocity = { x: 0, y: 0, z: 0 };
         this.position = { x: 0, y: 51.0, z: 0 };
       }
@@ -765,7 +765,7 @@ describe('Drone Physics', () => {
 
   describe('Freefall Behavior', () => {
     test('drone should accelerate downward at 9.81 m/s² in freefall', () => {
-      const drone = new DronePhysics();
+      const drone = new DronePhysics(null, null);
       
       // Verify the initial position is correct
       expect(drone.position.y).toBe(51.0);
@@ -813,7 +813,7 @@ describe('Drone Physics', () => {
 
     test('drone should survive extreme crash from high altitude', () => {
       const deltaTime = 1/60; // Use precise deltaTime for consistent physics
-      const drone = new DronePhysics();
+      const drone = new DronePhysics(null, null);
       
       // Verify the initial position is correct
       expect(drone.position.y).toBe(51.0);

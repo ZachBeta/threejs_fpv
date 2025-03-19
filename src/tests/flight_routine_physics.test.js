@@ -6,15 +6,18 @@ import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
 import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js';
 import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
 import { DroneModel } from '../models/drone_model.js';
+import { Map } from '../models/map.js';
 import * as THREE from 'three';
 
 describe('Flight Routine Physics', () => {
   let drone;
   let scene;
+  let map;
 
   beforeEach(() => {
     scene = new THREE.Scene();
-    drone = new DroneModel(scene);
+    map = new Map(scene);
+    drone = new DroneModel(scene, map);
   });
 
   // Helper function to simulate physics for a given duration

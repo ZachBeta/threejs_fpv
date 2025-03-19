@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { DronePhysics } from '../drone_physics.js';
 import { GameStateApi } from '../game_state_api.js';
+import { Map } from '../models/map.js';
 
 class GameStateDemo {
   constructor() {
@@ -29,9 +30,15 @@ class GameStateDemo {
 
     // Initialize THREE.js objects
     this.initThreeJS();
+    
+    // Initialize map
+    this.map = new Map(this.scene);
+    
+    // Get start position from map
+    const startPosition = this.map.getLandingPadPosition();
 
-    // Initialize physics with THREE.js objects
-    this.physics = new DronePhysics();
+    // Initialize physics with THREE.js objects and start position
+    this.physics = new DronePhysics(this.scene, startPosition);
 
     // Start simulation loop
     this.simulate();

@@ -6,7 +6,8 @@ describe('Routine Log Analysis', () => {
 
   beforeEach(() => {
     // Create a new physics instance for reference
-    physics = new DronePhysics();
+    // No scene or start position needed for these tests
+    physics = new DronePhysics(null, null);
     logs = [];
   });
 

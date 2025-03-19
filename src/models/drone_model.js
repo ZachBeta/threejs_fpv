@@ -2,12 +2,21 @@ import * as THREE from 'three';
 import { DronePhysics } from '../drone_physics.js';
 
 export class DroneModel {
-  constructor(scene) {
+  constructor(scene, map = null) {
     // Store scene reference
     this.scene = scene;
+    
+    // Get start position from the map if provided
+    let startPosition = null;
+    if (map) {
+      startPosition = map.getLandingPadPosition();
+    }
 
-    // Initialize physics with a reference to the scene for collision detection
-    this.physics = new DronePhysics(scene);
+    // Initialize physics with a reference to the scene for collision detection and start position
+    this.physics = new DronePhysics(scene, startPosition);
+    
+    // Store the initial position for reset
+    this.initialPosition = { ...this.physics.position };
     
     // Create drone mesh
     this.createDroneMesh();
@@ -21,7 +30,9 @@ export class DroneModel {
     const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
     const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
-    this.droneMesh.position.y = 51.0; // Match the new higher initial height 
+    this.droneMesh.position.x = this.physics.position.x;
+    this.droneMesh.position.y = this.physics.position.y;
+    this.droneMesh.position.z = this.physics.position.z;
     this.droneMesh.castShadow = true;
     this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
 
@@ -134,7 +145,9 @@ export class DroneModel {
   reset() {
     this.physics.reset();
     // Reset drone mesh position and rotation
-    this.droneMesh.position.set(0, 51.0, 0); // Match the new higher initial height
+    this.droneMesh.position.x = this.physics.position.x;
+    this.droneMesh.position.y = this.physics.position.y; 
+    this.droneMesh.position.z = this.physics.position.z;
     this.droneMesh.rotation.set(0, Math.PI, 0);
   }
 

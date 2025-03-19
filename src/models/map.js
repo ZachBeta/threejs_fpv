@@ -149,6 +149,15 @@ export class Map {
     this.scene.add(this.landingPad);
   }
   
+  // Get the landing pad position (start position)
+  getLandingPadPosition() {
+    return {
+      x: this.landingPad.position.x,
+      y: this.landingPad.position.y + 1.0, // Add slight offset above the pad
+      z: this.landingPad.position.z
+    };
+  }
+  
   // Method to reset or update map state if needed
   reset() {
     // Currently no state to reset, but we can add functionality here if needed

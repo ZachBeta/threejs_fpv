@@ -26,7 +26,7 @@ class PhysicsDemo {
     this.map = new Map(this.scene);
 
     // Create drone using DroneModel
-    this.drone = new DroneModel(this.scene);
+    this.drone = new DroneModel(this.scene, this.map);
     
     // Set up camera position
     this.camera.position.set(0, 15, 15);

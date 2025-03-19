@@ -76,7 +76,7 @@ class FlightRoutineDemo {
     this.logInterval = 100; // Log every 100ms
 
     // Create drone using DroneModel
-    this.drone = new DroneModel(this.scene);
+    this.drone = new DroneModel(this.scene, this.map);
     
     // Set up camera position
     this.camera.position.set(0, 20, 20);

@@ -12,8 +12,11 @@ describe('Collision Physics Tests', () => {
     // Initialize the map with the landing pad
     map = new Map(scene);
     
-    // Create drone physics with scene for collision detection
-    drone = new DronePhysics(scene);
+    // Get start position from map
+    const startPosition = map.getLandingPadPosition();
+    
+    // Create drone physics with scene for collision detection and start position
+    drone = new DronePhysics(scene, startPosition);
   });
   
   test('high velocity drone should not fall through landing pad', () => {
