@@ -208,15 +208,15 @@ describe('Flight Routines', () => {
       validateRoutine(routine);
     });
 
-    test('should include 720-degree yaw test steps', () => {
+    test('should include yaw test steps', () => {
       const stepNames = routine.steps.map(step => step.name);
-      expect(stepNames).toContain('Yaw left 720°');
-      expect(stepNames).toContain('Yaw right 720°');
+      expect(stepNames).toContain('Yaw left for 5 seconds');
+      expect(stepNames).toContain('Yaw right for 5 seconds');
     });
 
     test('should have correct yaw durations and values', () => {
-      const yawLeft = routine.steps.find(step => step.name === 'Yaw left 720°');
-      const yawRight = routine.steps.find(step => step.name === 'Yaw right 720°');
+      const yawLeft = routine.steps.find(step => step.name === 'Yaw left for 5 seconds');
+      const yawRight = routine.steps.find(step => step.name === 'Yaw right for 5 seconds');
 
       expect(yawLeft.duration).toBe(5000);
       expect(yawRight.duration).toBe(5000);
@@ -225,7 +225,7 @@ describe('Flight Routines', () => {
     });
 
     test('should maintain hover between yaw movements', () => {
-      const yawSteps = ['Yaw left 720°', 'Yaw right 720°'];
+      const yawSteps = ['Yaw left for 5 seconds', 'Yaw right for 5 seconds'];
       yawSteps.forEach(movement => {
         const movementIndex = routine.steps.findIndex(step => step.name === movement);
         expect(movementIndex).toBeGreaterThan(0);

@@ -2,18 +2,18 @@ import { BasicSteps, createStep } from './routine_steps.js';
 
 export class YawTestRoutine {
   constructor() {
-    this.name = "720° Yaw Test";
-    this.description = "Tests full 720-degree yaw rotations in both directions";
+    this.name = "Yaw Test";
+    this.description = "Tests sustained yaw rotations in both directions";
 
     // Create yaw test steps
-    const yawLeft720 = createStep("Yaw left 720°", 5000, {
+    const yawLeft = createStep("Yaw left for 5 seconds", 5000, {
       throttle: 0.6,
       pitch: 0,
       roll: 0,
       yaw: 0.5  // Positive yaw for counterclockwise/left rotation
     });
 
-    const yawRight720 = createStep("Yaw right 720°", 5000, {
+    const yawRight = createStep("Yaw right for 5 seconds", 5000, {
       throttle: 0.6,
       pitch: 0,
       roll: 0,
@@ -23,9 +23,9 @@ export class YawTestRoutine {
     this.steps = [
       BasicSteps.takeOff,
       BasicSteps.hoverMaintainHeading,
-      yawLeft720,
+      yawLeft,
       BasicSteps.hoverMaintainHeading,
-      yawRight720,
+      yawRight,
       BasicSteps.hoverMaintainHeading,
       BasicSteps.land
     ];

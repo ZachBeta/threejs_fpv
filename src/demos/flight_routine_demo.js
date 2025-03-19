@@ -9,6 +9,7 @@ import { OrientationTestRoutine } from '../flight_routines/orientation_test_rout
 import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
 import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js';
 import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
+import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
 import { Controls } from '../controls.js';
 
 class RoutineDemo {
@@ -35,7 +36,8 @@ class RoutineDemo {
       orientationTest: new OrientationTestRoutine().steps,
       physicsTest: new PhysicsTestRoutine().steps,
       throttleTest: new ThrottleTestRoutine().steps,
-      advancedManeuvers: new AdvancedManeuversRoutine().steps
+      advancedManeuvers: new AdvancedManeuversRoutine().steps,
+      yawTest: new YawTestRoutine().steps
     };
 
     // Set default routine
@@ -476,6 +478,9 @@ class RoutineDemo {
         break;
       case 'advancedManeuvers':
         routine = new AdvancedManeuversRoutine();
+        break;
+      case 'yawTest':
+        routine = new YawTestRoutine();
         break;
       default:
         routine = new BasicRoutine();
