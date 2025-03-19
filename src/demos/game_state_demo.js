@@ -1,9 +1,10 @@
+import * as THREE from 'three';
 import { DronePhysics } from '../physics.js';
 import { GameStateApi } from '../game_state_api.js';
 
-class LoggingDemo {
+class GameStateDemo {
   constructor() {
-    console.log('Creating new LoggingDemo instance');
+    console.log('Creating new GameStateDemo instance');
     this.isRoutineRunning = false;
     this.currentStep = 0;
     this.stepStartTime = 0;
@@ -26,11 +27,20 @@ class LoggingDemo {
     this.lastLogTime = 0;
     this.logInterval = 100; // Log every 100ms
 
-    // Initialize physics
+    // Initialize THREE.js objects
+    this.initThreeJS();
+
+    // Initialize physics with THREE.js objects
     this.physics = new DronePhysics();
 
     // Start simulation loop
     this.simulate();
+  }
+
+  initThreeJS() {
+    // Create a dummy scene to ensure THREE.js is initialized
+    this.scene = new THREE.Scene();
+    this.rotation = { x: 0, y: 0, z: 0 };
   }
 
   simulate() {
@@ -100,29 +110,39 @@ class LoggingDemo {
   logState() {
     if (!this.isRoutineRunning) return;
 
-    const state = {
-      timestamp: performance.now(),
-      position: {
-        x: this.physics.position.x.toFixed(2),
-        y: this.physics.position.y.toFixed(2),
-        z: this.physics.position.z.toFixed(2)
-      },
-      rotation: {
-        x: this.physics.rotation.x.toFixed(2),
-        y: this.physics.rotation.y.toFixed(2),
-        z: this.physics.rotation.z.toFixed(2)
-      },
-      controls: {
-        throttle: this.physics.throttle.toFixed(2),
-        pitch: this.physics.pitch.toFixed(2),
-        roll: this.physics.roll.toFixed(2),
-        yaw: this.physics.yaw.toFixed(2)
-      },
-      currentStep: this.isRoutineRunning ? this.routine[this.currentStep].name : 'Idle'
-    };
+    try {
+      // Check if physics and its properties are properly initialized
+      if (!this.physics || !this.physics.position || !this.physics.localRotation) {
+        console.error('Physics object not properly initialized:', this.physics);
+        return;
+      }
 
-    this.logs.push(state);
-    this.logger.logGameState(state);
+      const state = {
+        timestamp: performance.now(),
+        position: {
+          x: this.physics.position.x.toFixed(2),
+          y: this.physics.position.y.toFixed(2),
+          z: this.physics.position.z.toFixed(2)
+        },
+        rotation: {
+          x: this.physics.localRotation.x.toFixed(2),
+          y: this.physics.localRotation.y.toFixed(2),
+          z: this.physics.localRotation.z.toFixed(2)
+        },
+        controls: {
+          throttle: this.physics.throttle.toFixed(2),
+          pitch: this.physics.pitch.toFixed(2),
+          roll: this.physics.roll.toFixed(2),
+          yaw: this.physics.yaw.toFixed(2)
+        },
+        currentStep: this.isRoutineRunning ? this.routine[this.currentStep].name : 'Idle'
+      };
+
+      this.logs.push(state);
+      this.logger.logGameState(state);
+    } catch (error) {
+      console.error('Error in logState:', error);
+    }
   }
 
   startRoutine() {
@@ -176,7 +196,7 @@ let demo = null;
 
 export function initializeDemo() {
     if (!demo) {
-        demo = new LoggingDemo();
+        demo = new GameStateDemo();
     }
     return demo;
 }
