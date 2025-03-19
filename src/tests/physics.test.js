@@ -646,26 +646,18 @@ describe('Drone Physics', () => {
       
       // Run for 1 second (60 frames)
       for (let i = 0; i < 60; i++) {
-        if (i % 10 === 0) {
-          console.log(`Frame ${i}: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
-        }
         drone.updatePhysics(deltaTime);
       }
       
       // After 1s, velocity should be approximately -9.81 m/s
-      console.log(`After 1s: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
       expect(drone.velocity.y).toBeCloseTo(-9.81, 1);
       
       // Run for another second
       for (let i = 60; i < 120; i++) {
-        if (i % 10 === 0) {
-          console.log(`Frame ${i}: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
-        }
         drone.updatePhysics(deltaTime);
       }
       
       // After 2s, velocity should be approximately -19.62 m/s
-      console.log(`After 2s: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
       expect(drone.velocity.y).toBeCloseTo(-19.62, 1);
       
       // Verify we haven't hit the ground yet
@@ -702,15 +694,7 @@ describe('Drone Physics', () => {
       while (drone.position.y > 0) {
         drone.updatePhysics(deltaTime);
         maxVelocity = Math.min(maxVelocity, drone.velocity.y); // Track max negative velocity
-        
-        // Log every 1000m of descent
-        if (Math.floor(drone.position.y) % 1000 === 0) {
-          console.log(`Altitude: ${Math.floor(drone.position.y)}m, Velocity: ${drone.velocity.y.toFixed(2)} m/s`);
-        }
       }
-      
-      console.log(`Maximum velocity reached: ${maxVelocity.toFixed(2)} m/s`);
-      console.log(`Final position: ${drone.position.y}, Final velocity: ${drone.velocity.y}`);
       
       // Verify final state
       expect(drone.position.y).toBe(0); // Should stop exactly at ground
