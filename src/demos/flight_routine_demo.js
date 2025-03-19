@@ -15,6 +15,7 @@ import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
 import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
 import { YawTricksRoutine } from '../flight_routines/yaw_tricks_routine.js';
 import { BackflipRoutine } from '../flight_routines/backflip_routine.js';
+import { ColumnCircleRoutine } from '../flight_routines/column_circle_routine.js';
 import { StateRecorder } from '../utils/state_recorder.js';
 import RecordingManager from '../utils/RecordingManager.js';
 
@@ -63,7 +64,8 @@ class FlightRoutineDemo {
       yawRotation: new YawRotationRoutine(),
       acrobatics: new AcrobaticsRoutine(),
       yawTricks: new YawTricksRoutine(),
-      backflip: new BackflipRoutine()
+      backflip: new BackflipRoutine(),
+      columnCircle: new ColumnCircleRoutine()
     };
     
     // Initialize available routines steps
@@ -79,11 +81,12 @@ class FlightRoutineDemo {
       yawRotation: this.routineObjects.yawRotation.steps,
       acrobatics: this.routineObjects.acrobatics.steps,
       yawTricks: this.routineObjects.yawTricks.steps,
-      backflip: this.routineObjects.backflip.steps
+      backflip: this.routineObjects.backflip.steps,
+      columnCircle: this.routineObjects.columnCircle.steps
     };
 
-    // Set default routine to backflip
-    this.activeRoutineType = 'backflip';
+    // Set default routine to column circle
+    this.activeRoutineType = 'columnCircle';
     this.routine = this.routines[this.activeRoutineType];
 
     // Initialize Three.js scene

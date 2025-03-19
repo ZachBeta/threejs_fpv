@@ -46,7 +46,7 @@ export class DronePhysics {
     this.yawDamping = 0.92; // New parameter for yaw momentum
     this.airResistance = 0.05;
     this.angularDamping = 0.95;
-    this.tiltForce = 5.0;
+    this.tiltForce = 15.0; // Increased from 5.0 to make pitch/roll more responsive
     this.horizontalDrag = 0.02;
     this.verticalDrag = 0.05;
     this.mass = 0.5;
@@ -205,7 +205,8 @@ export class DronePhysics {
       }
       
       // Apply thrust in the up direction
-      const thrustForce = throttleResponse * this.throttleAcceleration;
+      const gravityCompensation = this.gravity * 2.0; // Increase compensation factor to 2.0 (was 1.2)
+      const thrustForce = (throttleResponse * this.throttleAcceleration) + gravityCompensation;
       
       // Add velocity in the up direction
       this.velocity.x += this.up.x * thrustForce * deltaTime;
