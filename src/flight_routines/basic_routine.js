@@ -9,29 +9,25 @@ export class BasicRoutine {
     const moveForward = createStep("Forward", 2000, {
       throttle: 0.5,
       pitch: -0.5,
-      roll: 0,
-      yaw: 0
+      roll: 0
     });
 
     const moveBackward = createStep("Backward", 2000, {
       throttle: 0.5,
       pitch: 0.5,
-      roll: 0,
-      yaw: 0
+      roll: 0
     });
 
     const moveLeft = createStep("Left", 2000, {
       throttle: 0.5,
       pitch: 0,
-      roll: -0.5,
-      yaw: 0
+      roll: -0.5
     });
 
     const moveRight = createStep("Right", 2000, {
       throttle: 0.5,
       pitch: 0,
-      roll: 0.5,
-      yaw: 0
+      roll: 0.5
     });
 
     const rotateLeft = createStep("Rotate Left", 2000, {

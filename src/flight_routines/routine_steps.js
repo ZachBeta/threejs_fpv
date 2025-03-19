@@ -8,7 +8,7 @@ export const BasicSteps = {
       throttle: 1.0,
       pitch: 0,
       roll: 0,
-      yaw: 0
+      yaw: null  // maintain heading during takeoff
     }
   },
 
@@ -19,7 +19,7 @@ export const BasicSteps = {
       throttle: 0.6,
       pitch: 0,
       roll: 0,
-      yaw: 0
+      yaw: null  // maintain heading during hover
     }
   },
 
@@ -42,7 +42,7 @@ export const BasicSteps = {
       throttle: 0,
       pitch: 0,
       roll: 0,
-      yaw: 0
+      yaw: 0  // reset yaw when landing
     }
   }
 };
@@ -102,7 +102,7 @@ export function createStep(name, duration, controls) {
       throttle: controls.throttle ?? 0,
       pitch: controls.pitch ?? 0,
       roll: controls.roll ?? 0,
-      yaw: controls.yaw ?? 0
+      yaw: controls.yaw ?? null  // Default to maintaining heading
     }
   };
 }

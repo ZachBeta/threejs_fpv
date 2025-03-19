@@ -24,8 +24,7 @@ export class CircleRoutine {
     const hoverHigh = createStep("Hover at circle height", 1000, {
       throttle: 0.7,
       pitch: 0,
-      roll: 0,
-      yaw: 0
+      roll: 0
     });
 
     this.steps = [
