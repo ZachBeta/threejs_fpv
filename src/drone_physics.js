@@ -104,20 +104,36 @@ export class DronePhysics {
     // Apply yaw rotation with momentum
     this.localRotation.y += this.angularVelocity.y * deltaTime;
     
-    // Update pitch and roll
-    this.localRotation.x += this.pitch * this.tiltSpeed * deltaTime; // Pitch
-    this.localRotation.z += this.roll * this.tiltSpeed * deltaTime; // Roll
+    // Calculate tilt speed - use faster tilting when safety is off
+    const currentTiltSpeed = this.safetyMode ? this.tiltSpeed : this.tiltSpeed * 2.0;
+    
+    // Update pitch and roll with appropriate speed
+    this.localRotation.x += this.pitch * currentTiltSpeed * deltaTime; // Pitch
+    this.localRotation.z += this.roll * currentTiltSpeed * deltaTime; // Roll
     
     // Apply safety limits if enabled
     if (this.safetyMode) {
       // Limit pitch and roll angles
       this.localRotation.x = Math.max(Math.min(this.localRotation.x, this.maxTiltAngle), -this.maxTiltAngle);
       this.localRotation.z = Math.max(Math.min(this.localRotation.z, this.maxTiltAngle), -this.maxTiltAngle);
+      
+      // Standard angular damping for safety mode
+      this.localRotation.x *= this.angularDamping;
+      this.localRotation.z *= this.angularDamping;
+    } else {
+      // When safety mode is off, allow full rotation but keep it within a reasonable range
+      // This normalizes angles to stay within -π to π range to avoid numerical issues
+      while (this.localRotation.x > Math.PI) this.localRotation.x -= Math.PI * 2;
+      while (this.localRotation.x < -Math.PI) this.localRotation.x += Math.PI * 2;
+      
+      while (this.localRotation.z > Math.PI) this.localRotation.z -= Math.PI * 2;
+      while (this.localRotation.z < -Math.PI) this.localRotation.z += Math.PI * 2;
+      
+      // Use lower angular damping in acrobatic mode for more responsive feel
+      const acrobaticDamping = 0.98; // Higher value = less damping
+      this.localRotation.x *= acrobaticDamping;
+      this.localRotation.z *= acrobaticDamping;
     }
-    
-    // Apply angular damping
-    this.localRotation.x *= this.angularDamping;
-    this.localRotation.z *= this.angularDamping;
     
     // Update rotation euler with current local rotation
     this.rotationEuler.set(
@@ -141,8 +157,21 @@ export class DronePhysics {
                            this.throttleChangeRate * deltaTime;
     
     if (this.previousThrottle > 0) {
+      // Calculate throttle response
+      let throttleResponse = Math.pow(this.previousThrottle, 1.5);
+      
+      // In acrobatic mode, adjust throttle response based on orientation
+      if (!this.safetyMode) {
+        // Scale throttle based on up vector orientation
+        // When upside down (up.y < 0), reduce effectiveness of throttle slightly
+        const upOrientation = this.up.y; // Will be between -1 (inverted) and 1 (normal)
+        
+        // Make full inversion less effective (70% thrust when fully inverted)
+        const orientationFactor = 0.7 + 0.3 * ((upOrientation + 1) / 2);
+        throttleResponse *= orientationFactor;
+      }
+      
       // Apply thrust in the up direction
-      const throttleResponse = Math.pow(this.previousThrottle, 1.5);
       const thrustForce = throttleResponse * this.throttleAcceleration;
       
       // Add velocity in the up direction
@@ -178,6 +207,27 @@ export class DronePhysics {
     this.velocity.x += this.right.x * rollForce * deltaTime;
     this.velocity.y += this.right.y * rollForce * deltaTime;
     this.velocity.z += this.right.z * rollForce * deltaTime;
+    
+    // In acrobatic mode, add additional physics handling for extreme maneuvers
+    if (!this.safetyMode) {
+      // Calculate how inverted the drone is (-1 to 1, where -1 is fully inverted)
+      const invertedFactor = this.up.y;  // This will be negative when upside down
+      
+      // Add slight auto-leveling force when close to inverted to prevent "floaty" behavior
+      // Only apply when not actively inputting roll/pitch controls
+      if (Math.abs(this.pitch) < 0.1 && Math.abs(this.roll) < 0.1) {
+        const autoLevelStrength = 0.8 * this.previousThrottle;
+        
+        // When significantly inverted, add a gentle force to help roll and recovery
+        if (invertedFactor < 0) {
+          // Apply a small force in the correct direction to help level out
+          const correctionForce = autoLevelStrength * invertedFactor * deltaTime;
+          this.velocity.x += this.up.x * correctionForce;
+          this.velocity.y += this.up.y * correctionForce;
+          this.velocity.z += this.up.z * correctionForce;
+        }
+      }
+    }
   }
 
   applyAirResistance(deltaTime) {

@@ -14,9 +14,10 @@ import { FreefallRoutine } from '../flight_routines/freefall_routine.js';
 import { Controls } from '../controls.js';
 import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
 import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
+import { YawTricksRoutine } from '../flight_routines/yaw_tricks_routine.js';
 
 class FlightRoutineDemo {
-  constructor() {
+  constructor(droneConfig) {
     console.log('Creating new FlightRoutineDemo instance');
     this.initializeBasics();
     
@@ -43,22 +44,7 @@ class FlightRoutineDemo {
     // Initialize controls
     this.controls = new Controls();
     
-    // Initialize available routines
-    this.routines = {
-      basic: new BasicRoutine().steps,
-      circle: new CircleRoutine().steps,
-      figureEight: new FigureEightRoutine().steps,
-      orientationTest: new OrientationTestRoutine().steps,
-      physicsTest: new PhysicsTestRoutine().steps,
-      throttleTest: new ThrottleTestRoutine().steps,
-      advancedManeuvers: new AdvancedManeuversRoutine().steps,
-      yawTest: new YawTestRoutine().steps,
-      freefall: new FreefallRoutine().steps,
-      yawRotation: new YawRotationRoutine().steps,
-      acrobatics: new AcrobaticsRoutine().steps
-    };
-    
-    // Store full routine objects for validation
+    // Initialize routine objects - store complete routine objects
     this.routineObjects = {
       basic: new BasicRoutine(),
       circle: new CircleRoutine(),
@@ -70,11 +56,28 @@ class FlightRoutineDemo {
       yawTest: new YawTestRoutine(),
       freefall: new FreefallRoutine(),
       yawRotation: new YawRotationRoutine(),
-      acrobatics: new AcrobaticsRoutine()
+      acrobatics: new AcrobaticsRoutine(),
+      yawTricks: new YawTricksRoutine()
+    };
+    
+    // Initialize available routines steps
+    this.routines = {
+      basic: this.routineObjects.basic.steps,
+      circle: this.routineObjects.circle.steps,
+      figureEight: this.routineObjects.figureEight.steps,
+      orientationTest: this.routineObjects.orientationTest.steps,
+      physicsTest: this.routineObjects.physicsTest.steps,
+      throttleTest: this.routineObjects.throttleTest.steps,
+      advancedManeuvers: this.routineObjects.advancedManeuvers.steps,
+      yawTest: this.routineObjects.yawTest.steps,
+      freefall: this.routineObjects.freefall.steps,
+      yawRotation: this.routineObjects.yawRotation.steps,
+      acrobatics: this.routineObjects.acrobatics.steps,
+      yawTricks: this.routineObjects.yawTricks.steps
     };
 
-    // Set default routine
-    this.activeRoutineType = 'orientationTest';
+    // Set default routine to acrobatics
+    this.activeRoutineType = 'acrobatics';
     this.routine = this.routines[this.activeRoutineType];
 
     // Initialize Three.js scene
@@ -97,6 +100,9 @@ class FlightRoutineDemo {
 
     // Create drone using DroneModel
     this.drone = new DroneModel(this.scene, this.map);
+    
+    // Disable safety mode by default to allow acrobatics
+    this.drone.physics.disableSafetyMode();
     
     // Set up camera position
     this.camera.position.set(0, 20, 20);
@@ -122,6 +128,13 @@ class FlightRoutineDemo {
     if (this.safeModeToggle && this.drone && this.drone.physics) {
       this.safeModeToggle.checked = this.drone.physics.safetyMode;
       console.log('Safety mode initialized to:', this.drone.physics.safetyMode);
+      
+      // Update the safety status text color to match the current state
+      const safetyStatus = document.getElementById('safety-status');
+      if (safetyStatus) {
+        safetyStatus.textContent = this.drone.physics.safetyMode ? 'ON' : 'OFF';
+        safetyStatus.style.color = this.drone.physics.safetyMode ? '#00ff00' : '#ff0000';
+      }
     }
     
     // Initialize routine steps display
@@ -228,6 +241,13 @@ class FlightRoutineDemo {
       // Log the actual safety mode state for debugging
       console.log('Safety mode state:', this.drone.physics.safetyMode);
       
+      // Update the safety status text to match the current state
+      const safetyStatus = document.getElementById('safety-status');
+      if (safetyStatus) {
+        safetyStatus.textContent = this.drone.physics.safetyMode ? 'ON' : 'OFF';
+        safetyStatus.style.color = this.drone.physics.safetyMode ? '#00ff00' : '#ff0000';
+      }
+      
       // Update UI and check routine availability
       this.updateRoutineAvailability();
       this.updateSafetyRequirements();
@@ -281,12 +301,23 @@ class FlightRoutineDemo {
       const stepElement = document.createElement('div');
       stepElement.className = 'routine-step';
       stepElement.textContent = `${index + 1}. ${step.name}`;
+      
+      // Highlight the active step if we're running a routine
+      if (this.isRoutineRunning && index === this.currentStep) {
+        stepElement.classList.add('active');
+      }
+      
       stepsContainer.appendChild(stepElement);
     });
     
     // Update routineSteps reference
     this.routineSteps = document.querySelectorAll('.routine-step');
     console.log(`Created ${this.routineSteps.length} routine step elements`);
+    
+    // If we're running a routine, scroll to the active step
+    if (this.isRoutineRunning && this.currentStep >= 0 && this.currentStep < this.routineSteps.length) {
+      this.scrollToActiveStep(this.routineSteps[this.currentStep]);
+    }
   }
 
   onWindowResize() {
@@ -343,13 +374,18 @@ class FlightRoutineDemo {
     if (this.routine) {
       const stepIndex = this.currentStep;
       const steps = document.querySelectorAll('.routine-step');
-      steps.forEach((step, index) => {
-        if (index === stepIndex) {
-          step.classList.add('active');
-        } else {
-          step.classList.remove('active');
-        }
-      });
+      
+      // Deactivate all steps first
+      steps.forEach(step => step.classList.remove('active'));
+      
+      // Activate current step if it exists
+      if (stepIndex >= 0 && stepIndex < steps.length) {
+        const activeStep = steps[stepIndex];
+        activeStep.classList.add('active');
+        
+        // Scroll to active step
+        this.scrollToActiveStep(activeStep);
+      }
     }
 
     // Update safety mode toggle
@@ -381,6 +417,28 @@ class FlightRoutineDemo {
           }
         }
       }
+    }
+  }
+
+  // Helper method to scroll to the active step
+  scrollToActiveStep(activeStepElement) {
+    const stepsContainer = document.getElementById('routine-steps');
+    if (!stepsContainer || !activeStepElement) return;
+    
+    // Calculate position to scroll to
+    const containerRect = stepsContainer.getBoundingClientRect();
+    const activeRect = activeStepElement.getBoundingClientRect();
+    
+    // Check if the active element is outside the visible area
+    const isAbove = activeRect.top < containerRect.top;
+    const isBelow = activeRect.bottom > containerRect.bottom;
+    
+    if (isAbove || isBelow) {
+      // Scroll with smooth animation
+      activeStepElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest'
+      });
     }
   }
 
@@ -562,6 +620,21 @@ class FlightRoutineDemo {
     this.setPitch(controls.pitch);
     this.setRoll(controls.roll);
     this.setYaw(controls.yaw);
+    
+    // Update UI to highlight the current step
+    const steps = document.querySelectorAll('.routine-step');
+    
+    // Deactivate all steps first
+    steps.forEach(step => step.classList.remove('active'));
+    
+    // Activate current step
+    if (this.currentStep >= 0 && this.currentStep < steps.length) {
+      const activeStep = steps[this.currentStep];
+      activeStep.classList.add('active');
+      
+      // Scroll to the active step immediately
+      this.scrollToActiveStep(activeStep);
+    }
   }
 
   stopRoutine() {
@@ -691,6 +764,15 @@ class FlightRoutineDemo {
         break;
       case 'freefall':
         routine = new FreefallRoutine();
+        break;
+      case 'yawRotation':
+        routine = new YawRotationRoutine();
+        break;
+      case 'acrobatics':
+        routine = new AcrobaticsRoutine();
+        break;
+      case 'yawTricks':
+        routine = new YawTricksRoutine();
         break;
       default:
         routine = new BasicRoutine();

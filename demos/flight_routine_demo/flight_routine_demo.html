@@ -227,6 +227,39 @@
             font-size: 12px;
             width: auto;
         }
+        #routine-steps {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            padding: 5px;
+            border-radius: 3px;
+            scrollbar-width: thin;
+            scrollbar-color: #00ff00 rgba(0, 0, 0, 0.5);
+        }
+        
+        #routine-steps::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        #routine-steps::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+        }
+        
+        #routine-steps::-webkit-scrollbar-thumb {
+            background-color: #00ff00;
+            border-radius: 3px;
+        }
+        
+        .routine-step {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .routine-step.active {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
     </style>
 </head>
 <body>
@@ -238,10 +271,10 @@
         <p id="server-status">Checking API connection...</p>
         <div class="safety-toggle">
             <label class="toggle-switch">
-                <input type="checkbox" id="safe-mode-toggle" checked>
+                <input type="checkbox" id="safe-mode-toggle">
                 <span class="toggle-slider"></span>
             </label>
-            <span class="toggle-label">Safety Mode: <span id="safety-status">ON</span></span>
+            <span class="toggle-label">Safety Mode: <span id="safety-status">OFF</span></span>
         </div>
         <p>
             Routine Type: 
@@ -251,12 +284,13 @@
                 <option value="physicsTest">Physics Test</option>
                 <option value="yawTest">Yaw Test</option>
                 <option value="yawRotation">Yaw Rotation (180/360°)</option>
+                <option value="yawTricks">Yaw Tricks</option>
                 <option value="circle">Circle</option>
                 <option value="advancedManeuvers">Advanced Maneuvers</option>
                 <option value="throttleTest">Throttle Test</option>
                 <option value="figureEight">Figure Eight</option>
                 <option value="freefall">Freefall Test</option>
-                <option value="acrobatics">Acrobatic Maneuvers</option>
+                <option value="acrobatics" selected>Acrobatic Maneuvers</option>
             </select>
         </p>
         <div class="routine-selector">
