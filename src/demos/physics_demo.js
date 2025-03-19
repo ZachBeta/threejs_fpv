@@ -203,6 +203,8 @@ class PhysicsDemo {
 
   animate() {
     requestAnimationFrame(() => this.animate());
+    
+    const deltaTime = 0.016; // Assuming 60fps
 
     // Update gamepad state
     this.controls.updateGamepadState();
@@ -212,7 +214,10 @@ class PhysicsDemo {
     this.updatePhysicsFromState();
 
     // Update drone
-    this.drone.update(0.016); // Assuming 60fps
+    this.drone.update(deltaTime);
+    
+    // Update map elements
+    this.map.update(deltaTime);
 
     // Update camera to follow drone
     const offsetY = 15; // Height above drone

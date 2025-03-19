@@ -120,7 +120,9 @@ export class Map {
     const columnGeometry = new THREE.CylinderGeometry(0.5, 0.5, 50, 16);
     const columnMaterial = new THREE.MeshStandardMaterial({ 
       color: 0x888888,
-      roughness: 0.7
+      roughness: 0.7,
+      transparent: true,
+      opacity: 0.3
     });
     const column = new THREE.Mesh(columnGeometry, columnMaterial);
     column.position.y = 25.0; // Half height to place bottom at ground level
@@ -158,8 +160,22 @@ export class Map {
     };
   }
   
+  // Get the targeting column position
+  getTargetPosition() {
+    return {
+      x: 0,
+      y: 50,
+      z: 0
+    };
+  }
+  
+  // Update method to animate map elements
+  update(deltaTime) {
+    // Remove spinner animation since it no longer exists
+  }
+  
   // Method to reset or update map state if needed
   reset() {
-    // Currently no state to reset, but we can add functionality here if needed
+    // Remove spinner reset since it no longer exists
   }
 } 

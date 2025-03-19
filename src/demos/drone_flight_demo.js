@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Map } from '../models/map.js';
 
 // Create diagnostic overlay
 const overlay = document.createElement('div');
@@ -72,7 +73,6 @@ document.body.appendChild(controllerDisplay);
 
 // Create scene
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB); // Sky blue background
 
 // Create camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -83,6 +83,9 @@ camera.lookAt(0, 5, 0);
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+
+// Initialize map
+const map = new Map(scene);
 
 // Create a large ground plane
 const groundGeometry = new THREE.PlaneGeometry(1000, 1000);

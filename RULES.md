@@ -4,6 +4,7 @@ Simple guidelines for working with this project.
 
 ## Manual overrides
 * NEVER DELETE INBOX.md - it's SACRED
+* LEAVE drone_flight_demo.js app ALONE - it's legacy
 * It is also untracked intentionally leave it alone
 * prefer realitic tests over mocked tests
 * cat any output from git to avoid view waiting for user input
