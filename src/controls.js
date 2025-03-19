@@ -112,12 +112,13 @@ export class Controls {
     Object.assign(this.state.controls, controls);
 
     // Handle button presses
-    if (gamepad.buttons[buttonMapping.reset]?.pressed) {
+    if (gamepad.buttons[buttonMapping.reset]?.pressed && !this._lastResetState) {
       this.reset();
     }
     if (gamepad.buttons[buttonMapping.hover]?.pressed && !this._lastHoverState) {
       this.toggleHoverMode();
     }
+    this._lastResetState = gamepad.buttons[buttonMapping.reset]?.pressed;
     this._lastHoverState = gamepad.buttons[buttonMapping.hover]?.pressed;
   }
 

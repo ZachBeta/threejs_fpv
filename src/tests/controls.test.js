@@ -294,6 +294,74 @@ describe('Controls', () => {
     });
   });
 
+  describe('Gamepad Button Controls', () => {
+    beforeEach(() => {
+      // Connect a mock gamepad
+      const mockGamepad = {
+        id: 'Test Controller',
+        index: 0,
+        axes: [0, 0, 0, 0],
+        buttons: Array(16).fill({ pressed: false })
+      };
+      gamepadConnectHandlers[0]({ gamepad: mockGamepad });
+    });
+
+    test('L button (button 4) should reset controls', () => {
+      // First set some non-zero controls
+      controls.setThrottle(1.0);
+      controls.setPitch(0.5);
+      controls.setYaw(-0.3);
+      controls.setRoll(0.7);
+      
+      // Create gamepad state with L button pressed
+      const mockGamepad = {
+        axes: [0, 0, 0, 0],
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      mockGamepad.buttons[4] = { pressed: true }; // L button pressed
+      
+      controls.state.gamepad = mockGamepad;
+      controls.handleGamepadInput();
+      
+      // Verify all controls are reset to zero
+      const state = controls.getControls();
+      expect(state.throttle).toBe(0);
+      expect(state.pitch).toBe(0);
+      expect(state.yaw).toBe(0);
+      expect(state.roll).toBe(0);
+      expect(state.hover).toBe(false);
+    });
+
+    test('R button (button 5) should toggle hover mode', () => {
+      // Create gamepad state with R button pressed
+      const mockGamepad = {
+        axes: [0, 0, 0, 0],
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      mockGamepad.buttons[5] = { pressed: true }; // R button pressed
+      
+      // Initial state
+      let state = controls.getControls();
+      expect(state.hover).toBe(false);
+      
+      // Press R button
+      controls.state.gamepad = mockGamepad;
+      controls.handleGamepadInput();
+      state = controls.getControls();
+      expect(state.hover).toBe(true);
+      
+      // Release and press R button again
+      mockGamepad.buttons[5] = { pressed: false };
+      controls.handleGamepadInput();
+      mockGamepad.buttons[5] = { pressed: true };
+      controls.handleGamepadInput();
+      state = controls.getControls();
+      expect(state.hover).toBe(false);
+    });
+  });
+
   describe('Browser Input Flow', () => {
     let mockPhysicsDemo;
     

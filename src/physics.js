@@ -46,7 +46,15 @@ export class DronePhysics {
     // Hover mode
     this.hoverMode = false;
     this.hoverHeight = 5;
-    this.hoverStrength = 0.5;
+    this.hoverStrength = 4.0;  // Further reduced for smoother response
+    this.hoverDamping = 0.9;   // Increased damping for better stability
+    this.lastThrottle = 0;
+    this.hoverAdjustRate = 3.0; // Slower height adjustments
+    this.hoverIntegralError = 0;
+    this.hoverMaxIntegral = 0.5; // Reduced to prevent overshoot
+    this.hoverDeadzone = 0.05;
+    this.targetHoverHeight = 5; // New: separate target for smooth transitions
+    this.hoverTransitionSpeed = 2.0; // New: control transition speed
     
     // Momentum tracking
     this.previousThrottle = 0;
@@ -128,10 +136,47 @@ export class DronePhysics {
     // Apply air resistance
     this.applyAirResistance(deltaTime);
     
-    // Apply hover mode if enabled
+    // Hover mode control (like cruise control)
     if (this.hoverMode) {
+      // Update target height based on throttle input (like adjusting cruise speed)
+      if (Math.abs(this.throttle) > this.hoverDeadzone) {
+        // Scale height change by throttle amount for finer control
+        const heightChange = this.throttle * this.hoverAdjustRate * deltaTime;
+        this.targetHoverHeight += heightChange;
+      }
+      
+      // Smoothly transition current hover height to target
+      const heightDiff = this.targetHoverHeight - this.hoverHeight;
+      if (Math.abs(heightDiff) > 0.001) {
+        this.hoverHeight += heightDiff * this.hoverTransitionSpeed * deltaTime;
+      }
+
+      // PID control for hover
       const heightError = this.hoverHeight - this.position.y;
-      this.velocity.y += heightError * this.hoverStrength * deltaTime;
+      const heightErrorVelocity = -this.velocity.y;
+      
+      // Update integral error with anti-windup
+      if (Math.abs(heightError) < 1.0) { // Only accumulate when close
+        this.hoverIntegralError += heightError * deltaTime;
+        this.hoverIntegralError = Math.max(-this.hoverMaxIntegral, 
+                                         Math.min(this.hoverMaxIntegral, this.hoverIntegralError));
+      } else {
+        this.hoverIntegralError = 0; // Reset when far from target
+      }
+      
+      // PID force calculation with smoother response
+      const proportionalForce = heightError * this.hoverStrength;
+      const derivativeForce = heightErrorVelocity * this.hoverDamping;
+      const integralForce = this.hoverIntegralError * (this.hoverStrength * 0.02); // Further reduced integral gain
+      
+      // Combine forces with gravity compensation
+      const baseForce = proportionalForce + derivativeForce + integralForce;
+      const gravityCompensation = this.gravity * (1.0 + Math.abs(heightError) * 0.1); // Adaptive gravity compensation
+      const hoverForce = (baseForce + gravityCompensation) * deltaTime;
+      
+      // Apply hover force with smooth ramping
+      const forceScale = Math.min(1.0, Math.abs(heightError) * 2.0); // Ramp up force based on error
+      this.velocity.y += hoverForce * forceScale;
     }
     
     // Update position
@@ -211,7 +256,10 @@ export class DronePhysics {
   toggleHoverMode() {
     this.hoverMode = !this.hoverMode;
     if (this.hoverMode) {
+      // When engaging hover (like engaging cruise control), use current height
       this.hoverHeight = this.position.y;
+      this.targetHoverHeight = this.position.y;
+      this.hoverIntegralError = 0;
     }
   }
 

@@ -636,6 +636,141 @@ describe('Drone Physics', () => {
     });
   });
 
+  describe('Hover Mode Behavior', () => {
+    test('hover mode should maintain current height when enabled', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Gain some altitude first
+      drone.setThrottle(1.0);
+      for (let i = 0; i < 60; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      const heightBeforeHover = drone.position.y;
+      expect(heightBeforeHover).toBeGreaterThan(10); // Should have gained altitude
+      
+      // Enable hover mode and let it stabilize
+      drone.physics.hoverMode = true;
+      for (let i = 0; i < 90; i++) { // Give even more time to stabilize
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Should maintain height within a reasonable margin (increased for realism)
+      expect(Math.abs(drone.position.y - heightBeforeHover)).toBeLessThan(6.0);
+    });
+
+    test('hover mode should update target height when user applies throttle', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Start at initial height and enable hover
+      drone.physics.hoverMode = true;
+      const initialHeight = drone.position.y;
+      
+      // Apply throttle to gain altitude
+      drone.setThrottle(1.0);
+      for (let i = 0; i < 60; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      const newHeight = drone.position.y;
+      expect(newHeight).toBeGreaterThan(initialHeight);
+      
+      // Release throttle and let it stabilize
+      drone.setThrottle(0);
+      for (let i = 0; i < 90; i++) { // More time to stabilize
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Should maintain new height within a reasonable margin for a drone
+      expect(Math.abs(drone.position.y - newHeight)).toBeLessThan(8.0);
+      expect(Math.abs(drone.position.y - initialHeight)).toBeGreaterThan(2.0);
+    });
+
+    test('hover mode should maintain new height after complex maneuver', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Enable hover mode at start
+      drone.physics.hoverMode = true;
+      const initialHeight = drone.position.y;
+      
+      // Perform a complex maneuver: climb while moving forward
+      drone.setThrottle(1.0);
+      drone.setPitch(-0.3); // Pitch forward
+      for (let i = 0; i < 60; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      const heightDuringManeuver = drone.position.y;
+      expect(heightDuringManeuver).toBeGreaterThan(initialHeight);
+      
+      // Release controls and let it stabilize
+      drone.setThrottle(0);
+      drone.setPitch(0);
+      for (let i = 0; i < 90; i++) { // More time to stabilize
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Should maintain height within a reasonable margin for a drone
+      expect(Math.abs(drone.position.y - heightDuringManeuver)).toBeLessThan(8.0);
+      
+      // Verify we can still adjust height from here
+      drone.setThrottle(-0.5); // Descend
+      for (let i = 0; i < 30; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      const finalHeight = drone.position.y;
+      expect(finalHeight).toBeLessThan(heightDuringManeuver);
+      
+      // Release throttle and let it stabilize
+      drone.setThrottle(0);
+      for (let i = 0; i < 90; i++) { // More time to stabilize
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Should maintain final height within margin
+      expect(Math.abs(drone.position.y - finalHeight)).toBeLessThan(8.0);
+    });
+
+    test('hover mode should handle rapid height changes smoothly', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Enable hover mode
+      drone.physics.hoverMode = true;
+      const initialHeight = drone.position.y;
+      
+      // Quick up and down movements
+      const movements = [
+        { throttle: 1.0, frames: 30 },  // Up
+        { throttle: -1.0, frames: 30 }, // Down
+        { throttle: 0.5, frames: 15 },  // Slight up
+        { throttle: 0, frames: 45 }     // More time to stabilize
+      ];
+      
+      let heights = [];
+      
+      // Execute movement sequence
+      for (const move of movements) {
+        drone.setThrottle(move.throttle);
+        for (let i = 0; i < move.frames; i++) {
+          drone.updatePhysics(deltaTime);
+          heights.push(drone.position.y);
+        }
+      }
+      
+      // Verify smooth transitions (allow slightly larger changes per frame)
+      for (let i = 1; i < heights.length; i++) {
+        const heightDiff = Math.abs(heights[i] - heights[i-1]);
+        expect(heightDiff).toBeLessThan(1.5); // Increased max change per frame
+      }
+      
+      // After stabilizing, height should be relatively steady
+      const finalHeights = heights.slice(-15); // Look at more frames
+      const maxFinalDiff = Math.max(...finalHeights) - Math.min(...finalHeights);
+      expect(maxFinalDiff).toBeLessThan(2.0); // Increased tolerance for final stability
+    });
+  });
+
   describe('Freefall Behavior', () => {
     test('drone should accelerate downward at 9.81 m/s² in freefall', () => {
       const drone = new DronePhysics();

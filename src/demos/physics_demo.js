@@ -149,6 +149,16 @@ class PhysicsDemo {
     );
     diagnostics.altitude = this.drone.position.y;
     
+    // Update hover indicator
+    const hoverIndicator = document.getElementById('hover-indicator');
+    if (hoverIndicator) {
+      if (this.drone.hoverMode) {
+        hoverIndicator.classList.add('active');
+      } else {
+        hoverIndicator.classList.remove('active');
+      }
+    }
+    
     // Update overlay text with enhanced debug info
     this.diagnosticOverlay.innerHTML = `
       <div>Controller: ${diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
@@ -211,6 +221,11 @@ class PhysicsDemo {
     this.renderer.render(this.scene, this.camera);
   }
 
+  reset() {
+    this.controls.reset();
+    this.drone.reset();
+  }
+
   // Control methods now delegate to controls instance
   setThrottle(value) {
     this.controls.setThrottle(value);
@@ -231,11 +246,6 @@ class PhysicsDemo {
   toggleHoverMode() {
     this.controls.toggleHoverMode();
     this.drone.toggleHoverMode();
-  }
-
-  reset() {
-    this.controls.reset();
-    this.drone.reset();
   }
 }
 
