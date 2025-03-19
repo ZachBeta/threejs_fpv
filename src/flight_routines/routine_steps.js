@@ -107,6 +107,66 @@ export function createStep(name, duration, controls) {
   };
 }
 
+// Helper function to create an acrobatic step with safety requirements
+export function createAcrobaticStep(name, duration, controls, requirements = {}) {
+  return {
+    name,
+    duration,
+    controls: {
+      throttle: controls.throttle ?? 0,
+      pitch: controls.pitch ?? 0,
+      roll: controls.roll ?? 0,
+      yaw: controls.yaw ?? null  // Default to maintaining heading
+    },
+    requirements: {
+      minAltitude: requirements.minAltitude ?? 30, // Minimum safe altitude (default 30 units)
+      requireSafetyOff: requirements.requireSafetyOff ?? true, // Acrobatic maneuvers require safety mode off
+      maxGroundSpeed: requirements.maxGroundSpeed // Optional maximum ground speed
+    },
+    // Function to check if requirements are met
+    checkRequirements: function(drone) {
+      const checks = [];
+      
+      // Check altitude requirement
+      if (this.requirements.minAltitude && 
+          drone.physics.position.y < this.requirements.minAltitude) {
+        checks.push(`Altitude too low for ${this.name}. Need at least ${this.requirements.minAltitude} units.`);
+        
+        // Attempt recovery by applying more throttle if altitude is too low
+        if (drone.physics.position.y < this.requirements.minAltitude * 0.9) {
+          // Override controls to gain altitude
+          this.controls.throttle = 1.0;  // Full throttle
+          this.controls.pitch = 0;       // Level pitch
+          this.controls.roll = 0;        // Level roll
+          // Keep current yaw
+        }
+      }
+      
+      // Check safety mode requirement
+      if (this.requirements.requireSafetyOff && 
+          drone.physics.safetyMode) {
+        checks.push(`Safety mode must be off for ${this.name}.`);
+      }
+      
+      // Check ground speed requirement if specified
+      if (this.requirements.maxGroundSpeed !== undefined) {
+        const groundSpeed = Math.sqrt(
+          drone.physics.velocity.x * drone.physics.velocity.x + 
+          drone.physics.velocity.z * drone.physics.velocity.z
+        );
+        if (groundSpeed > this.requirements.maxGroundSpeed) {
+          checks.push(`Ground speed too high for ${this.name}. Maximum: ${this.requirements.maxGroundSpeed}.`);
+        }
+      }
+      
+      return {
+        canRun: checks.length === 0,
+        messages: checks
+      };
+    }
+  };
+}
+
 // Helper function to modify an existing step
 export function modifyStep(step, modifications) {
   return {

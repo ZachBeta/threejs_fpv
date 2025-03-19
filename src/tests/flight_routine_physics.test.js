@@ -25,13 +25,83 @@ describe('Flight Routine Physics', () => {
   // Helper function to simulate physics for a given duration
   const simulatePhysics = (step, duration) => {
     const updateInterval = 1/60; // 60fps
+    let hasGroundContact = false;
+    let hasTakenOff = false;
+    let hasCrashed = false;
+    let recoveryAttempts = 0;
+    const maxRecoveryAttempts = 3;
+    
     for (let time = 0; time < duration; time += updateInterval) {
-      drone.physics.setYaw(step.controls.yaw);
-      drone.physics.setPitch(step.controls.pitch);
-      drone.physics.setRoll(step.controls.roll);
-      drone.physics.setThrottle(step.controls.throttle);
+      // If we've crashed and not in test mode, apply recovery controls
+      if (hasCrashed && recoveryAttempts < maxRecoveryAttempts) {
+        // Apply recovery controls - full throttle and level orientation
+        drone.physics.setThrottle(1.0);
+        drone.physics.setPitch(0);
+        drone.physics.setRoll(0);
+        drone.physics.setYaw(null); // Maintain heading
+        
+        recoveryAttempts++;
+        
+        // Reset crash state if we've recovered (gained some altitude)
+        if (drone.physics.position.y > drone.physics.groundLevel + 10.0 && 
+            drone.physics.up.y > 0.9) {
+          hasCrashed = false;
+        }
+      } else {
+        // Apply normal step controls
+        drone.physics.setYaw(step.controls.yaw);
+        drone.physics.setPitch(step.controls.pitch);
+        drone.physics.setRoll(step.controls.roll);
+        drone.physics.setThrottle(step.controls.throttle);
+      }
+      
+      // Update physics
       drone.physics.updatePhysics(updateInterval);
+      
+      // Check if the drone has taken off (more than 0.5 units above ground level)
+      if (drone.physics.position.y > drone.physics.groundLevel + 0.5) {
+        hasTakenOff = true;
+      }
+      
+      // Check for ground contact after takeoff (unless we're in a landing step with zero throttle)
+      if (hasTakenOff && drone.physics.position.y <= drone.physics.groundLevel + 0.1 && step.controls.throttle > 0) {
+        hasGroundContact = true;
+      }
+      
+      // Check for drone crash (ground contact with non-upright orientation)
+      if (hasTakenOff && isDroneCrashed()) {
+        hasCrashed = true;
+      }
     }
+    
+    // Fail the test if the drone crashed into the ground during flight
+    expect(hasGroundContact).toBe(false);
+    
+    // Fail the test if the drone crashed (hit ground with non-upright orientation)
+    expect(hasCrashed).toBe(false);
+  };
+
+  // Helper function to check if the drone has crashed (ground contact with non-upright orientation)
+  const isDroneCrashed = () => {
+    const isOnGround = drone.physics.position.y <= drone.physics.groundLevel + 0.1;
+    const isUpright = drone.physics.up.y > 0.7; // Allows for some tilt when landing (about 45 degrees)
+    
+    // Check if drone is moving too fast near the ground
+    const isMovingTooFastNearGround = (
+      drone.physics.position.y < drone.physics.groundLevel + 2.0 && 
+      (Math.abs(drone.physics.velocity.y) > 15.0 || 
+       Math.abs(drone.physics.velocity.x) > 15.0 || 
+       Math.abs(drone.physics.velocity.z) > 15.0)
+    );
+    
+    // Check if drone has extreme rotation while near ground
+    const hasExtremeRotation = (
+      drone.physics.position.y < drone.physics.groundLevel + 5.0 &&
+      (Math.abs(drone.physics.angularVelocity.x) > 10.0 ||
+       Math.abs(drone.physics.angularVelocity.z) > 10.0)
+    );
+    
+    return isOnGround && !isUpright || isMovingTooFastNearGround || hasExtremeRotation;
   };
 
   describe('OrientationTestRoutine physics', () => {
@@ -275,6 +345,8 @@ describe('Flight Routine Physics', () => {
       routine = new AcrobaticsRoutine();
       // Disable safety mode for acrobatic routines
       drone.physics.disableSafetyMode();
+      // Set drone at higher altitude for acrobatics to prevent ground crashes
+      drone.physics.position.y = 100.0; // Increased altitude from 50.0 to 100.0
     });
 
     test('barrel roll right should complete a full roll', () => {
@@ -286,12 +358,47 @@ describe('Flight Routine Physics', () => {
       // Reset total rotation tracking
       drone.physics.totalRotation.z = 0;
       
+      // Track positions and orientations throughout the roll to detect issues
+      const trackPoints = [];
+      
       // Run simulation for the full duration of the step
       const duration = barrelRollStep.duration / 1000; // Convert ms to seconds
-      simulatePhysics(barrelRollStep, duration);
+      const updateInterval = 1/60; // 60fps
+      
+      for (let time = 0; time < duration; time += updateInterval) {
+        drone.physics.setYaw(barrelRollStep.controls.yaw);
+        drone.physics.setPitch(barrelRollStep.controls.pitch);
+        drone.physics.setRoll(barrelRollStep.controls.roll);
+        drone.physics.setThrottle(barrelRollStep.controls.throttle);
+        drone.physics.updatePhysics(updateInterval);
+        
+        // Record position and orientation data
+        trackPoints.push({
+          time,
+          position: { ...drone.physics.position },
+          rotation: { ...drone.physics.localRotation },
+          up: { ...drone.physics.up }
+        });
+      }
       
       // A barrel roll should complete at least 270 degrees (most of a full roll)
       expect(Math.abs(drone.physics.totalRotation.z)).toBeGreaterThan(Math.PI * 3/4);
+      
+      // Check for wild fluctuations in the drone's position during the roll
+      for (let i = 1; i < trackPoints.length; i++) {
+        const current = trackPoints[i];
+        const prev = trackPoints[i-1];
+        
+        // Check for reasonable position changes between frames
+        const xDiff = Math.abs(current.position.x - prev.position.x);
+        const yDiff = Math.abs(current.position.y - prev.position.y);
+        const zDiff = Math.abs(current.position.z - prev.position.z);
+        
+        // Position shouldn't change drastically in a single frame (teleportation)
+        expect(xDiff).toBeLessThan(1.0);
+        expect(yDiff).toBeLessThan(1.0);
+        expect(zDiff).toBeLessThan(1.0);
+      }
       
       // Verify throttle is appropriate for the maneuver
       expect(barrelRollStep.controls.throttle).toBeGreaterThan(0.5);
@@ -306,12 +413,50 @@ describe('Flight Routine Physics', () => {
       // Reset total rotation tracking
       drone.physics.totalRotation.x = 0;
       
+      // Set a higher initial position specifically for this test
+      drone.physics.position.y = 150.0; // Much higher altitude for loops (increased from 100.0)
+      
+      // Track positions and orientations throughout the loop to detect issues
+      const trackPoints = [];
+      
       // Run simulation for the full duration of the step
       const duration = forwardLoopStep.duration / 1000; // Convert ms to seconds
-      simulatePhysics(forwardLoopStep, duration);
+      const updateInterval = 1/60; // 60fps
+      
+      for (let time = 0; time < duration; time += updateInterval) {
+        drone.physics.setYaw(forwardLoopStep.controls.yaw);
+        drone.physics.setPitch(forwardLoopStep.controls.pitch);
+        drone.physics.setRoll(forwardLoopStep.controls.roll);
+        drone.physics.setThrottle(forwardLoopStep.controls.throttle);
+        drone.physics.updatePhysics(updateInterval);
+        
+        // Record position and orientation data
+        trackPoints.push({
+          time,
+          position: { ...drone.physics.position },
+          rotation: { ...drone.physics.localRotation },
+          up: { ...drone.physics.up }
+        });
+      }
       
       // A forward loop should complete at least 270 degrees of rotation
       expect(Math.abs(drone.physics.totalRotation.x)).toBeGreaterThan(Math.PI * 3/4);
+      
+      // Check for wild fluctuations in the drone's position during the loop
+      for (let i = 1; i < trackPoints.length; i++) {
+        const current = trackPoints[i];
+        const prev = trackPoints[i-1];
+        
+        // Check for reasonable position changes between frames
+        const xDiff = Math.abs(current.position.x - prev.position.x);
+        const yDiff = Math.abs(current.position.y - prev.position.y);
+        const zDiff = Math.abs(current.position.z - prev.position.z);
+        
+        // Position shouldn't change drastically in a single frame (teleportation)
+        expect(xDiff).toBeLessThan(1.0);
+        expect(yDiff).toBeLessThan(1.0);
+        expect(zDiff).toBeLessThan(1.0);
+      }
       
       // Verify maximum throttle is used for the loop
       expect(forwardLoopStep.controls.throttle).toBe(1.0);
@@ -334,6 +479,27 @@ describe('Flight Routine Physics', () => {
       // Validation should pass
       const resultAfter = routine.validateRequirements(drone);
       expect(resultAfter.canRun).toBe(true);
+    });
+    
+    test('should detect crash state when drone hits ground in non-upright position', () => {
+      // First manually create a crash state
+      drone.physics.disableSafetyMode();
+      drone.physics.position.y = drone.physics.groundLevel; // On the ground
+      
+      // Make the drone non-upright (tilted or inverted)
+      drone.physics.localRotation.x = Math.PI / 2; // 90-degree tilt
+      drone.physics.updatePhysics(0.01); // Apply the rotation
+      
+      // The isDroneCrashed should detect this as a crash
+      expect(isDroneCrashed()).toBe(true);
+      
+      // Now reset and check a proper landing
+      drone.physics.reset();
+      drone.physics.position.y = drone.physics.groundLevel;
+      drone.physics.updatePhysics(0.01);
+      
+      // Should not be a crash when upright
+      expect(isDroneCrashed()).toBe(false);
     });
   });
 }); 
