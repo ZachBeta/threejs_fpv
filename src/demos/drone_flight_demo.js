@@ -80,8 +80,10 @@ camera.position.set(0, 5, 15); // Start position
 camera.lookAt(0, 5, 0);
 
 // Create renderer
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadow edges
 document.body.appendChild(renderer.domElement);
 
 // Initialize map

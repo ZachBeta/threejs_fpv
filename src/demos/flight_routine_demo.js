@@ -64,6 +64,7 @@ class FlightRoutineDemo {
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Smoother shadow edges
 
     // Initialize map
     this.map = new Map(this.scene);

@@ -21,6 +21,9 @@ export class Map {
     
     // Create landing pad
     this.setupLandingPad();
+    
+    // Create shadow test objects at different distances
+    this.createShadowTestObjects();
   }
   
   setupLighting() {
@@ -28,10 +31,29 @@ export class Map {
     this.scene.add(ambientLight);
     
     const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
+    directionalLight.position.set(200, 300, 200);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 1024;
-    directionalLight.shadow.mapSize.height = 1024;
+    
+    // Improve shadow quality and range
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    
+    // Configure shadow camera to cover a larger area
+    const shadowSize = 500;
+    directionalLight.shadow.camera.left = -shadowSize;
+    directionalLight.shadow.camera.right = shadowSize;
+    directionalLight.shadow.camera.top = shadowSize;
+    directionalLight.shadow.camera.bottom = -shadowSize;
+    directionalLight.shadow.camera.near = 1;
+    directionalLight.shadow.camera.far = 1000;
+    
+    // Adjust bias to reduce shadow acne
+    directionalLight.shadow.bias = -0.0001;
+    
+    // Add helper to visualize the light's shadow camera (comment out in production)
+    // const helper = new THREE.CameraHelper(directionalLight.shadow.camera);
+    // this.scene.add(helper);
+    
     this.scene.add(directionalLight);
   }
   
@@ -177,5 +199,53 @@ export class Map {
   // Method to reset or update map state if needed
   reset() {
     // Remove spinner reset since it no longer exists
+  }
+  
+  createShadowTestObjects() {
+    // Create a set of test cubes at various distances from the origin
+    const distances = [50, 100, 200, 300, 400];
+    const colors = [0xff0000, 0x00ff00, 0x0000ff, 0xff00ff, 0xffff00];
+    
+    // Create diagonal test objects (northeast direction)
+    distances.forEach((distance, index) => {
+      this.createTestObject(distance, distance, colors[index]);
+    });
+    
+    // Create cardinal direction test objects
+    const farDistance = 300;
+    this.createTestObject(farDistance, 0, 0xff5500); // East
+    this.createTestObject(-farDistance, 0, 0x5500ff); // West
+    this.createTestObject(0, farDistance, 0x00ff55); // North
+    this.createTestObject(0, -farDistance, 0xff0055); // South
+  }
+  
+  createTestObject(x, z, color) {
+    // Create a floating cube
+    const cubeSize = 10;
+    const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    const cubeMaterial = new THREE.MeshStandardMaterial({ 
+      color: color,
+      roughness: 0.7
+    });
+    
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.set(x, cubeSize * 1.5, z);
+    cube.castShadow = true;
+    cube.receiveShadow = true;
+    this.scene.add(cube);
+    
+    // Create a column under the cube
+    const columnHeight = 30;
+    const columnGeometry = new THREE.CylinderGeometry(2, 2, columnHeight, 16);
+    const columnMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x888888,
+      roughness: 0.5
+    });
+    
+    const column = new THREE.Mesh(columnGeometry, columnMaterial);
+    column.position.set(x, columnHeight / 2, z);
+    column.castShadow = true;
+    column.receiveShadow = true;
+    this.scene.add(column);
   }
 } 
