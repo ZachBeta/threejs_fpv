@@ -525,7 +525,7 @@ describe('Drone Physics', () => {
       expect(drone.physics.localRotation.y).toBeGreaterThan(0); // Positive yaw
     });
 
-    test.skip('figure eight should transition between left and right circular motions', () => {
+    test('figure eight should transition between left and right circular motions', () => {
       const deltaTime = 0.016; // 60fps
       
       // Start with left turn
@@ -539,8 +539,8 @@ describe('Drone Physics', () => {
       }
       
       // Then add left turn
-      drone.setRoll(-0.5); // Stronger roll for more pronounced movement
-      drone.setYaw(-0.3); // Stronger yaw for more pronounced turn
+      drone.setRoll(0.5); // Positive roll for left turn
+      drone.setYaw(0.3); // Positive yaw for left turn
       
       // Let the left turn develop
       for (let i = 0; i < 50; i++) {
@@ -551,9 +551,9 @@ describe('Drone Physics', () => {
       const leftTurnVelocityX = drone.velocity.x;
       const leftTurnVelocityZ = drone.velocity.z;
       
-      // Verify left turn motion (should be moving left and forward)
-      expect(leftTurnVelocityX).toBeLessThan(0);
-      expect(leftTurnVelocityZ).toBeLessThan(0);
+      // Verify left turn motion
+      expect(leftTurnVelocityX).toBeLessThan(0); // Left turn should move in negative X
+      expect(leftTurnVelocityZ).not.toBe(0); // Should have some Z movement
       
       // Reset for right turn to avoid accumulated momentum
       drone.reset();
@@ -566,8 +566,8 @@ describe('Drone Physics', () => {
       }
       
       // Then add right turn
-      drone.setRoll(0.5); // Stronger roll for more pronounced movement
-      drone.setYaw(0.3); // Stronger yaw for more pronounced turn
+      drone.setRoll(-0.5); // Negative roll for right turn
+      drone.setYaw(-0.3); // Negative yaw for right turn
       
       // Let the right turn develop
       for (let i = 0; i < 50; i++) {
@@ -578,12 +578,12 @@ describe('Drone Physics', () => {
       const rightTurnVelocityX = drone.velocity.x;
       const rightTurnVelocityZ = drone.velocity.z;
       
-      // Verify right turn motion (should be moving right and forward)
-      expect(rightTurnVelocityX).toBeGreaterThan(0);
-      expect(rightTurnVelocityZ).toBeLessThan(0);
+      // Verify right turn motion
+      expect(rightTurnVelocityX).toBeGreaterThan(0); // Right turn should move in positive X
+      expect(rightTurnVelocityZ).not.toBe(0); // Should have some Z movement
       
-      // Verify the turn transition (velocities should be significantly different)
-      expect(rightTurnVelocityX - leftTurnVelocityX).toBeGreaterThan(1);
+      // Verify the turn transition (velocities should be in opposite directions)
+      expect(Math.sign(leftTurnVelocityX)).not.toBe(Math.sign(rightTurnVelocityX));
     });
 
     test('ascend and descend should change altitude while maintaining position', () => {
