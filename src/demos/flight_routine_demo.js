@@ -14,6 +14,9 @@ import { Controls } from '../controls.js';
 import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
 import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
 import { YawTricksRoutine } from '../flight_routines/yaw_tricks_routine.js';
+import { BackflipRoutine } from '../flight_routines/backflip_routine.js';
+import { StateRecorder } from '../utils/state_recorder.js';
+import RecordingManager from '../utils/RecordingManager.js';
 
 class FlightRoutineDemo {
   constructor(droneConfig) {
@@ -35,6 +38,10 @@ class FlightRoutineDemo {
     this.stepStartTime = 0;
     this.isPaused = false;
     
+    // Recording state
+    this.isRecording = false;
+    this.recordingStartTime = 0;
+    
     // Performance metrics
     this.fps = 0;
     this.frameCount = 0;
@@ -55,7 +62,8 @@ class FlightRoutineDemo {
       freefall: new FreefallRoutine(),
       yawRotation: new YawRotationRoutine(),
       acrobatics: new AcrobaticsRoutine(),
-      yawTricks: new YawTricksRoutine()
+      yawTricks: new YawTricksRoutine(),
+      backflip: new BackflipRoutine()
     };
     
     // Initialize available routines steps
@@ -70,11 +78,12 @@ class FlightRoutineDemo {
       freefall: this.routineObjects.freefall.steps,
       yawRotation: this.routineObjects.yawRotation.steps,
       acrobatics: this.routineObjects.acrobatics.steps,
-      yawTricks: this.routineObjects.yawTricks.steps
+      yawTricks: this.routineObjects.yawTricks.steps,
+      backflip: this.routineObjects.backflip.steps
     };
 
-    // Set default routine to acrobatics
-    this.activeRoutineType = 'acrobatics';
+    // Set default routine to backflip
+    this.activeRoutineType = 'backflip';
     this.routine = this.routines[this.activeRoutineType];
 
     // Initialize Three.js scene
@@ -98,7 +107,7 @@ class FlightRoutineDemo {
     // Create drone using DroneModel
     this.drone = new DroneModel(this.scene, this.map);
     
-    // Disable safety mode by default to allow acrobatics
+    // Disable safety mode by default
     this.drone.physics.disableSafetyMode();
     
     // Set up camera position
@@ -107,6 +116,13 @@ class FlightRoutineDemo {
 
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
+
+    // Initialize state recorder
+    this.stateRecorder = new StateRecorder();
+
+    // Initialize recording manager
+    this.recordingManager = new RecordingManager();
+    this.recordingManager.mount(document.getElementById('instructions'));
   }
 
   initializeUI() {
@@ -513,6 +529,26 @@ class FlightRoutineDemo {
         }
       }
     }
+    
+    // Record frame if recording is active
+    if (this.recordingManager.isRecording) {
+      this.recordingManager.recordFrame({
+        physics: {
+          position: { ...this.drone.position },
+          quaternion: { ...this.drone.quaternion },
+          up: { ...this.drone.up },
+          forward: { ...this.drone.getWorldDirection(new THREE.Vector3()) },
+          pitch: this.controls.pitch,
+          roll: this.controls.roll,
+          yaw: this.controls.yaw,
+          throttle: this.controls.throttle
+        },
+        render: {
+          position: { ...this.drone.position },
+          quaternion: { ...this.drone.quaternion }
+        }
+      });
+    }
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -768,6 +804,9 @@ class FlightRoutineDemo {
         break;
       case 'yawTricks':
         routine = new YawTricksRoutine();
+        break;
+      case 'backflip':
+        routine = new BackflipRoutine();
         break;
       default:
         routine = new BasicRoutine();

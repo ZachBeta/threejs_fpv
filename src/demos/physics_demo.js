@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { DroneModel } from '../models/drone_model.js';
 import { Map } from '../models/map.js';
 import { Controls } from '../controls.js';
+import { stateRecorder } from '../utils/state_recorder.js';
+import RecordingManager from '../utils/RecordingManager.js';
 
 class PhysicsDemo {
   constructor() {
@@ -29,6 +31,9 @@ class PhysicsDemo {
     // Create drone using DroneModel
     this.drone = new DroneModel(this.scene, this.map);
     
+    // Disable safety mode by default
+    this.drone.physics.disableSafetyMode();
+    
     // Set up camera position
     this.camera.position.set(0, 15, 15);
     this.camera.lookAt(0, 0, 0);
@@ -36,11 +41,18 @@ class PhysicsDemo {
     // Set up FPV camera
     this.setupFPVCamera();
 
+    // Initialize recording manager
+    this.recordingManager = new RecordingManager();
+    this.recordingManager.mount(document.body);
+
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
 
     // Start animation loop
     this.animate();
+    
+    // For debugging - make demo accessible globally
+    window.demo = this;
   }
 
   setupFPVCamera() {
@@ -361,6 +373,7 @@ ${formatAsKeyValuePairs(roundedOrientation)}</div>
     requestAnimationFrame(() => this.animate());
     
     const deltaTime = 0.016; // Assuming 60fps
+    const currentTime = performance.now() / 1000; // Convert to seconds
 
     // Update gamepad state
     this.controls.updateGamepadState();
@@ -409,6 +422,26 @@ ${formatAsKeyValuePairs(roundedOrientation)}</div>
 
     // Update diagnostics
     this.updateDiagnostics();
+    
+    // Record frame if recording is active
+    if (this.recordingManager.isRecording) {
+      this.recordingManager.recordFrame({
+        physics: {
+          position: { ...this.drone.position },
+          quaternion: { ...this.drone.quaternion },
+          up: { ...this.drone.up },
+          forward: { ...this.drone.getWorldDirection(new THREE.Vector3()) },
+          pitch: this.controls.pitch,
+          roll: this.controls.roll,
+          yaw: this.controls.yaw,
+          throttle: this.controls.throttle
+        },
+        render: {
+          position: { ...this.drone.position },
+          quaternion: { ...this.drone.quaternion }
+        }
+      });
+    }
 
     // Render main view
     this.renderer.render(this.scene, this.camera);
@@ -484,6 +517,23 @@ document.addEventListener('keydown', (event) => {
       demo.setRoll(-1.0); // Changed from 1.0 to -1.0 for right roll
       break;
     
+    // Recording controls
+    case 'b': // Backward loop recording shortcut
+      // First, check if we're already recording
+      if (!demo.recordingManager.isRecording) {
+        // Start recording
+        demo.recordingManager.startRecording();
+        // Configure for backward loop - full throttle and backward pitch
+        demo.setThrottle(1.0);
+        demo.setPitch(1.0);
+      } else {
+        // Stop recording and reset controls
+        demo.recordingManager.stopRecording();
+        demo.setThrottle(0);
+        demo.setPitch(0);
+      }
+      break;
+    
     // Other controls
     case 'h':
       demo.toggleAltitudeHold();
@@ -497,22 +547,22 @@ document.addEventListener('keydown', (event) => {
 document.addEventListener('keyup', (event) => {
   switch(event.key) {
     // Left stick (WASD)
-    case 'w':
-    case 's':
+    case 'w': // Release throttle up
+    case 's': // Release throttle down
       demo.setThrottle(0);
       break;
-    case 'a':
-    case 'd':
+    case 'a': // Release yaw left
+    case 'd': // Release yaw right
       demo.setYaw(0);
       break;
     
     // Right stick (IJKL)
-    case 'i':
-    case 'k':
+    case 'i': // Release pitch forward
+    case 'k': // Release pitch backward
       demo.setPitch(0);
       break;
-    case 'j':
-    case 'l':
+    case 'j': // Release roll left
+    case 'l': // Release roll right
       demo.setRoll(0);
       break;
   }
