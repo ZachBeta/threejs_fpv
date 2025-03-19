@@ -9,7 +9,6 @@ import { OrientationTestRoutine } from '../flight_routines/orientation_test_rout
 import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
 import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js';
 import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
-import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
 import { FreefallRoutine } from '../flight_routines/freefall_routine.js';
 import { Controls } from '../controls.js';
 import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
@@ -53,7 +52,6 @@ class FlightRoutineDemo {
       physicsTest: new PhysicsTestRoutine(),
       throttleTest: new ThrottleTestRoutine(),
       advancedManeuvers: new AdvancedManeuversRoutine(),
-      yawTest: new YawTestRoutine(),
       freefall: new FreefallRoutine(),
       yawRotation: new YawRotationRoutine(),
       acrobatics: new AcrobaticsRoutine(),
@@ -69,7 +67,6 @@ class FlightRoutineDemo {
       physicsTest: this.routineObjects.physicsTest.steps,
       throttleTest: this.routineObjects.throttleTest.steps,
       advancedManeuvers: this.routineObjects.advancedManeuvers.steps,
-      yawTest: this.routineObjects.yawTest.steps,
       freefall: this.routineObjects.freefall.steps,
       yawRotation: this.routineObjects.yawRotation.steps,
       acrobatics: this.routineObjects.acrobatics.steps,
@@ -737,10 +734,8 @@ class FlightRoutineDemo {
 
   getRoutineSteps(routineType) {
     let routine;
-    switch(routineType) {
-      case 'orientationTest':
-        routine = new OrientationTestRoutine();
-        break;
+    
+    switch (routineType) {
       case 'basic':
         routine = new BasicRoutine();
         break;
@@ -750,6 +745,9 @@ class FlightRoutineDemo {
       case 'figureEight':
         routine = new FigureEightRoutine();
         break;
+      case 'orientationTest':
+        routine = new OrientationTestRoutine();
+        break;
       case 'physicsTest':
         routine = new PhysicsTestRoutine();
         break;
@@ -758,9 +756,6 @@ class FlightRoutineDemo {
         break;
       case 'advancedManeuvers':
         routine = new AdvancedManeuversRoutine();
-        break;
-      case 'yawTest':
-        routine = new YawTestRoutine();
         break;
       case 'freefall':
         routine = new FreefallRoutine();
@@ -776,7 +771,9 @@ class FlightRoutineDemo {
         break;
       default:
         routine = new BasicRoutine();
+        break;
     }
+    
     return routine.steps;
   }
 

@@ -5,10 +5,11 @@ import { OrientationTestRoutine } from '../flight_routines/orientation_test_rout
 import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
 import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js';
 import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
-import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
-import { BasicSteps } from '../flight_routines/routine_steps.js';
 import { YawRotationRoutine } from '../flight_routines/yaw_rotation_routine.js';
 import { AcrobaticsRoutine } from '../flight_routines/acrobatics_routine.js';
+import { FreefallRoutine } from '../flight_routines/freefall_routine.js';
+import { YawTricksRoutine } from '../flight_routines/yaw_tricks_routine.js';
+import { BasicSteps } from '../flight_routines/routine_steps.js';
 
 describe('Flight Routines', () => {
   // Helper function to validate basic step structure
@@ -199,35 +200,50 @@ describe('Flight Routines', () => {
     });
   });
 
-  describe('YawTestRoutine', () => {
+  describe('YawRotationRoutine', () => {
     let routine;
 
     beforeEach(() => {
-      routine = new YawTestRoutine();
+      routine = new YawRotationRoutine();
     });
 
     test('should have valid structure', () => {
       validateRoutine(routine);
     });
 
-    test('should include yaw test steps', () => {
+    test('should include sustained yaw test steps', () => {
       const stepNames = routine.steps.map(step => step.name);
       expect(stepNames).toContain('Yaw left for 5 seconds');
       expect(stepNames).toContain('Yaw right for 5 seconds');
     });
 
+    test('should include yaw rotation steps', () => {
+      const stepNames = routine.steps.map(step => step.name);
+      expect(stepNames).toContain('Yaw 180° right');
+      expect(stepNames).toContain('Yaw 180° left');
+      expect(stepNames).toContain('Yaw 360° right');
+      expect(stepNames).toContain('Yaw 360° left');
+    });
+
     test('should have correct yaw durations and values', () => {
       const yawLeft = routine.steps.find(step => step.name === 'Yaw left for 5 seconds');
       const yawRight = routine.steps.find(step => step.name === 'Yaw right for 5 seconds');
+      const yaw180Right = routine.steps.find(step => step.name === 'Yaw 180° right');
+      const yaw360Left = routine.steps.find(step => step.name === 'Yaw 360° left');
 
       expect(yawLeft.duration).toBe(5000);
       expect(yawRight.duration).toBe(5000);
+      expect(yaw180Right.duration).toBe(2000);
+      expect(yaw360Left.duration).toBe(4000);
+      
       expect(yawLeft.controls.yaw).toBeGreaterThan(0);
       expect(yawRight.controls.yaw).toBeLessThan(0);
+      expect(yaw180Right.controls.yaw).toBeLessThan(0);
+      expect(yaw360Left.controls.yaw).toBeGreaterThan(0);
     });
 
     test('should maintain hover between yaw movements', () => {
-      const yawSteps = ['Yaw left for 5 seconds', 'Yaw right for 5 seconds'];
+      const yawSteps = ['Yaw left for 5 seconds', 'Yaw right for 5 seconds', 'Yaw 180° right', 'Yaw 180° left', 'Yaw 360° right', 'Yaw 360° left'];
       yawSteps.forEach(movement => {
         const movementIndex = routine.steps.findIndex(step => step.name === movement);
         expect(movementIndex).toBeGreaterThan(0);
@@ -305,44 +321,6 @@ describe('Flight Routines', () => {
     });
   });
 
-  describe('YawRotationRoutine', () => {
-    let routine;
-
-    beforeEach(() => {
-      routine = new YawRotationRoutine();
-    });
-
-    test('should have valid structure', () => {
-      validateRoutine(routine);
-    });
-
-    test('should include 180 and 360 degree yaw steps', () => {
-      const stepNames = routine.steps.map(step => step.name);
-      expect(stepNames).toContain('Yaw 180° right');
-      expect(stepNames).toContain('Yaw 180° left');
-      expect(stepNames).toContain('Yaw 360° right');
-      expect(stepNames).toContain('Yaw 360° left');
-    });
-
-    test('should have appropriate durations for different rotations', () => {
-      const yaw180Right = routine.steps.find(step => step.name === 'Yaw 180° right');
-      const yaw360Right = routine.steps.find(step => step.name === 'Yaw 360° right');
-
-      // 360 should take longer than 180
-      expect(yaw360Right.duration).toBeGreaterThan(yaw180Right.duration);
-    });
-
-    test('should have correct yaw control values', () => {
-      const yaw180Right = routine.steps.find(step => step.name === 'Yaw 180° right');
-      const yaw180Left = routine.steps.find(step => step.name === 'Yaw 180° left');
-
-      // Right rotation should have negative yaw
-      expect(yaw180Right.controls.yaw).toBeLessThan(0);
-      // Left rotation should have positive yaw
-      expect(yaw180Left.controls.yaw).toBeGreaterThan(0);
-    });
-  });
-
   describe('AcrobaticsRoutine', () => {
     let routine;
 
@@ -409,6 +387,58 @@ describe('Flight Routines', () => {
       // Should allow routine with safety off
       const resultWithoutSafety = routine.validateRequirements(mockDroneWithoutSafety);
       expect(resultWithoutSafety.canRun).toBe(true);
+    });
+  });
+
+  describe('FreefallRoutine', () => {
+    let routine;
+
+    beforeEach(() => {
+      routine = new FreefallRoutine();
+    });
+
+    test('should have valid structure', () => {
+      validateRoutine(routine);
+    });
+
+    test('should include freefall test steps', () => {
+      const stepNames = routine.steps.map(step => step.name);
+      expect(stepNames).toContain('Rise to height');
+      expect(stepNames).toContain('Cut power');
+    });
+
+    test('should have correct test durations', () => {
+      const freefallStep = routine.steps.find(step => step.name === 'Cut power');
+      expect(freefallStep).toBeDefined();
+      expect(freefallStep.duration).toBeGreaterThan(0);
+    });
+  });
+
+  describe('YawTricksRoutine', () => {
+    let routine;
+
+    beforeEach(() => {
+      routine = new YawTricksRoutine();
+    });
+
+    test('should have valid structure', () => {
+      validateRoutine(routine);
+    });
+
+    test('should include yaw tricks steps', () => {
+      const stepNames = routine.steps.map(step => step.name);
+      expect(stepNames).toContain('180° Yaw while moving forward');
+      expect(stepNames).toContain('Orbit while facing center (right)');
+    });
+
+    test('should have correct yaw control values', () => {
+      const orbitRight = routine.steps.find(step => step.name === 'Orbit while facing center (right)');
+      expect(orbitRight).toBeDefined();
+      expect(orbitRight.controls.yaw).toBeLessThan(0);
+      
+      const orbitLeft = routine.steps.find(step => step.name === 'Orbit while facing center (left)');
+      expect(orbitLeft).toBeDefined();
+      expect(orbitLeft.controls.yaw).toBeGreaterThan(0);
     });
   });
 }); 
