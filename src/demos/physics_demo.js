@@ -152,7 +152,7 @@ class PhysicsDemo {
     // Update hover indicator
     const hoverIndicator = document.getElementById('hover-indicator');
     if (hoverIndicator) {
-      if (this.drone.hoverMode) {
+      if (this.drone.altitudeHold) {
         hoverIndicator.classList.add('active');
       } else {
         hoverIndicator.classList.remove('active');
@@ -167,7 +167,7 @@ class PhysicsDemo {
       <div>Speed: ${diagnostics.speed.toFixed(2)} m/s</div>
       <div>Altitude: ${diagnostics.altitude.toFixed(2)} m</div>
       <div>Throttle: ${this.drone.throttle.toFixed(2)}</div>
-      <div>Hover Mode: ${this.drone.hoverMode ? 'ON' : 'OFF'}</div>
+      <div>Altitude Hold: ${this.drone.altitudeHold ? 'ON' : 'OFF'}</div>
       <div>Debug State:</div>
       <div style="margin-left: 10px">
         Raw Inputs: ${JSON.stringify(diagnostics.debugState.rawInputs, null, 2)}</div>
@@ -244,8 +244,12 @@ class PhysicsDemo {
   }
 
   toggleHoverMode() {
-    this.controls.toggleHoverMode();
-    this.drone.toggleHoverMode();
+    this.toggleAltitudeHold();
+  }
+
+  toggleAltitudeHold() {
+    this.controls.toggleAltitudeHold();
+    this.drone.toggleAltitudeHold();
   }
 }
 
@@ -285,7 +289,7 @@ document.addEventListener('keydown', (event) => {
     
     // Other controls
     case 'h':
-      demo.toggleHoverMode();
+      demo.toggleAltitudeHold();
       break;
     case 'r':
       demo.reset();
