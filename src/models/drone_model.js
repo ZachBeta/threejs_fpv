@@ -161,6 +161,11 @@ export class DroneModel {
   
   // For backwards compatibility
   get hoverMode() {
-    return this.physics.hoverMode;
+    return this.physics.altitudeHoldActive;
+  }
+
+  // Add an alias property for use in the physics demo
+  get altitudeHold() {
+    return this.physics.altitudeHoldActive;
   }
 } 

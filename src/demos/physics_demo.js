@@ -133,6 +133,16 @@ class PhysicsDemo {
     this.drone.setYaw(controls.yaw);
     this.drone.setPitch(controls.pitch);
     this.drone.setRoll(controls.roll);
+    
+    // Sync altitude hold state
+    if (controls.altitudeHold !== this.drone.altitudeHold) {
+      console.log("Syncing altitude hold state from controls:", controls.altitudeHold);
+      if (controls.altitudeHold) {
+        this.drone.physics.enableAltitudeHold();
+      } else {
+        this.drone.physics.disableAltitudeHold();
+      }
+    }
 
     // Update controls diagnostics with drone orientation
     this.controls.updateDroneOrientation(this.drone.droneMesh.rotation);
@@ -168,6 +178,7 @@ class PhysicsDemo {
       <div>Altitude: ${diagnostics.altitude.toFixed(2)} m</div>
       <div>Throttle: ${this.drone.throttle.toFixed(2)}</div>
       <div>Altitude Hold: ${this.drone.altitudeHold ? 'ON' : 'OFF'}</div>
+      <div>Controls.altitudeHold: ${controls.altitudeHold ? 'ON' : 'OFF'}</div>
       <div>Debug State:</div>
       <div style="margin-left: 10px">
         Raw Inputs: ${JSON.stringify(diagnostics.debugState.rawInputs, null, 2)}</div>
@@ -248,6 +259,7 @@ class PhysicsDemo {
   }
 
   toggleAltitudeHold() {
+    console.log("Demo: toggleAltitudeHold called");
     this.controls.toggleAltitudeHold();
     this.drone.toggleAltitudeHold();
   }
