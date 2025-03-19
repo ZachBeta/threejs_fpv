@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { DronePhysics } from '../physics.js';
+import { DronePhysics } from '../drone_physics.js';
 
 // Mock THREE.js
 jest.mock('three', () => ({

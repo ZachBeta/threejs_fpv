@@ -13,9 +13,9 @@ import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
 import { FreefallRoutine } from '../flight_routines/freefall_routine.js';
 import { Controls } from '../controls.js';
 
-class RoutineDemo {
+class FlightRoutineDemo {
   constructor() {
-    console.log('Creating new RoutineDemo instance');
+    console.log('Creating new FlightRoutineDemo instance');
     this.initializeBasics();
     
     // Wait for DOM before initializing UI
@@ -569,7 +569,7 @@ class RoutineDemo {
 }
 
 // Create demo instance
-const demo = new RoutineDemo();
+const demo = new FlightRoutineDemo();
 
 // Make demo available globally for the menu
 window.demo = demo;
@@ -585,4 +585,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 100);
 });
 
-export { RoutineDemo }; 
+export { FlightRoutineDemo }; 

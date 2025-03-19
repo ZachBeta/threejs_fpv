@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DronePhysics } from '../physics.js';
+import { DronePhysics } from '../drone_physics.js';
 
 export class DroneModel {
   constructor(scene) {

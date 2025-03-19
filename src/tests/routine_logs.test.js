@@ -1,4 +1,4 @@
-import { DronePhysics } from '../physics.js';
+import { DronePhysics } from '../drone_physics.js';
 
 describe('Routine Log Analysis', () => {
   let logs;
