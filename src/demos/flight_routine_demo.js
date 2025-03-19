@@ -15,15 +15,27 @@ import { Controls } from '../controls.js';
 class RoutineDemo {
   constructor() {
     console.log('Creating new RoutineDemo instance');
+    this.initializeBasics();
+    
+    // Wait for DOM before initializing UI
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.initializeUI());
+    } else {
+      this.initializeUI();
+    }
+  }
+
+  initializeBasics() {
+    // Initialize non-DOM dependent properties
     this.isRoutineRunning = false;
     this.currentStep = 0;
     this.stepStartTime = 0;
+    this.isPaused = false;
     
     // Performance metrics
     this.fps = 0;
     this.frameCount = 0;
     this.lastFpsUpdate = 0;
-    this.isPaused = false;
     
     // Initialize controls
     this.controls = new Controls();
@@ -44,16 +56,12 @@ class RoutineDemo {
     this.activeRoutineType = 'orientationTest';
     this.routine = this.routines[this.activeRoutineType];
 
-    // Check server status
-    this.checkServerStatus();
-
     // Initialize Three.js scene
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.shadowMap.enabled = true;
-    document.body.appendChild(this.renderer.domElement);
 
     // Initialize map
     this.map = new Map(this.scene);
@@ -65,10 +73,6 @@ class RoutineDemo {
     this.lastLogTime = 0;
     this.logInterval = 100; // Log every 100ms
 
-    // Initialize control stick displays
-    this.leftStickIndicator = document.querySelector('.stick-display[data-label="Left Stick"] .stick-indicator');
-    this.rightStickIndicator = document.querySelector('.stick-display[data-label="Right Stick"] .stick-indicator');
-
     // Create drone using DroneModel
     this.drone = new DroneModel(this.scene);
     
@@ -78,11 +82,52 @@ class RoutineDemo {
 
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
+  }
 
+  initializeUI() {
+    console.log('Initializing UI elements');
+    
+    // Append renderer to document
+    document.body.appendChild(this.renderer.domElement);
+    
+    // Bind UI elements
+    this.bindUIElements();
+    
+    // Setup event listeners
+    this.setupEventListeners();
+    
+    // Initialize routine steps display
+    this.updateRoutineStepsDisplay();
+    
+    // Start animation loop
+    this.animate();
+    
+    // Make demo available globally for UI updates
+    window.demo = this;
+    
+    // Check server status
+    this.checkServerStatus();
+  }
+
+  bindUIElements() {
+    console.log('Binding UI elements');
+    
     // Get UI elements
     this.overlay = document.getElementById('overlay');
     this.routineSteps = document.querySelectorAll('.routine-step');
     this.routineSelector = document.getElementById('routine-selector');
+    this.leftStickIndicator = document.querySelector('.stick-display[data-label="Left Stick"] .stick-indicator');
+    this.rightStickIndicator = document.querySelector('.stick-display[data-label="Right Stick"] .stick-indicator');
+    
+    // Log any missing elements for debugging
+    if (!this.overlay) console.warn('Overlay element not found');
+    if (!this.routineSelector) console.warn('Routine selector not found');
+    if (!this.leftStickIndicator) console.warn('Left stick indicator not found');
+    if (!this.rightStickIndicator) console.warn('Right stick indicator not found');
+  }
+
+  setupEventListeners() {
+    console.log('Setting up event listeners');
     
     // Setup routine selector
     if (this.routineSelector) {
@@ -92,17 +137,46 @@ class RoutineDemo {
         this.updateRoutineStepsDisplay();
       });
     }
-    
-    // Start animation loop
-    this.animate();
-    
-    // Initialize routine steps display with the current routine
-    this.updateRoutineStepsDisplay();
 
-    // Make demo available globally for UI updates
-    window.demo = this;
+    // Add keyboard controls
+    document.addEventListener('keydown', (event) => {
+      console.log('Key pressed:', event.key);
+      switch(event.key) {
+        case ' ': // Spacebar to start/stop routine
+          if (this.isRoutineRunning) {
+            console.log('Stopping routine');
+            this.stopRoutine();
+          } else {
+            console.log('Starting routine');
+            this.startRoutine();
+          }
+          break;
+        case 'r':
+          console.log('Resetting drone and controls');
+          this.drone.reset();
+          this.controls.reset();
+          break;
+        case 'Escape':
+          if (this.isRoutineRunning || !this.isPaused) {
+            console.log('Pausing simulation');
+            this.pauseSimulation();
+          }
+          break;
+      }
+    });
+
+    // Listen for menu resume event
+    const closeMenuButton = document.getElementById('close-menu-button');
+    if (closeMenuButton) {
+      closeMenuButton.addEventListener('click', () => {
+        if (this.isPaused) {
+          console.log('Resuming simulation');
+          this.resumeSimulation();
+        }
+      });
+    }
   }
-  
+
   updateRoutineStepsDisplay() {
     const stepsContainer = document.getElementById('routine-steps');
     if (!stepsContainer) {
@@ -494,42 +568,6 @@ const demo = new RoutineDemo();
 
 // Make demo available globally for the menu
 window.demo = demo;
-
-// Add keyboard controls
-document.addEventListener('keydown', (event) => {
-  console.log('Key pressed:', event.key);
-  switch(event.key) {
-    case ' ': // Spacebar to start/stop routine
-      if (demo.isRoutineRunning) {
-        console.log('Stopping routine');
-        demo.stopRoutine();
-      } else {
-        console.log('Starting routine');
-        demo.startRoutine();
-      }
-      break;
-    case 'r':
-      console.log('Resetting drone and controls');
-      demo.drone.reset();
-      demo.controls.reset();
-      break;
-    case 'Escape':
-      // Menu handled in HTML
-      if (demo.isRoutineRunning || !demo.isPaused) {
-        console.log('Pausing simulation');
-        demo.pauseSimulation();
-      }
-      break;
-  }
-});
-
-// Listen for menu resume event
-document.getElementById('close-menu-button')?.addEventListener('click', () => {
-  if (demo.isPaused) {
-    console.log('Resuming simulation');
-    demo.resumeSimulation();
-  }
-});
 
 // Ensure routine steps are displayed when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
