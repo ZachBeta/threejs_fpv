@@ -161,21 +161,29 @@ export class Controls {
   setThrottle(value) {
     this.state.controls.throttle = value;
     this.logControlChange('throttle', value);
+    // Update raw inputs for stick display - throttle is vertical axis (y) of left stick
+    this.updateRawInputFromKeyboard('leftStick', 'y', -value); // Negative is up for Y axis
   }
 
   setPitch(value) {
     this.state.controls.pitch = value;
     this.logControlChange('pitch', value);
+    // Update raw inputs for stick display - pitch is vertical axis (y) of right stick
+    this.updateRawInputFromKeyboard('rightStick', 'y', value); // Changed sign to match gamepad
   }
 
   setRoll(value) {
     this.state.controls.roll = value;
     this.logControlChange('roll', value);
+    // Update raw inputs for stick display - roll is horizontal axis (x) of right stick
+    this.updateRawInputFromKeyboard('rightStick', 'x', -value); // Changed sign to match gamepad
   }
 
   setYaw(value) {
     this.state.controls.yaw = value;
     this.logControlChange('yaw', value);
+    // Update raw inputs for stick display - yaw is horizontal axis (x) of left stick
+    this.updateRawInputFromKeyboard('leftStick', 'x', -value); // Changed sign to match gamepad
   }
 
   toggleAltitudeHold() {  // renamed from toggleHoverMode
@@ -234,5 +242,20 @@ export class Controls {
       altitudeHold: this.state.controls.altitudeHold,
       hover: this.state.controls.altitudeHold // for backward compatibility
     };
+  }
+
+  updateRawInputFromKeyboard(stick, axis, value) {
+    // Initialize raw inputs if they don't exist
+    if (!this.state.diagnostics.debugState.rawInputs[stick]) {
+      this.state.diagnostics.debugState.rawInputs[stick] = { x: 0, y: 0 };
+    }
+    
+    // Update the specific axis
+    this.state.diagnostics.debugState.rawInputs[stick][axis] = value;
+    
+    // Update last input for diagnostics
+    const leftStick = this.state.diagnostics.debugState.rawInputs.leftStick || { x: 0, y: 0 };
+    const rightStick = this.state.diagnostics.debugState.rawInputs.rightStick || { x: 0, y: 0 };
+    this.state.diagnostics.lastInput = `L:(${leftStick.x.toFixed(2)},${leftStick.y.toFixed(2)}) R:(${rightStick.x.toFixed(2)},${rightStick.y.toFixed(2)})`;
   }
 } 

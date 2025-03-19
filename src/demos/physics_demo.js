@@ -169,14 +169,39 @@ class PhysicsDemo {
       }
     }
     
-    // Round orientation values to 6 decimal places
+    // Format values to have consistent width with leading + or - signs
+    
+    // For drone orientation
     const droneOrientation = diagnostics.debugState.droneOrientation || {};
     const roundedOrientation = {};
     
     for (const key in droneOrientation) {
       const value = Number(droneOrientation[key]);
-      // Format with leading + or - sign to maintain consistent width
       roundedOrientation[key] = (value >= 0 ? '+' : '') + value.toFixed(6);
+    }
+    
+    // For raw inputs
+    const rawInputs = diagnostics.debugState.rawInputs || {};
+    const formattedRawInputs = {};
+    
+    // Format the left and right sticks
+    for (const stick of ['leftStick', 'rightStick']) {
+      if (rawInputs[stick]) {
+        formattedRawInputs[stick] = {};
+        for (const axis of ['x', 'y']) {
+          const value = Number(rawInputs[stick][axis] || 0);
+          formattedRawInputs[stick][axis] = (value >= 0 ? '+' : '') + value.toFixed(6);
+        }
+      }
+    }
+    
+    // For processed controls
+    const processedControls = diagnostics.debugState.processedControls || {};
+    const formattedControls = {};
+    
+    for (const control in processedControls) {
+      const value = Number(processedControls[control]);
+      formattedControls[control] = (value >= 0 ? '+' : '') + value.toFixed(6);
     }
     
     // Update overlay text with enhanced debug info
@@ -193,9 +218,9 @@ class PhysicsDemo {
       <div>Controls.altitudeHold: ${controls.altitudeHold ? 'ON' : 'OFF'}</div>
       <div>Debug State:</div>
       <div style="margin-left: 10px">
-        Raw Inputs: ${JSON.stringify(diagnostics.debugState.rawInputs, null, 2)}</div>
+        Raw Inputs: ${JSON.stringify(formattedRawInputs, null, 2)}</div>
       <div style="margin-left: 10px">
-        Processed Controls: ${JSON.stringify(diagnostics.debugState.processedControls, null, 2)}</div>
+        Processed Controls: ${JSON.stringify(formattedControls, null, 2)}</div>
       <div style="margin-left: 10px">
         Drone Orientation: ${JSON.stringify(roundedOrientation, null, 2)}</div>
     `;
