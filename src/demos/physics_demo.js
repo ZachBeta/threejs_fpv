@@ -169,6 +169,16 @@ class PhysicsDemo {
       }
     }
     
+    // Round orientation values to 6 decimal places
+    const droneOrientation = diagnostics.debugState.droneOrientation || {};
+    const roundedOrientation = {};
+    
+    for (const key in droneOrientation) {
+      const value = Number(droneOrientation[key]);
+      // Format with leading + or - sign to maintain consistent width
+      roundedOrientation[key] = (value >= 0 ? '+' : '') + value.toFixed(6);
+    }
+    
     // Update overlay text with enhanced debug info
     this.diagnosticOverlay.innerHTML = `
       <div>Controller: ${diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
@@ -176,6 +186,8 @@ class PhysicsDemo {
       <div>Last Input: ${diagnostics.lastInput}</div>
       <div>Speed: ${diagnostics.speed.toFixed(2)} m/s</div>
       <div>Altitude: ${diagnostics.altitude.toFixed(2)} m</div>
+      <div>Position: X:${this.drone.position.x.toFixed(2)} Y:${this.drone.position.y.toFixed(2)} Z:${this.drone.position.z.toFixed(2)}</div>
+      <div>Map Position: X:${Math.floor(this.drone.position.x)} Y:${Math.floor(this.drone.position.y)} Z:${Math.floor(this.drone.position.z)}</div>
       <div>Throttle: ${this.drone.throttle.toFixed(2)}</div>
       <div>Altitude Hold: ${this.drone.altitudeHold ? 'ON' : 'OFF'}</div>
       <div>Controls.altitudeHold: ${controls.altitudeHold ? 'ON' : 'OFF'}</div>
@@ -185,7 +197,7 @@ class PhysicsDemo {
       <div style="margin-left: 10px">
         Processed Controls: ${JSON.stringify(diagnostics.debugState.processedControls, null, 2)}</div>
       <div style="margin-left: 10px">
-        Drone Orientation: ${JSON.stringify(diagnostics.debugState.droneOrientation, null, 2)}</div>
+        Drone Orientation: ${JSON.stringify(roundedOrientation, null, 2)}</div>
     `;
 
     // Update stick indicators
