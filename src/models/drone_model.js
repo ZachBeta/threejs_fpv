@@ -6,8 +6,8 @@ export class DroneModel {
     // Store scene reference
     this.scene = scene;
 
-    // Initialize physics
-    this.physics = new DronePhysics();
+    // Initialize physics with a reference to the scene for collision detection
+    this.physics = new DronePhysics(scene);
     
     // Create drone mesh
     this.createDroneMesh();
@@ -21,7 +21,7 @@ export class DroneModel {
     const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
     const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
     this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
-    this.droneMesh.position.y = 10;
+    this.droneMesh.position.y = 51.0; // Match the new higher initial height 
     this.droneMesh.castShadow = true;
     this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
 
@@ -122,14 +122,19 @@ export class DroneModel {
     this.physics.setYaw(value);
   }
 
+  toggleAltitudeHold() {
+    return this.physics.toggleAltitudeHold();
+  }
+
+  // For backwards compatibility
   toggleHoverMode() {
-    this.physics.toggleHoverMode();
+    return this.toggleAltitudeHold();
   }
 
   reset() {
     this.physics.reset();
     // Reset drone mesh position and rotation
-    this.droneMesh.position.set(0, 10, 0);
+    this.droneMesh.position.set(0, 51.0, 0); // Match the new higher initial height
     this.droneMesh.rotation.set(0, Math.PI, 0);
   }
 
@@ -150,6 +155,11 @@ export class DroneModel {
     return this.physics.throttle;
   }
 
+  get altitudeHoldActive() {
+    return this.physics.altitudeHoldActive;
+  }
+  
+  // For backwards compatibility
   get hoverMode() {
     return this.physics.hoverMode;
   }

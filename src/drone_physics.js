@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 
 export class DronePhysics {
-  constructor() {
+  constructor(scene = null) {
+    // Store reference to scene for collision detection
+    this.scene = scene;
+    
     // Position and movement
-    this.position = { x: 0, y: 10, z: 0 };
+    this.position = { x: 0, y: 51.0, z: 0 }; // Start above the higher landing pad at y=50
     this.velocity = { x: 0, y: 0, z: 0 };
     
     // Use THREE.js for quaternion math
@@ -43,18 +46,18 @@ export class DronePhysics {
     // Environment
     this.groundLevel = 0;
     
-    // Hover mode
-    this.hoverMode = false;
-    this.hoverHeight = 5;
-    this.hoverStrength = 4.0;  // Further reduced for smoother response
-    this.hoverDamping = 0.9;   // Increased damping for better stability
+    // Altitude hold mode (renamed from hover mode)
+    this.altitudeHoldActive = false;
+    this.altitudeHoldHeight = 5;
+    this.altitudeHoldStrength = 4.0;  // Further reduced for smoother response
+    this.altitudeHoldDamping = 0.9;   // Increased damping for better stability
     this.lastThrottle = 0;
-    this.hoverAdjustRate = 3.0; // Slower height adjustments
-    this.hoverIntegralError = 0;
-    this.hoverMaxIntegral = 0.5; // Reduced to prevent overshoot
-    this.hoverDeadzone = 0.05;
-    this.targetHoverHeight = 5; // New: separate target for smooth transitions
-    this.hoverTransitionSpeed = 2.0; // New: control transition speed
+    this.altitudeHoldAdjustRate = 3.0; // Slower height adjustments
+    this.altitudeHoldIntegralError = 0;
+    this.altitudeHoldMaxIntegral = 0.5; // Reduced to prevent overshoot
+    this.altitudeHoldDeadzone = 0.05;
+    this.targetAltitudeHoldHeight = 5; // New: separate target for smooth transitions
+    this.altitudeHoldTransitionSpeed = 2.0; // New: control transition speed
     
     // Momentum tracking
     this.previousThrottle = 0;
@@ -62,6 +65,9 @@ export class DronePhysics {
   }
 
   updatePhysics(deltaTime) {
+    // Prior position for teleportation detection
+    const priorY = this.position.y;
+    
     // Apply gravity
     this.velocity.y -= this.gravity * deltaTime;
     
@@ -71,8 +77,8 @@ export class DronePhysics {
     // Then update position based on new orientation
     this.updatePosition(deltaTime);
     
-    // Apply ground collision
-    this.handleGroundCollision();
+    // Apply ground and landing pad collision
+    this.handleGroundCollision(priorY, deltaTime);
   }
 
   updateRotations(deltaTime) {
@@ -136,48 +142,8 @@ export class DronePhysics {
     // Apply air resistance
     this.applyAirResistance(deltaTime);
     
-    // Hover mode control (like cruise control)
-    if (this.hoverMode) {
-      // Update target height based on throttle input (like adjusting cruise speed)
-      if (Math.abs(this.throttle) > this.hoverDeadzone) {
-        // Scale height change by throttle amount for finer control
-        const heightChange = this.throttle * this.hoverAdjustRate * deltaTime;
-        this.targetHoverHeight += heightChange;
-      }
-      
-      // Smoothly transition current hover height to target
-      const heightDiff = this.targetHoverHeight - this.hoverHeight;
-      if (Math.abs(heightDiff) > 0.001) {
-        this.hoverHeight += heightDiff * this.hoverTransitionSpeed * deltaTime;
-      }
-
-      // PID control for hover
-      const heightError = this.hoverHeight - this.position.y;
-      const heightErrorVelocity = -this.velocity.y;
-      
-      // Update integral error with anti-windup
-      if (Math.abs(heightError) < 1.0) { // Only accumulate when close
-        this.hoverIntegralError += heightError * deltaTime;
-        this.hoverIntegralError = Math.max(-this.hoverMaxIntegral, 
-                                         Math.min(this.hoverMaxIntegral, this.hoverIntegralError));
-      } else {
-        this.hoverIntegralError = 0; // Reset when far from target
-      }
-      
-      // PID force calculation with smoother response
-      const proportionalForce = heightError * this.hoverStrength;
-      const derivativeForce = heightErrorVelocity * this.hoverDamping;
-      const integralForce = this.hoverIntegralError * (this.hoverStrength * 0.02); // Further reduced integral gain
-      
-      // Combine forces with gravity compensation
-      const baseForce = proportionalForce + derivativeForce + integralForce;
-      const gravityCompensation = this.gravity * (1.0 + Math.abs(heightError) * 0.1); // Adaptive gravity compensation
-      const hoverForce = (baseForce + gravityCompensation) * deltaTime;
-      
-      // Apply hover force with smooth ramping
-      const forceScale = Math.min(1.0, Math.abs(heightError) * 2.0); // Ramp up force based on error
-      this.velocity.y += hoverForce * forceScale;
-    }
+    // Apply altitude hold
+    this.applyAltitudeHold(deltaTime);
     
     // Update position
     this.position.x += this.velocity.x * deltaTime;
@@ -220,7 +186,8 @@ export class DronePhysics {
     }
   }
 
-  handleGroundCollision() {
+  handleGroundCollision(priorY, deltaTime) {
+    // Ground collision
     if (this.position.y < this.groundLevel) {
       this.position.y = this.groundLevel;
       this.velocity.y = 0;
@@ -228,6 +195,100 @@ export class DronePhysics {
       // Apply ground friction
       this.velocity.x *= 0.8;
       this.velocity.z *= 0.8;
+    }
+    
+    // Check for landing pad collision
+    if (this.scene) {
+      this.scene.children.forEach(object => {
+        if (object.userData && object.userData.isCollider) {
+          if (object.userData.type === 'landingPad') {
+            // Enhanced collision detection for high velocities
+            const landingPadY = object.position.y;
+            const landingPadRadius = 2; // Same as the cylinder radius
+            
+            // Check if drone is above landing pad horizontally
+            const dx = this.position.x - object.position.x;
+            const dz = this.position.z - object.position.z;
+            const distanceSquared = dx * dx + dz * dz;
+            
+            if (distanceSquared < landingPadRadius * landingPadRadius) {
+              // Drone is within the horizontal bounds of the landing pad
+              
+              // For extreme velocities (teleportation-like), we need to check if the drone
+              // started above the landing pad and ended below it in a single step
+              if (priorY > landingPadY && this.position.y < landingPadY) {
+                // We've teleported through the landing pad in one step
+                this.position.y = landingPadY + 0.1; // Place on the landing pad
+                this.velocity.y = 0;
+                
+                // Apply higher friction
+                this.velocity.x *= 0.6;
+                this.velocity.z *= 0.6;
+                return; // Skip further collision detection
+              }
+              
+              // For high velocities, use continuous collision detection
+              if (this.velocity.y < -10) { // Only for significant downward velocities
+                // The step size we need to check to prevent tunneling (based on velocity)
+                const frameTime = deltaTime || 0.016; // Use provided deltaTime or default
+                const velocityMagnitude = Math.abs(this.velocity.y);
+                const safeStepSize = 0.1; // Maximum allowed movement per sub-step
+                const numSubSteps = Math.max(1, Math.ceil(velocityMagnitude * frameTime / safeStepSize));
+                const subStepTime = frameTime / numSubSteps;
+                
+                // Simulate movement in smaller sub-steps for continuous collision detection
+                let collided = false;
+                const originalY = this.position.y; // Store original position
+                
+                for (let i = 0; i < numSubSteps; i++) {
+                  // Calculate next position
+                  const nextY = this.position.y + this.velocity.y * subStepTime;
+                  
+                  // Check if this sub-step crosses the landing pad
+                  if (this.position.y > landingPadY && nextY <= landingPadY) {
+                    // Collision detected - stop at landing pad
+                    this.position.y = landingPadY + 0.1; // Rest slightly above the pad
+                    this.velocity.y = 0;
+                    
+                    // Apply higher friction when landing on the pad
+                    this.velocity.x *= 0.6;
+                    this.velocity.z *= 0.6;
+                    
+                    collided = true;
+                    break;
+                  }
+                  
+                  // If no collision, update position for next sub-step
+                  if (!collided) {
+                    this.position.y = nextY;
+                  }
+                }
+                
+                // If no collision occurred during sub-steps, restore the original position
+                // to let normal physics continue
+                if (!collided) {
+                  this.position.y = originalY;
+                } else {
+                  return; // Skip further processing if a collision was detected
+                }
+              }
+              
+              // Standard collision check (already on or near the pad)
+              if (this.position.y <= (landingPadY + 0.1) && 
+                  this.position.y >= (landingPadY - 0.1)) {
+                
+                // Keep the drone on the landing pad
+                this.position.y = landingPadY + 0.1; // Rest slightly above the pad
+                this.velocity.y = 0;
+                
+                // Apply higher friction when on the pad
+                this.velocity.x *= 0.6;
+                this.velocity.z *= 0.6;
+              }
+            }
+          }
+        }
+      });
     }
   }
 
@@ -253,18 +314,35 @@ export class DronePhysics {
     this.yaw = Math.min(Math.max(-1, value), 1);
   }
 
-  toggleHoverMode() {
-    this.hoverMode = !this.hoverMode;
-    if (this.hoverMode) {
-      // When engaging hover (like engaging cruise control), use current height
-      this.hoverHeight = this.position.y;
-      this.targetHoverHeight = this.position.y;
-      this.hoverIntegralError = 0;
+  toggleAltitudeHold() {
+    if (this.altitudeHoldActive) {
+      this.disableAltitudeHold();
+    } else {
+      this.enableAltitudeHold();
     }
+    return this.altitudeHoldActive;
+  }
+
+  enableAltitudeHold() {
+    this.altitudeHoldActive = true;
+    this.altitudeHoldHeight = this.position.y;
+    this.targetAltitudeHoldHeight = this.position.y;
+    this.altitudeHoldIntegralError = 0;
+    console.log("Altitude hold enabled at height:", this.position.y);
+  }
+
+  disableAltitudeHold() {
+    this.altitudeHoldActive = false;
+    // Reset integral error when disabling to prevent unexpected behavior when re-enabling
+    this.altitudeHoldIntegralError = 0;
+    console.log("Altitude hold disabled");
   }
 
   reset() {
-    this.position = { x: 0, y: 10, z: 0 };
+    // Maintain scene reference
+    const scene = this.scene;
+    
+    this.position = { x: 0, y: 51.0, z: 0 }; // Start above the higher landing pad at y=50
     this.velocity = { x: 0, y: 0, z: 0 };
     this.quaternion.set(0, 0, 0, 1);
     this.localRotation = { x: 0, y: 0, z: 0 };
@@ -277,6 +355,69 @@ export class DronePhysics {
     this.pitch = 0;
     this.roll = 0;
     this.yaw = 0;
-    this.hoverMode = false;
+    this.altitudeHoldActive = false;
+    
+    // Restore scene reference
+    this.scene = scene;
+  }
+
+  // Update altitude hold height target based on throttle input
+  updateAltitudeHoldTarget(deltaTime) {
+    if (Math.abs(this.throttle) > this.altitudeHoldDeadzone) {
+      // Adjust target height based on throttle direction and value
+      this.targetAltitudeHoldHeight += this.throttle * this.altitudeHoldAdjustRate * deltaTime;
+    }
+    
+    // Smoothly transition to target height
+    this.altitudeHoldHeight += (this.targetAltitudeHoldHeight - this.altitudeHoldHeight) 
+                            * this.altitudeHoldTransitionSpeed * deltaTime;
+  }
+
+  // Apply altitude hold forces
+  applyAltitudeHold(deltaTime) {
+    if (!this.altitudeHoldActive) return;
+    
+    // Update target height based on throttle input
+    this.updateAltitudeHoldTarget(deltaTime);
+    
+    // Calculate error and derivative (vertical velocity)
+    const heightError = this.altitudeHoldHeight - this.position.y;
+    const velocityError = -this.velocity.y; // Negative because upward is positive
+    
+    // Update integral term with anti-windup
+    this.altitudeHoldIntegralError += heightError * deltaTime;
+    this.altitudeHoldIntegralError = Math.max(
+      -this.altitudeHoldMaxIntegral,
+      Math.min(this.altitudeHoldMaxIntegral, this.altitudeHoldIntegralError)
+    );
+    
+    // PID controller for altitude hold with stronger gains
+    const pTerm = heightError * 5.0;
+    const dTerm = velocityError * 3.0;
+    const iTerm = this.altitudeHoldIntegralError * 1.0;
+    
+    // Combined force with stronger gravity compensation
+    const gravityCompensation = this.gravity * 1.2; // Over-compensate gravity slightly
+    let hoverForce = (pTerm + dTerm + iTerm) + gravityCompensation;
+    
+    // Scale force based on error magnitude for smoother response
+    const forceScale = Math.min(1.0, Math.abs(heightError) * 0.5);
+    
+    // Apply the force to the vertical velocity
+    this.velocity.y += hoverForce * forceScale * deltaTime;
+  }
+
+  // Add backward compatibility getter/setter for hoverMode
+  get hoverMode() {
+    return this.altitudeHoldActive;
+  }
+  
+  set hoverMode(value) {
+    this.altitudeHoldActive = value;
+    if (value) {
+      this.altitudeHoldHeight = this.position.y;
+      this.targetAltitudeHoldHeight = this.position.y;
+      this.altitudeHoldIntegralError = 0;
+    }
   }
 } 

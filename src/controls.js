@@ -14,7 +14,7 @@ export class Controls {
       },
       buttonMapping: {
         reset: 4, // L button
-        hover: 5  // R button
+        altitudeHold: 5  // R button (renamed from hover)
       }
     }
   } = {}) {
@@ -41,9 +41,13 @@ export class Controls {
         yaw: 0,
         pitch: 0,
         roll: 0,
-        hover: false
+        altitudeHold: false  // renamed from hover
       }
     };
+
+    // Initialize button state tracking variables
+    this._lastResetState = false;
+    this._lastAltitudeHoldState = false;
 
     this.setupGamepadListeners();
   }
@@ -113,17 +117,17 @@ export class Controls {
 
     // Handle button presses with proper state tracking
     const resetPressed = gamepad.buttons[buttonMapping.reset]?.pressed;
-    const hoverPressed = gamepad.buttons[buttonMapping.hover]?.pressed;
+    const altitudeHoldPressed = gamepad.buttons[buttonMapping.altitudeHold]?.pressed;  // renamed from hover
 
     if (resetPressed && !this._lastResetState) {
       this.reset();
     }
-    if (hoverPressed && !this._lastHoverState) {
-      this.toggleHoverMode();
+    if (altitudeHoldPressed && !this._lastAltitudeHoldState) {  // renamed from hover
+      this.toggleAltitudeHold();  // renamed from hover
     }
 
     this._lastResetState = resetPressed;
-    this._lastHoverState = hoverPressed;
+    this._lastAltitudeHoldState = altitudeHoldPressed;  // renamed from hover
   }
 
   updateGamepadState() {
@@ -174,9 +178,9 @@ export class Controls {
     this.logControlChange('yaw', value);
   }
 
-  toggleHoverMode() {
-    this.state.controls.hover = !this.state.controls.hover;
-    console.log('Hover mode:', this.state.controls.hover ? 'enabled' : 'disabled');
+  toggleAltitudeHold() {  // renamed from toggleHoverMode
+    this.state.controls.altitudeHold = !this.state.controls.altitudeHold;  // renamed from hover
+    console.log('Altitude Hold mode:', this.state.controls.altitudeHold ? 'enabled' : 'disabled');
   }
 
   reset() {
@@ -185,9 +189,22 @@ export class Controls {
       yaw: 0,
       pitch: 0,
       roll: 0,
-      hover: false
+      altitudeHold: false  // renamed from hover
     };
     console.log('Controls reset');
+  }
+
+  // For backwards compatibility
+  toggleHoverMode() {
+    this.toggleAltitudeHold();
+  }
+
+  get hover() {
+    return this.state.controls.altitudeHold;
+  }
+
+  set hover(value) {
+    this.state.controls.altitudeHold = value;
   }
 
   // Debug helpers
@@ -209,6 +226,13 @@ export class Controls {
   }
 
   getControls() {
-    return this.state.controls;
+    return {
+      throttle: this.state.controls.throttle,
+      yaw: this.state.controls.yaw,
+      pitch: this.state.controls.pitch,
+      roll: this.state.controls.roll,
+      altitudeHold: this.state.controls.altitudeHold,
+      hover: this.state.controls.altitudeHold // for backward compatibility
+    };
   }
 } 
