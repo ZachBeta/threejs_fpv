@@ -182,7 +182,7 @@ describe('Controls', () => {
       controls.state.gamepad = mockGamepadLeft;
       controls.handleGamepadInput();
       state = controls.getControls();
-      expect(state.roll).toBe(-1.0); // Left on stick should be negative (roll right)
+      expect(state.roll).toBe(1.0); // Left on stick should be positive (roll left)
       
       const mockGamepadRight = {
         axes: [0, 0, 1, 0], // Right stick X at 1 (right)
@@ -193,7 +193,7 @@ describe('Controls', () => {
       controls.state.gamepad = mockGamepadRight;
       controls.handleGamepadInput();
       state = controls.getControls();
-      expect(state.roll).toBe(1.0); // Right on stick should be positive (roll left)
+      expect(state.roll).toBe(-1.0); // Right on stick should be negative (roll right)
     });
 
     test('roll input should respect deadzone', () => {
@@ -453,9 +453,57 @@ describe('Controls', () => {
       const state = controls.getControls();
       const diagnostics = controls.getDiagnostics();
       
-      expect(state.roll).toBe(1.0); // Right on stick = roll left = positive
+      expect(state.roll).toBe(-1.0); // Right on stick = roll right = negative
       expect(diagnostics.debugState.rawInputs.rightStick.x).toBe(1);
-      expect(diagnostics.debugState.processedControls.roll).toBe(1.0);
+      expect(diagnostics.debugState.processedControls.roll).toBe(-1.0);
+    });
+  });
+
+  describe('Gamepad Roll Direction', () => {
+    test('gamepad roll right should move the drone to the right', () => {
+      // Mock the gamepad API input for stick movement to the right
+      const mockGamepadRight = {
+        axes: [0, 0, 1, 0], // Right stick X at 1 (right)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller',
+        index: 0
+      };
+
+      // Connect gamepad and update controls
+      gamepadConnectHandlers[0]({ gamepad: mockGamepadRight });
+      controls.state.gamepad = mockGamepadRight;
+      controls.handleGamepadInput();
+
+      // Verify the correctly processed controls
+      const state = controls.getControls();
+      const diagnostics = controls.getDiagnostics();
+      
+      // When stick moves right (positive X), roll should be negative (right)
+      expect(diagnostics.debugState.rawInputs.rightStick.x).toBe(1); // Stick is right
+      expect(state.roll).toBe(-1.0); // Should be roll right (negative)
+    });
+
+    test('gamepad roll left should move the drone to the left', () => {
+      // Mock the gamepad API input for stick movement to the left
+      const mockGamepadLeft = {
+        axes: [0, 0, -1, 0], // Right stick X at -1 (left)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller',
+        index: 0
+      };
+
+      // Connect gamepad and update controls
+      gamepadConnectHandlers[0]({ gamepad: mockGamepadLeft });
+      controls.state.gamepad = mockGamepadLeft;
+      controls.handleGamepadInput();
+
+      // Verify the correctly processed controls
+      const state = controls.getControls();
+      const diagnostics = controls.getDiagnostics();
+      
+      // When stick moves left (negative X), roll should be positive (left)
+      expect(diagnostics.debugState.rawInputs.rightStick.x).toBe(-1); // Stick is left
+      expect(state.roll).toBe(1.0); // Should be roll left (positive)
     });
   });
 }); 

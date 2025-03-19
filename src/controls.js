@@ -106,7 +106,7 @@ export class Controls {
       throttle: leftY !== 0 ? -leftY : 0,
       yaw: leftX !== 0 ? -leftX : 0,
       pitch: rightY !== 0 ? rightY : 0,
-      roll: rightX !== 0 ? rightX : 0
+      roll: rightX !== 0 ? -rightX : 0  // Invert right stick X for correct roll direction
     };
 
     // Store processed controls for debugging
