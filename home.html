@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js FPV Demos</title>
+    <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/public/styles.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin-right: 20px;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .demo-list {
+            list-style: none;
+            padding: 0;
+        }
+        .demo-item {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            transition: all 0.2s ease;
+        }
+        .demo-item:hover {
+            background-color: #f8f8f8;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .demo-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 18px;
+            display: block;
+        }
+        .demo-item a:hover {
+            color: var(--primary-dark);
+        }
+        .demo-description {
+            color: #666;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .demo-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+            background-color: var(--warning-color);
+            color: #000;
+        }
+        .demo-status.completed {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .demo-status.new {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="/public/images/drone.svg" alt="FPV Drone Logo" class="logo">
+            <h1>Three.js FPV Demos</h1>
+        </div>
+        <ul class="demo-list">
+            <li class="demo-item">
+                <a href="demos/drone_flight_demo/drone_flight_demo.html">Drone Flight Demo <span class="demo-status completed">Completed</span></a>
+                <div class="demo-description">FPV drone simulation with gamepad support, hover mode and performance metrics.</div>
+            </li>
+            <li class="demo-item">
+                <a href="demos/physics_demo/physics_demo.html">Physics Demo <span class="demo-status">In Progress</span></a>
+                <div class="demo-description">Experimental physics engine demonstration.</div>
+            </li>
+            <li class="demo-item">
+                <a href="demos/flight_routine_demo/flight_routine_demo.html">Flight Routine Demo <span class="demo-status">In Progress</span></a>
+                <div class="demo-description">Pre-programmed flight routine demonstration.</div>
+            </li>
+            <li class="demo-item">
+                <a href="demos/backflip_analysis/index.html">Backflip Analysis Tool <span class="demo-status new">New</span></a>
+                <div class="demo-description">Tool for analyzing backflip recordings and validating maneuver execution.</div>
+            </li>
+            <li class="demo-item">
+                <a href="demos/game_state_demo/game_state_demo.html">Game State Demo <span class="demo-status completed">Completed</span></a>
+                <div class="demo-description">System test demonstrations with game state tracking.</div>
+            </li>
+            <li class="demo-item">
+                <a href="demos/gamepad_demo/index.html">Gamepad Tester <span class="demo-status new">New</span></a>
+                <div class="demo-description">A utility for testing gamepad inputs and generating controller configurations.</div>
+            </li>
+        </ul>
+    </div>
+</body>
+</html> 
