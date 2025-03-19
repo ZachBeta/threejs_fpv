@@ -253,10 +253,10 @@ document.addEventListener('keydown', (event) => {
       demo.setThrottle(-1.0);
       break;
     case 'a': // Yaw left
-      demo.setYaw(-1.0);
+      demo.setYaw(1.0);
       break;
     case 'd': // Yaw right
-      demo.setYaw(1.0);
+      demo.setYaw(-1.0);
       break;
     
     // Right stick (IJKL)

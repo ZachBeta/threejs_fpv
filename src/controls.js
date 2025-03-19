@@ -13,7 +13,8 @@ export class Controls {
         rightStickY: 3
       },
       buttonMapping: {
-        reset: 4 // L button
+        reset: 4, // L button
+        hover: 5  // R button
       }
     }
   } = {}) {
@@ -73,7 +74,7 @@ export class Controls {
     const gamepad = this.state.gamepad;
     this.state.diagnostics.controllerConnected = true;
     this.state.diagnostics.controllerName = gamepad.id;
-    const { deadzone, axisMapping } = this.gamepadConfig;
+    const { deadzone, axisMapping, buttonMapping } = this.gamepadConfig;
 
     // Get raw inputs with deadzone applied
     const leftX = Math.abs(gamepad.axes[axisMapping.leftStickX]) > deadzone ? 
@@ -101,7 +102,7 @@ export class Controls {
       throttle: leftY !== 0 ? -leftY : 0,
       yaw: leftX !== 0 ? -leftX : 0,
       pitch: rightY !== 0 ? rightY : 0,
-      roll: rightX !== 0 ? rightX : 0
+      roll: rightX !== 0 ? -rightX : 0  // Inverted to match keyboard controls
     };
 
     // Store processed controls for debugging
@@ -109,6 +110,15 @@ export class Controls {
 
     // Update game state
     Object.assign(this.state.controls, controls);
+
+    // Handle button presses
+    if (gamepad.buttons[buttonMapping.reset]?.pressed) {
+      this.reset();
+    }
+    if (gamepad.buttons[buttonMapping.hover]?.pressed && !this._lastHoverState) {
+      this.toggleHoverMode();
+    }
+    this._lastHoverState = gamepad.buttons[buttonMapping.hover]?.pressed;
   }
 
   updateGamepadState() {

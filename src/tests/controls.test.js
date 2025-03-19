@@ -209,6 +209,67 @@ describe('Controls', () => {
     });
   });
 
+  describe('Yaw Direction Consistency', () => {
+    test('yaw direction should be consistent between keyboard and gamepad', () => {
+      // Test keyboard-style direct yaw setting
+      controls.setYaw(-1.0); // Yaw left
+      let state = controls.getControls();
+      expect(state.yaw).toBe(-1.0);
+      
+      controls.setYaw(1.0); // Yaw right
+      state = controls.getControls();
+      expect(state.yaw).toBe(1.0);
+      
+      // Test gamepad-style input
+      const mockGamepadLeft = {
+        axes: [-1, 0, 0, 0], // Left stick X at -1 (left)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      
+      controls.state.gamepad = mockGamepadLeft;
+      controls.handleGamepadInput();
+      state = controls.getControls();
+      expect(state.yaw).toBe(1.0); // Left on stick should be positive (yaw left)
+      
+      const mockGamepadRight = {
+        axes: [1, 0, 0, 0], // Left stick X at 1 (right)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      
+      controls.state.gamepad = mockGamepadRight;
+      controls.handleGamepadInput();
+      state = controls.getControls();
+      expect(state.yaw).toBe(-1.0); // Right on stick should be negative (yaw right)
+    });
+
+    test('yaw input should respect deadzone', () => {
+      const mockGamepad = {
+        axes: [0.05, 0, 0, 0], // Left stick X barely moved right
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      
+      controls.state.gamepad = mockGamepad;
+      controls.handleGamepadInput();
+      const state = controls.getControls();
+      expect(state.yaw).toBe(0); // Should be zero due to deadzone
+    });
+
+    test('keyboard yaw controls should match documented behavior', () => {
+      // Test A key (yaw left)
+      controls.setYaw(-1.0);
+      let state = controls.getControls();
+      expect(state.yaw).toBe(-1.0); // A key should make drone yaw left (negative)
+      
+      // Test D key (yaw right)
+      controls.setYaw(1.0);
+      state = controls.getControls();
+      expect(state.yaw).toBe(1.0); // D key should make drone yaw right (positive)
+    });
+  });
+
   describe('Orientation Tracking', () => {
     test('updateDroneOrientation should track pitch changes', () => {
       const mockRotation = { x: 0.5, y: 0, z: 0 }; // Pitched up by 0.5 radians
