@@ -20,6 +20,10 @@ export class DronePhysics {
     this.localRotation = { x: 0, y: 0, z: 0 }; // For input tracking
     this.angularVelocity = { x: 0, y: 0, z: 0 };
     
+    // Track total rotation (including multiple revolutions) for acrobatics
+    this.totalRotation = { x: 0, y: 0, z: 0 };
+    this.previousRotation = { x: 0, y: 0, z: 0 };
+    
     // Vectors for transformation
     this.forward = new THREE.Vector3(0, 0, -1);
     this.up = new THREE.Vector3(0, 1, 0);
@@ -111,6 +115,11 @@ export class DronePhysics {
     this.localRotation.x += this.pitch * currentTiltSpeed * deltaTime; // Pitch
     this.localRotation.z += this.roll * currentTiltSpeed * deltaTime; // Roll
     
+    // Store previous rotation values before normalization
+    const prevX = this.localRotation.x;
+    const prevY = this.localRotation.y;
+    const prevZ = this.localRotation.z;
+    
     // Apply safety limits if enabled
     if (this.safetyMode) {
       // Limit pitch and roll angles
@@ -134,6 +143,30 @@ export class DronePhysics {
       this.localRotation.x *= acrobaticDamping;
       this.localRotation.z *= acrobaticDamping;
     }
+    
+    // Also normalize yaw for consistency
+    while (this.localRotation.y > Math.PI) this.localRotation.y -= Math.PI * 2;
+    while (this.localRotation.y < -Math.PI) this.localRotation.y += Math.PI * 2;
+    
+    // Update total rotation tracking by calculating deltas with wraparound handling
+    // For each axis, compute the delta considering possible wraparound
+    ['x', 'y', 'z'].forEach(axis => {
+      // Calculate the change with wraparound detection
+      let delta = this.localRotation[axis] - this.previousRotation[axis];
+      
+      // Handle wraparound
+      if (delta < -Math.PI) {
+        delta += Math.PI * 2; // Crossed from -π to +π
+      } else if (delta > Math.PI) {
+        delta -= Math.PI * 2; // Crossed from +π to -π
+      }
+      
+      // Add the delta to total rotation
+      this.totalRotation[axis] += delta;
+      
+      // Update previous rotation
+      this.previousRotation[axis] = this.localRotation[axis];
+    });
     
     // Update rotation euler with current local rotation
     this.rotationEuler.set(
@@ -425,6 +458,8 @@ export class DronePhysics {
     this.quaternion.set(0, 0, 0, 1);
     this.localRotation = { x: 0, y: 0, z: 0 };
     this.angularVelocity = { x: 0, y: 0, z: 0 };
+    this.totalRotation = { x: 0, y: 0, z: 0 };
+    this.previousRotation = { x: 0, y: 0, z: 0 };
     this.forward.set(0, 0, -1);
     this.up.set(0, 1, 0);
     this.right.set(1, 0, 0);

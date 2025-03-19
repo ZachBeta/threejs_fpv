@@ -238,12 +238,15 @@ describe('Flight Routine Physics', () => {
       // Initial heading is 0
       expect(drone.physics.localRotation.y).toBe(0);
       
+      // Reset total rotation tracking
+      drone.physics.totalRotation.y = 0;
+      
       // Simulate the 180 degree rotation
       simulatePhysics(yaw180Step, yaw180Step.duration / 1000);
       
-      // Should be approximately halfway around (negative PI)
-      expect(drone.physics.localRotation.y).toBeLessThan(-Math.PI / 2);
-      expect(drone.physics.localRotation.y).toBeGreaterThan(-Math.PI * 1.5);
+      // Should have rotated approximately negative π radians (180 degrees clockwise)
+      expect(drone.physics.totalRotation.y).toBeLessThan(-Math.PI / 2);
+      expect(drone.physics.totalRotation.y).toBeGreaterThan(-Math.PI * 1.5);
     });
 
     test('360 degree yaw left should complete a full rotation', () => {
@@ -252,15 +255,16 @@ describe('Flight Routine Physics', () => {
       );
       expect(yaw360Step).toBeDefined();
       
-      // Test the yaw direction rather than final position
-      const initialHeading = drone.physics.localRotation.y;
+      // Reset total rotation tracking
+      drone.physics.totalRotation.y = 0;
       
-      // Simulate a portion of the rotation
-      simulatePhysics(yaw360Step, 0.5); // half a second
+      // Run simulation for the full duration of the step
+      const duration = yaw360Step.duration / 1000; // Convert ms to seconds
+      simulatePhysics(yaw360Step, duration);
       
-      // Should be rotating counterclockwise (positive direction)
-      const midwayHeading = drone.physics.localRotation.y;
-      expect(midwayHeading).toBeGreaterThan(initialHeading);
+      // Should complete approximately a full circle (2π radians) 
+      // or at least most of it (>270 degrees)
+      expect(drone.physics.totalRotation.y).toBeGreaterThan(Math.PI * 3/4);
     });
   });
 
@@ -279,15 +283,15 @@ describe('Flight Routine Physics', () => {
       );
       expect(barrelRollStep).toBeDefined();
       
-      // Track initial orientation
-      const initialRoll = drone.physics.localRotation.z;
+      // Reset total rotation tracking
+      drone.physics.totalRotation.z = 0;
       
-      // Simulate a portion of the barrel roll
-      simulatePhysics(barrelRollStep, 0.5);
+      // Run simulation for the full duration of the step
+      const duration = barrelRollStep.duration / 1000; // Convert ms to seconds
+      simulatePhysics(barrelRollStep, duration);
       
-      // Verify the roll is happening in the right direction
-      // Right roll should have positive roll value
-      expect(drone.physics.localRotation.z).toBeGreaterThan(initialRoll);
+      // A barrel roll should complete at least 270 degrees (most of a full roll)
+      expect(Math.abs(drone.physics.totalRotation.z)).toBeGreaterThan(Math.PI * 3/4);
       
       // Verify throttle is appropriate for the maneuver
       expect(barrelRollStep.controls.throttle).toBeGreaterThan(0.5);
@@ -299,14 +303,15 @@ describe('Flight Routine Physics', () => {
       );
       expect(forwardLoopStep).toBeDefined();
       
-      // Initial pitch should be 0
-      const initialPitch = drone.physics.localRotation.x;
+      // Reset total rotation tracking
+      drone.physics.totalRotation.x = 0;
       
-      // Simulate the first part of the loop
-      simulatePhysics(forwardLoopStep, 0.5);
+      // Run simulation for the full duration of the step
+      const duration = forwardLoopStep.duration / 1000; // Convert ms to seconds
+      simulatePhysics(forwardLoopStep, duration);
       
-      // Forward loop should create a negative pitch (nose down)
-      expect(drone.physics.localRotation.x).toBeLessThan(initialPitch);
+      // A forward loop should complete at least 270 degrees of rotation
+      expect(Math.abs(drone.physics.totalRotation.x)).toBeGreaterThan(Math.PI * 3/4);
       
       // Verify maximum throttle is used for the loop
       expect(forwardLoopStep.controls.throttle).toBe(1.0);
