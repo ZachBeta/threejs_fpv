@@ -2,9 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import { saveLogs, getLogs, getStepStats, getControlRanges, saveGameState, getLatestGameStates, clearAllLogs, clearAllData, initializeDatabase, getDatabase } from './db.js';
 import { logRequest, logResponse, logError } from './utils/logger.js';
+import { setupRecordingApi } from './server/recording_api.js';
 import net from 'net';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
 
 // Convert exec to promise-based
 const execAsync = promisify(exec);
@@ -49,9 +52,16 @@ async function ensurePortAvailable(port) {
 // Initialize database before setting up the server
 initializeDatabase();
 
+// Make sure data directory exists
+const dataDir = path.join(process.cwd(), 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir);
+  console.log('Created data directory');
+}
+
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Increased limit for large recordings
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -73,6 +83,9 @@ app.use((err, req, res, next) => {
     logError(err);
     res.status(500).json({ success: false, error: err.message });
 });
+
+// Setup recording API routes
+setupRecordingApi(app);
 
 // Test endpoint to verify server is running
 app.get('/api/test', (req, res) => {

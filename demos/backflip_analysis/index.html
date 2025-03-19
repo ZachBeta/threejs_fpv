@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backflip Analysis Tool - Three.js FPV</title>
+  <link rel="icon" href="/public/favicon.svg" type="image/svg+xml">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      background-color: #f8f9fa;
+    }
+    
+    .home-link {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      font-family: monospace;
+      padding: 10px;
+      border-radius: 5px;
+      z-index: 1100;
+    }
+    
+    .home-link a {
+      color: #00ff00;
+      text-decoration: none;
+    }
+    
+    .home-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="home-link">
+    <a href="/home.html">← Back to Home</a>
+  </div>
+  
+  <!-- The BackflipAnalysisTool will create its own UI elements -->
+  
+  <script type="module" src="/src/demos/backflip_analysis_tool.js"></script>
+</body>
+</html> 

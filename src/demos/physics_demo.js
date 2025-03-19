@@ -481,6 +481,70 @@ ${formatAsKeyValuePairs(roundedOrientation)}</div>
     this.controls.toggleAltitudeHold();
     this.drone.toggleAltitudeHold();
   }
+
+  handleKeyDown(event) {
+    switch (event.key.toLowerCase()) {
+      // Left stick (WASD)
+      case 'w': // Throttle up
+        this.setThrottle(1.0);
+        break;
+      case 's': // Throttle down
+        this.setThrottle(-1.0);
+        break;
+      case 'a': // Yaw left
+        this.setYaw(1.0);
+        break;
+      case 'd': // Yaw right
+        this.setYaw(-1.0);
+        break;
+      
+      // Right stick (IJKL)
+      case 'i': // Pitch forward
+        this.setPitch(-1.0); // Negative value to pitch forward
+        break;
+      case 'k': // Pitch backward
+        this.setPitch(1.0); // Positive value to pitch backward
+        break;
+      case 'j': // Roll left
+        this.setRoll(1.0); // Changed from -1.0 to 1.0 for left roll
+        break;
+      case 'l': // Roll right
+        this.setRoll(-1.0); // Changed from 1.0 to -1.0 for right roll
+        break;
+      
+      // Recording controls
+      case 'r': // Toggle recording
+        if (this.recordingManager.isRecording) {
+          this.recordingManager.stopRecording();
+        } else {
+          this.recordingManager.startRecording('manual_flight');
+        }
+        break;
+      
+      case 'b': // Backward loop recording shortcut
+        if (!this.recordingManager.isRecording) {
+          this.recordingManager.startRecording('backflip');
+          // Configure for backward loop - full throttle and backward pitch
+          this.setThrottle(1.0);
+          this.setPitch(1.0);
+        } else {
+          this.recordingManager.stopRecording();
+          this.setThrottle(0);
+          this.setPitch(0);
+        }
+        break;
+      
+      // Other controls
+      case 'h':
+        this.toggleAltitudeHold();
+        break;
+      case 'r':
+        this.reset();
+        break;
+    }
+  }
+
+  // ... rest of existing code ...
 }
 
 // Create demo instance
@@ -488,60 +552,7 @@ const demo = new PhysicsDemo();
 
 // Add keyboard controls
 document.addEventListener('keydown', (event) => {
-  switch(event.key) {
-    // Left stick (WASD)
-    case 'w': // Throttle up
-      demo.setThrottle(1.0);
-      break;
-    case 's': // Throttle down
-      demo.setThrottle(-1.0);
-      break;
-    case 'a': // Yaw left
-      demo.setYaw(1.0);
-      break;
-    case 'd': // Yaw right
-      demo.setYaw(-1.0);
-      break;
-    
-    // Right stick (IJKL)
-    case 'i': // Pitch forward
-      demo.setPitch(-1.0); // Negative value to pitch forward
-      break;
-    case 'k': // Pitch backward
-      demo.setPitch(1.0); // Positive value to pitch backward
-      break;
-    case 'j': // Roll left
-      demo.setRoll(1.0); // Changed from -1.0 to 1.0 for left roll
-      break;
-    case 'l': // Roll right
-      demo.setRoll(-1.0); // Changed from 1.0 to -1.0 for right roll
-      break;
-    
-    // Recording controls
-    case 'b': // Backward loop recording shortcut
-      // First, check if we're already recording
-      if (!demo.recordingManager.isRecording) {
-        // Start recording
-        demo.recordingManager.startRecording();
-        // Configure for backward loop - full throttle and backward pitch
-        demo.setThrottle(1.0);
-        demo.setPitch(1.0);
-      } else {
-        // Stop recording and reset controls
-        demo.recordingManager.stopRecording();
-        demo.setThrottle(0);
-        demo.setPitch(0);
-      }
-      break;
-    
-    // Other controls
-    case 'h':
-      demo.toggleAltitudeHold();
-      break;
-    case 'r':
-      demo.reset();
-      break;
-  }
+  demo.handleKeyDown(event);
 });
 
 document.addEventListener('keyup', (event) => {

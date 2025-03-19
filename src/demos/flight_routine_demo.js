@@ -137,16 +137,17 @@ class FlightRoutineDemo {
     // Setup event listeners
     this.setupEventListeners();
     
-    // Initialize safety mode toggle with actual drone physics value
+    // Initialize safety mode toggle with safety off by default
     if (this.safeModeToggle && this.drone && this.drone.physics) {
-      this.safeModeToggle.checked = this.drone.physics.safetyMode;
+      this.safeModeToggle.checked = false;
+      this.drone.physics.disableSafetyMode();
       console.log('Safety mode initialized to:', this.drone.physics.safetyMode);
       
       // Update the safety status text color to match the current state
       const safetyStatus = document.getElementById('safety-status');
       if (safetyStatus) {
-        safetyStatus.textContent = this.drone.physics.safetyMode ? 'ON' : 'OFF';
-        safetyStatus.style.color = this.drone.physics.safetyMode ? '#00ff00' : '#ff0000';
+        safetyStatus.textContent = 'OFF';
+        safetyStatus.style.color = '#ff0000';
       }
     }
     
@@ -173,17 +174,25 @@ class FlightRoutineDemo {
     this.overlay = document.getElementById('overlay');
     this.routineSteps = document.querySelectorAll('.routine-step');
     this.routineSelect = document.getElementById('routine-select');
-    this.startButton = document.getElementById('start-button');
-    this.stopButton = document.getElementById('stop-button');
-    this.pauseButton = document.getElementById('pause-button');
-    this.resumeButton = document.getElementById('resume-button');
     this.safeModeToggle = document.getElementById('safe-mode-toggle');
+    this.recordingToggle = document.getElementById('recording-toggle');
+    this.recordingEnabled = document.getElementById('recording-enabled');
+    this.recordingStatus = document.getElementById('recording-status');
+    this.recordingTime = document.getElementById('recording-time');
     this.leftStickIndicator = document.querySelector('.stick-display[data-label="Left Stick"] .stick-indicator');
     this.rightStickIndicator = document.querySelector('.stick-display[data-label="Right Stick"] .stick-indicator');
+    
+    // Initialize recording time tracking
+    this.recordingStartTime = 0;
+    this.recordingTimeInterval = null;
     
     // Log any missing elements for debugging
     if (!this.overlay) console.warn('Overlay element not found');
     if (!this.routineSelect) console.warn('Routine selector not found');
+    if (!this.recordingToggle) console.warn('Recording toggle not found');
+    if (!this.recordingEnabled) console.warn('Recording enabled element not found');
+    if (!this.recordingStatus) console.warn('Recording status element not found');
+    if (!this.recordingTime) console.warn('Recording time element not found');
     if (!this.leftStickIndicator) console.warn('Left stick indicator not found');
     if (!this.rightStickIndicator) console.warn('Right stick indicator not found');
   }
@@ -196,6 +205,8 @@ class FlightRoutineDemo {
       this.routineSelect.addEventListener('change', (e) => {
         this.activeRoutineType = e.target.value;
         this.routine = this.routines[this.activeRoutineType];
+        
+        // Update UI without starting the routine
         this.updateRoutineStepsDisplay();
         this.updateRoutineAvailability();
         this.updateSafetyRequirements();
@@ -206,95 +217,160 @@ class FlightRoutineDemo {
     // Add keyboard controls
     document.addEventListener('keydown', (event) => {
       console.log('Key pressed:', event.key);
-      switch(event.key) {
-        case ' ': // Spacebar to start/stop routine
-          if (this.isRoutineRunning) {
-            console.log('Stopping routine');
-            this.stopRoutine();
-          } else {
-            console.log('Starting routine');
-            this.startRoutine();
-          }
-          break;
-        case 'r':
-          console.log('Resetting drone and controls');
-          this.drone.reset();
-          this.controls.reset();
-          break;
-        case 'Escape':
-          if (this.isRoutineRunning || !this.isPaused) {
-            console.log('Pausing simulation');
-            this.pauseSimulation();
-          }
-          break;
+      if (event.key === ' ') { // Spacebar to toggle routine
+        if (this.isRoutineRunning) {
+          this.stopRoutine();
+        } else if (this.routineSelect.value) {
+          // If a routine is selected but not running, start it
+          this.activeRoutineType = this.routineSelect.value;
+          this.routine = this.routines[this.activeRoutineType];
+          this.startRoutine();
+        }
+      } else if (event.key === 'r') {
+        this.drone.reset();
+        this.controls.reset();
       }
     });
 
-    // Listen for menu resume event
-    const closeMenuButton = document.getElementById('close-menu-button');
-    if (closeMenuButton) {
-      closeMenuButton.addEventListener('click', () => {
-        if (this.isPaused) {
-          console.log('Resuming simulation');
-          this.resumeSimulation();
+    // Toggle safety mode
+    if (this.safeModeToggle) {
+      this.safeModeToggle.addEventListener('change', () => {
+        if (this.safeModeToggle.checked) {
+          console.log('Enabling safety mode');
+          this.drone.physics.enableSafetyMode();
+        } else {
+          console.log('Disabling safety mode');
+          this.drone.physics.disableSafetyMode();
+        }
+        
+        // Update UI and check routine availability
+        this.updateRoutineAvailability();
+        this.updateSafetyRequirements();
+        this.debugSafetyModeStatus();
+      });
+    }
+
+    // Toggle recording
+    if (this.recordingToggle) {
+      this.recordingToggle.addEventListener('change', () => {
+        const isEnabled = this.recordingToggle.checked;
+        console.log('Recording toggle:', isEnabled ? 'enabled' : 'disabled');
+        
+        // Update UI
+        if (this.recordingEnabled) {
+          this.recordingEnabled.textContent = isEnabled ? 'ON' : 'OFF';
+          this.recordingEnabled.style.color = isEnabled ? '#00ff00' : '#ff0000';
+        }
+        
+        // If currently running a routine, handle recording state
+        if (this.isRoutineRunning) {
+          if (isEnabled && !this.recordingManager.isRecording) {
+            console.log('Starting recording due to toggle');
+            this.recordingManager.startRecording(this.activeRoutineType);
+            this.recordingStatus.style.display = 'flex';
+            this.recordingStatus.style.opacity = '1';
+            
+            // Start recording time tracking
+            this.recordingStartTime = performance.now();
+            this.updateRecordingTime();
+            this.recordingTimeInterval = setInterval(() => this.updateRecordingTime(), 100);
+          } else if (!isEnabled && this.recordingManager.isRecording) {
+            console.log('Stopping recording due to toggle');
+            this.recordingManager.stopRecording();
+            this.recordingStatus.style.display = 'none';
+            this.recordingStatus.style.opacity = '0';
+            
+            // Stop recording time tracking
+            if (this.recordingTimeInterval) {
+              clearInterval(this.recordingTimeInterval);
+              this.recordingTimeInterval = null;
+            }
+          }
         }
       });
     }
+  }
 
-    // Toggle safety mode
-    this.safeModeToggle.addEventListener('change', () => {
-      if (this.safeModeToggle.checked) {
-        console.log('Enabling safety mode');
-        this.drone.physics.enableSafetyMode();
-      } else {
-        console.log('Disabling safety mode');
-        this.drone.physics.disableSafetyMode();
+  startRoutine() {
+    if (this.isRoutineRunning) return;
+    
+    // Check if routine has requirements
+    const currentRoutine = this.routineObjects[this.activeRoutineType];
+    if (currentRoutine && currentRoutine.validateRequirements) {
+      const status = currentRoutine.validateRequirements(this.drone);
+      if (!status.canRun) {
+        console.warn('Cannot run routine:', status.message);
+        this.overlay.textContent = `Cannot run routine: ${status.message}`;
+        return;
       }
+    }
+    
+    this.isRoutineRunning = true;
+    this.currentStep = 0;
+    this.stepStartTime = performance.now();
+    
+    // Start recording if enabled
+    if (this.recordingToggle && this.recordingToggle.checked) {
+      console.log('Starting recording for routine:', this.activeRoutineType);
+      this.recordingManager.startRecording(this.activeRoutineType);
+      this.recordingStatus.style.display = 'flex';
+      this.recordingStatus.style.opacity = '1';
       
-      // Log the actual safety mode state for debugging
-      console.log('Safety mode state:', this.drone.physics.safetyMode);
+      // Start recording time tracking
+      this.recordingStartTime = performance.now();
+      this.updateRecordingTime();
+      this.recordingTimeInterval = setInterval(() => this.updateRecordingTime(), 100);
+    }
+    
+    // Update UI
+    this.updateRoutineStepsDisplay();
+    this.updateControlSticks();
+    this.overlay.textContent = `Running ${this.activeRoutineType} routine`;
+    
+    // Apply first step's controls
+    this.applyStepControls(this.routine[this.currentStep]);
+  }
+
+  stopRoutine() {
+    if (!this.isRoutineRunning) return;
+    
+    // Store current routine selection
+    const currentRoutine = this.routineSelect.value;
+    
+    this.isRoutineRunning = false;
+    this.currentStep = 0;
+    
+    // Stop recording if it's active
+    if (this.recordingManager.isRecording) {
+      console.log('Stopping recording');
+      this.recordingManager.stopRecording();
+      this.recordingStatus.style.display = 'none';
+      this.recordingStatus.style.opacity = '0';
       
-      // Update the safety status text to match the current state
-      const safetyStatus = document.getElementById('safety-status');
-      if (safetyStatus) {
-        safetyStatus.textContent = this.drone.physics.safetyMode ? 'ON' : 'OFF';
-        safetyStatus.style.color = this.drone.physics.safetyMode ? '#00ff00' : '#ff0000';
+      // Stop recording time tracking
+      if (this.recordingTimeInterval) {
+        clearInterval(this.recordingTimeInterval);
+        this.recordingTimeInterval = null;
       }
-      
-      // Update UI and check routine availability
-      this.updateRoutineAvailability();
-      this.updateSafetyRequirements();
-      this.debugSafetyModeStatus();
-    });
-    
-    // Add button event listeners
-    if (this.startButton) {
-      this.startButton.addEventListener('click', () => {
-        console.log('Start button clicked');
-        this.startRoutine();
-      });
     }
     
-    if (this.stopButton) {
-      this.stopButton.addEventListener('click', () => {
-        console.log('Stop button clicked');
-        this.stopRoutine();
-      });
+    // Reset controls
+    this.controls.reset();
+    this.updateControlSticks();
+    
+    // Reset drone position and ensure safety mode is off
+    this.drone.reset();
+    this.ensureSafetyModeOff();
+    
+    // Restore routine selector to previous value
+    if (this.routineSelect) {
+      this.routineSelect.value = currentRoutine;
+      this.activeRoutineType = currentRoutine;
+      this.routine = this.routines[this.activeRoutineType];
     }
     
-    if (this.pauseButton) {
-      this.pauseButton.addEventListener('click', () => {
-        console.log('Pause button clicked');
-        this.pauseSimulation();
-      });
-    }
-    
-    if (this.resumeButton) {
-      this.resumeButton.addEventListener('click', () => {
-        console.log('Resume button clicked');
-        this.resumeSimulation();
-      });
-    }
+    // Update overlay
+    this.overlay.textContent = 'Press SPACE to start routine';
   }
 
   updateRoutineStepsDisplay() {
@@ -521,8 +597,42 @@ class FlightRoutineDemo {
         // Move to next step
         this.currentStep++;
         if (this.currentStep >= this.routine.length) {
+          // Store current routine selection
+          const currentRoutine = this.routineSelect.value;
+          
+          // Routine is complete
           this.currentStep = 0;
           this.isRoutineRunning = false;
+          
+          // Stop recording if active
+          if (this.recordingManager.isRecording) {
+            console.log('Stopping recording - routine complete');
+            this.recordingManager.stopRecording();
+            this.recordingStatus.style.display = 'none';
+            this.recordingStatus.style.opacity = '0';
+            
+            // Stop recording time tracking
+            if (this.recordingTimeInterval) {
+              clearInterval(this.recordingTimeInterval);
+              this.recordingTimeInterval = null;
+            }
+          }
+          
+          // Reset controls and drone
+          this.controls.reset();
+          this.updateControlSticks();
+          this.drone.reset();
+          this.ensureSafetyModeOff();
+          
+          // Restore routine selector to previous value
+          if (this.routineSelect) {
+            this.routineSelect.value = currentRoutine;
+            this.activeRoutineType = currentRoutine;
+            this.routine = this.routines[this.activeRoutineType];
+          }
+          
+          // Update overlay
+          this.overlay.textContent = 'Press SPACE to start routine';
         } else {
           this.stepStartTime = currentTime;
           this.applyStepControls(this.routine[this.currentStep]);
@@ -532,12 +642,17 @@ class FlightRoutineDemo {
     
     // Record frame if recording is active
     if (this.recordingManager.isRecording) {
+      const forward = new THREE.Vector3();
+      if (this.drone && this.drone.mesh) {
+        this.drone.mesh.getWorldDirection(forward);
+      }
+      
       this.recordingManager.recordFrame({
         physics: {
           position: { ...this.drone.position },
           quaternion: { ...this.drone.quaternion },
           up: { ...this.drone.up },
-          forward: { ...this.drone.getWorldDirection(new THREE.Vector3()) },
+          forward: { x: forward.x, y: forward.y, z: forward.z },
           pitch: this.controls.pitch,
           roll: this.controls.roll,
           yaw: this.controls.yaw,
@@ -624,27 +739,6 @@ class FlightRoutineDemo {
     this.logger.logGameState(state);
   }
 
-  startRoutine() {
-    this.isRoutineRunning = true;
-    this.currentStep = 0;
-    this.stepStartTime = performance.now();
-    this.logs = []; // Clear previous logs
-    this.logger.enable(); // Enable logging
-
-    // Check if routine has requirements
-    const currentRoutine = this.routineObjects[this.activeRoutineType];
-    if (currentRoutine && currentRoutine.validateRequirements) {
-      const status = currentRoutine.validateRequirements(this.drone);
-      if (!status.canRun) {
-        console.warn(status.message);
-        return; // Don't start the routine
-      }
-    }
-
-    this.applyStepControls(this.routine[this.currentStep]);
-    this.updateUI();
-  }
-
   // Add new method to apply controls from a step
   applyStepControls(step) {
     console.log('Applying controls for step:', step.name);
@@ -668,16 +762,6 @@ class FlightRoutineDemo {
       // Scroll to the active step immediately
       this.scrollToActiveStep(activeStep);
     }
-  }
-
-  stopRoutine() {
-    this.isRoutineRunning = false;
-    // Reset controls
-    this.resetControls();
-    this.logger.disable(); // Disable logging
-
-    // Save logs to file
-    this.saveLogs();
   }
 
   saveLogs() {
@@ -754,68 +838,6 @@ class FlightRoutineDemo {
       });
   }
 
-  pauseSimulation() {
-    this.isPaused = true;
-    if (this.isRoutineRunning) {
-      this.isRoutineRunning = false;
-    }
-  }
-  
-  resumeSimulation() {
-    this.isPaused = false;
-    this.lastFpsUpdate = performance.now();
-    this.frameCount = 0;
-    this.animate();
-  }
-
-  getRoutineSteps(routineType) {
-    let routine;
-    
-    switch (routineType) {
-      case 'basic':
-        routine = new BasicRoutine();
-        break;
-      case 'circle':
-        routine = new CircleRoutine();
-        break;
-      case 'figureEight':
-        routine = new FigureEightRoutine();
-        break;
-      case 'orientationTest':
-        routine = new OrientationTestRoutine();
-        break;
-      case 'physicsTest':
-        routine = new PhysicsTestRoutine();
-        break;
-      case 'throttleTest':
-        routine = new ThrottleTestRoutine();
-        break;
-      case 'advancedManeuvers':
-        routine = new AdvancedManeuversRoutine();
-        break;
-      case 'freefall':
-        routine = new FreefallRoutine();
-        break;
-      case 'yawRotation':
-        routine = new YawRotationRoutine();
-        break;
-      case 'acrobatics':
-        routine = new AcrobaticsRoutine();
-        break;
-      case 'yawTricks':
-        routine = new YawTricksRoutine();
-        break;
-      case 'backflip':
-        routine = new BackflipRoutine();
-        break;
-      default:
-        routine = new BasicRoutine();
-        break;
-    }
-    
-    return routine.steps;
-  }
-
   updateRoutineAvailability() {
     // Check if current routine has requirements
     const currentRoutine = this.routineObjects[this.activeRoutineType];
@@ -824,16 +846,16 @@ class FlightRoutineDemo {
       const status = currentRoutine.validateRequirements(this.drone);
       
       // Only disable the start button if requirements aren't met
-      if (this.startButton) {
-        this.startButton.disabled = !status.canRun;
+      if (this.runButton) {
+        this.runButton.disabled = !status.canRun;
         
         // Add clear visual indication to start button
         if (!status.canRun) {
-          this.startButton.style.opacity = "0.5";
-          this.startButton.title = "Toggle safety mode to OFF to enable this routine";
+          this.runButton.style.opacity = "0.5";
+          this.runButton.title = "Toggle safety mode to OFF to enable this routine";
         } else {
-          this.startButton.style.opacity = "1";
-          this.startButton.title = "";
+          this.runButton.style.opacity = "1";
+          this.runButton.title = "";
         }
       }
       
@@ -844,10 +866,10 @@ class FlightRoutineDemo {
       }
     } else {
       // No requirements, make sure start button is enabled if it exists
-      if (this.startButton) {
-        this.startButton.disabled = false;
-        this.startButton.style.opacity = "1";
-        this.startButton.title = "";
+      if (this.runButton) {
+        this.runButton.disabled = false;
+        this.runButton.style.opacity = "1";
+        this.runButton.title = "";
       }
       
       // Remove warning if exists
@@ -903,6 +925,43 @@ class FlightRoutineDemo {
         } else {
           // If safety is already off, colorize green
           routineOption.style.color = '#00ff00';
+        }
+      }
+    }
+  }
+
+  // Add method to update recording status
+  updateRecordingStatus() {
+    if (this.recordingManager.isRecording) {
+      this.recordingStatus.style.display = 'flex';
+      this.recordingStatus.style.opacity = '1';
+    } else {
+      this.recordingStatus.style.display = 'none';
+      this.recordingStatus.style.opacity = '0';
+    }
+  }
+
+  // Add method to update recording time
+  updateRecordingTime() {
+    if (!this.recordingTime || !this.recordingStartTime) return;
+    
+    const currentTime = performance.now();
+    const elapsedSeconds = (currentTime - this.recordingStartTime) / 1000;
+    this.recordingTime.textContent = `Recording ${this.activeRoutineType}: ${elapsedSeconds.toFixed(1)}s`;
+  }
+
+  // Add method to ensure safety mode is off
+  ensureSafetyModeOff() {
+    if (this.drone && this.drone.physics) {
+      this.drone.physics.disableSafetyMode();
+      
+      // Update UI
+      if (this.safeModeToggle) {
+        this.safeModeToggle.checked = false;
+        const safetyStatus = document.getElementById('safety-status');
+        if (safetyStatus) {
+          safetyStatus.textContent = 'OFF';
+          safetyStatus.style.color = '#ff0000';
         }
       }
     }

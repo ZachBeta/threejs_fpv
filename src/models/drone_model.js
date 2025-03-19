@@ -18,23 +18,26 @@ export class DroneModel {
     // Store the initial position for reset
     this.initialPosition = { ...this.physics.position };
     
+    // Create a fixed quaternion for the 180° Y rotation
+    this.yRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
+    
     // Create drone mesh
     this.createDroneMesh();
     
     // Add to scene
-    this.scene.add(this.droneMesh);
+    this.scene.add(this._droneMesh);
   }
 
   createDroneMesh() {
     // Create main drone body
     const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
     const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    this.droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
-    this.droneMesh.position.x = this.physics.position.x;
-    this.droneMesh.position.y = this.physics.position.y;
-    this.droneMesh.position.z = this.physics.position.z;
-    this.droneMesh.castShadow = true;
-    this.droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
+    this._droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
+    this._droneMesh.position.x = this.physics.position.x;
+    this._droneMesh.position.y = this.physics.position.y;
+    this._droneMesh.position.z = this.physics.position.z;
+    this._droneMesh.castShadow = true;
+    this._droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
 
     // Add orientation indicators
     this.addOrientationIndicators();
@@ -100,7 +103,7 @@ export class DroneModel {
     this.cameraModel.add(indicator);
     
     // Add camera to drone
-    this.droneMesh.add(this.cameraModel);
+    this._droneMesh.add(this.cameraModel);
   }
 
   addOrientationIndicators() {
@@ -116,7 +119,7 @@ export class DroneModel {
     frontIndicator.rotation.x = Math.PI / 2; // Point forward
     frontIndicator.position.z = 0.6;
     frontIndicator.castShadow = true;
-    this.droneMesh.add(frontIndicator);
+    this._droneMesh.add(frontIndicator);
 
     // Up indicator (blue)
     const upIndicator = new THREE.Mesh(
@@ -129,7 +132,7 @@ export class DroneModel {
     );
     upIndicator.position.y = 0.3;
     upIndicator.castShadow = true;
-    this.droneMesh.add(upIndicator);
+    this._droneMesh.add(upIndicator);
 
     // Right indicator (green)
     const rightIndicator = new THREE.Mesh(
@@ -143,7 +146,7 @@ export class DroneModel {
     rightIndicator.rotation.z = -Math.PI / 2; // Point right
     rightIndicator.position.x = 0.6;
     rightIndicator.castShadow = true;
-    this.droneMesh.add(rightIndicator);
+    this._droneMesh.add(rightIndicator);
   }
 
   addPropellers() {
@@ -166,7 +169,7 @@ export class DroneModel {
       const propeller = new THREE.Mesh(propellerGeometry, propellerMaterial);
       propeller.position.set(pos.x, 0.1, pos.z);
       propeller.castShadow = true;
-      this.droneMesh.add(propeller);
+      this._droneMesh.add(propeller);
       this.propellers.push(propeller);
       
       // Add arm connecting to center
@@ -189,7 +192,7 @@ export class DroneModel {
         arm.rotation.y = Math.PI/4;
       }
       
-      this.droneMesh.add(arm);
+      this._droneMesh.add(arm);
     });
   }
 
@@ -198,14 +201,18 @@ export class DroneModel {
     this.physics.updatePhysics(deltaTime);
 
     // Update drone mesh position
-    this.droneMesh.position.x = this.physics.position.x;
-    this.droneMesh.position.y = this.physics.position.y;
-    this.droneMesh.position.z = this.physics.position.z;
+    this._droneMesh.position.x = this.physics.position.x;
+    this._droneMesh.position.y = this.physics.position.y;
+    this._droneMesh.position.z = this.physics.position.z;
     
-    // Update drone rotation using quaternion
-    this.droneMesh.quaternion.copy(this.physics.quaternion);
-    // Add 180 degrees rotation around Y to keep facing away from camera
-    this.droneMesh.rotateY(Math.PI);
+    // Create a temporary quaternion for the combined rotation
+    const combinedRotation = new THREE.Quaternion();
+    // Start with the Y rotation (180° flip)
+    combinedRotation.copy(this.yRotation);
+    // Then apply the physics rotation
+    combinedRotation.multiply(this.physics.quaternion);
+    // Apply the combined rotation to the drone mesh
+    this._droneMesh.quaternion.copy(combinedRotation);
 
     // Animate propellers based on throttle
     const propellerSpeed = this.physics.throttle * 0.5;
@@ -252,10 +259,10 @@ export class DroneModel {
   reset() {
     this.physics.reset();
     // Reset drone mesh position and rotation
-    this.droneMesh.position.x = this.physics.position.x;
-    this.droneMesh.position.y = this.physics.position.y; 
-    this.droneMesh.position.z = this.physics.position.z;
-    this.droneMesh.rotation.set(0, Math.PI, 0);
+    this._droneMesh.position.x = this.physics.position.x;
+    this._droneMesh.position.y = this.physics.position.y; 
+    this._droneMesh.position.z = this.physics.position.z;
+    this._droneMesh.rotation.set(0, Math.PI, 0);
   }
 
   // Getters for physics state
@@ -287,5 +294,10 @@ export class DroneModel {
   // Add an alias property for use in the physics demo
   get altitudeHold() {
     return this.physics.altitudeHoldActive;
+  }
+  
+  // Expose the droneMesh for debugging and recording
+  get droneMesh() {
+    return this._droneMesh;
   }
 } 
