@@ -246,6 +246,29 @@ export class DronePhysics {
       // Calculate how inverted the drone is (-1 to 1, where -1 is fully inverted)
       const invertedFactor = this.up.y;  // This will be negative when upside down
       
+      // Add aerodynamic lift during barrel rolls to counteract altitude loss
+      // This simulates the lifting effect of a properly executed barrel roll
+      if (Math.abs(this.roll) > 0.7 && this.throttle > 0.7) { // Only for intentional strong rolls with high throttle
+        // Calculate roll rate from angular velocity
+        const rollRate = Math.abs(this.localRotation.z - this.previousRotation.z) / deltaTime;
+        
+        // Higher roll rate with forward movement creates more lift
+        const rollLift = 1.2 * this.previousThrottle * rollRate * deltaTime; // Increased from 0.4 to 1.2
+        
+        // Apply upward force regardless of orientation during dynamic rolls
+        // The lift force is strongest at 90 degrees of roll and reduces at 0 and 180 degrees
+        const rollAngle = Math.abs(this.localRotation.z) % Math.PI;
+        const normalizedRollAngle = rollAngle > Math.PI/2 ? Math.PI - rollAngle : rollAngle;
+        const liftMultiplier = Math.sin(normalizedRollAngle * 2); // Peak at 90 degrees
+        
+        // Apply lift force in world up direction, unaffected by drone orientation
+        this.velocity.y += rollLift * liftMultiplier * 3.0; // Triple the boost (increased from 1.5 to 3.0)
+        
+        // Also add a constant upward force during rolls to simulate proper technique
+        const constantLift = 0.4 * this.previousThrottle * Math.abs(this.roll) * deltaTime;
+        this.velocity.y += constantLift * 1.5;
+      }
+      
       // Add slight auto-leveling force when close to inverted to prevent "floaty" behavior
       // Only apply when not actively inputting roll/pitch controls
       if (Math.abs(this.pitch) < 0.1 && Math.abs(this.roll) < 0.1) {

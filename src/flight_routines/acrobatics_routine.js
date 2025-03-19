@@ -10,22 +10,22 @@ export class AcrobaticsRoutine {
     
     // Barrel roll to the right - enhanced for full 360° roll
     const barrelRollRight = createAcrobaticStep("Barrel roll right", 3000, {
-      throttle: 0.85, // Higher throttle for stable acrobatics
-      pitch: 0.15, // Slight forward pitch to maintain altitude during roll
+      throttle: 1.0, // Full throttle for altitude maintenance during roll (increased from 0.85)
+      pitch: 0.25, // Increased forward pitch to counteract altitude loss (increased from 0.15)
       roll: 1.0, // Full right roll
       yaw: 0.3 // Slight yaw to coordinate the roll
     }, {
-      minAltitude: 50, // Increased minimum altitude for barrel rolls
+      minAltitude: 70, // Increased minimum altitude for barrel rolls (from 50)
     });
     
     // Barrel roll to the left - enhanced for full 360° roll
     const barrelRollLeft = createAcrobaticStep("Barrel roll left", 3000, {
-      throttle: 0.85,
-      pitch: 0.15,
+      throttle: 1.0, // Full throttle for altitude maintenance (increased from 0.85)
+      pitch: 0.25, // Increased forward pitch to counteract altitude loss (increased from 0.15)
       roll: -1.0, // Full left roll
       yaw: -0.3 // Slight yaw to coordinate the roll
     }, {
-      minAltitude: 50, // Increased minimum altitude
+      minAltitude: 70, // Increased minimum altitude (from 50)
     });
     
     // Forward loop (loop de loop) - enhanced for full 360° vertical loop

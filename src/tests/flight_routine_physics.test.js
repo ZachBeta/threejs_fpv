@@ -346,7 +346,7 @@ describe('Flight Routine Physics', () => {
       // Disable safety mode for acrobatic routines
       drone.physics.disableSafetyMode();
       // Set drone at higher altitude for acrobatics to prevent ground crashes
-      drone.physics.position.y = 100.0; // Increased altitude from 50.0 to 100.0
+      drone.physics.position.y = 120.0; // Increased altitude from 100.0 to 120.0
     });
 
     test('barrel roll right should complete a full roll', () => {
@@ -360,6 +360,10 @@ describe('Flight Routine Physics', () => {
       
       // Track positions and orientations throughout the roll to detect issues
       const trackPoints = [];
+      const rollAngles = [];
+      let passedUpsideDown = false;
+      let maxRoll = -Infinity;
+      let minRoll = Infinity;
       
       // Run simulation for the full duration of the step
       const duration = barrelRollStep.duration / 1000; // Convert ms to seconds
@@ -379,10 +383,44 @@ describe('Flight Routine Physics', () => {
           rotation: { ...drone.physics.localRotation },
           up: { ...drone.physics.up }
         });
+
+        // Track roll angles to analyze the roll progression
+        rollAngles.push(drone.physics.localRotation.z);
+        
+        // Track if we've passed through upside-down position
+        if (drone.physics.up.y < -0.5) {
+          passedUpsideDown = true;
+        }
+        
+        // Track min/max roll angles
+        maxRoll = Math.max(maxRoll, drone.physics.localRotation.z);
+        minRoll = Math.min(minRoll, drone.physics.localRotation.z);
       }
+      
+      // Log results for debugging
+      console.log('Max roll angle:', maxRoll);
+      console.log('Min roll angle:', minRoll);
+      console.log('Passed upside down:', passedUpsideDown);
+      console.log('Final roll angle:', drone.physics.localRotation.z);
+      console.log('Final up vector:', drone.physics.up);
+      console.log('Total rotation Z:', drone.physics.totalRotation.z);
+      
+      // Verify we passed through an upside-down position
+      expect(passedUpsideDown).toBe(true);
       
       // A barrel roll should complete at least 270 degrees (most of a full roll)
       expect(Math.abs(drone.physics.totalRotation.z)).toBeGreaterThan(Math.PI * 3/4);
+      
+      // For a proper barrel roll, we should do close to a full 360-degree rotation
+      // 10% tolerance (0.9 * 2π to 1.1 * 2π)
+      expect(Math.abs(drone.physics.totalRotation.z)).toBeGreaterThanOrEqual(0.9 * Math.PI * 2);
+      expect(Math.abs(drone.physics.totalRotation.z)).toBeLessThanOrEqual(1.1 * Math.PI * 2);
+      
+      // Check the drone's roll angle progression
+      // In a proper barrel roll, the roll angle should go through the full range of values
+      // First, verify we have significant roll angle changes
+      const rollRange = maxRoll - minRoll;
+      expect(rollRange).toBeGreaterThan(Math.PI); // Should cover at least half the circle
       
       // Check for wild fluctuations in the drone's position during the roll
       for (let i = 1; i < trackPoints.length; i++) {
@@ -398,10 +436,27 @@ describe('Flight Routine Physics', () => {
         expect(xDiff).toBeLessThan(1.0);
         expect(yDiff).toBeLessThan(1.0);
         expect(zDiff).toBeLessThan(1.0);
+        
+        // Check for reasonable rotation changes between frames
+        const rollDiff = Math.abs(
+          ((current.rotation.z % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) - 
+          ((prev.rotation.z % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI)
+        );
+        
+        // Roll shouldn't change too drastically in a single frame
+        // Allow for angle wraparound by checking both ways
+        const normalizedRollDiff = Math.min(rollDiff, 2 * Math.PI - rollDiff);
+        expect(normalizedRollDiff).toBeLessThan(Math.PI / 4); // Max 45 degrees per frame
       }
       
       // Verify throttle is appropriate for the maneuver
-      expect(barrelRollStep.controls.throttle).toBeGreaterThan(0.5);
+      expect(barrelRollStep.controls.throttle).toBeGreaterThan(0.75);
+      
+      // Drone should not lose excessive altitude during the barrel roll
+      const startY = trackPoints[0].position.y;
+      const endY = trackPoints[trackPoints.length - 1].position.y;
+      const altitudeLoss = startY - endY;
+      expect(altitudeLoss).toBeLessThan(35); // Allow for reasonable altitude loss during acrobatics
     });
 
     test('forward loop should rotate the drone vertically', () => {
