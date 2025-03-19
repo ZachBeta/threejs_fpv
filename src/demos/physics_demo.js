@@ -205,6 +205,24 @@ class PhysicsDemo {
       formattedControls[control] = (value >= 0 ? '+' : '') + value.toFixed(6);
     }
     
+    // Helper function to format objects as key:value pairs per line
+    const formatAsKeyValuePairs = (obj, indent = 2) => {
+      const indentSpace = ' '.repeat(indent);
+      let result = '';
+      
+      if (typeof obj === 'object' && obj !== null) {
+        for (const [key, value] of Object.entries(obj)) {
+          if (typeof value === 'object' && value !== null) {
+            result += `${indentSpace}${key}:\n${formatAsKeyValuePairs(value, indent + 2)}`;
+          } else {
+            result += `${indentSpace}${key}: ${value}\n`;
+          }
+        }
+      }
+      
+      return result;
+    };
+    
     // Update overlay text with enhanced debug info
     this.diagnosticOverlay.innerHTML = `
       <div>Controller: ${diagnostics.controllerConnected ? 'Connected' : 'Disconnected'}</div>
@@ -218,12 +236,15 @@ class PhysicsDemo {
       <div>Altitude Hold: ${this.drone.altitudeHold ? 'ON' : 'OFF'}</div>
       <div>Controls.altitudeHold: ${controls.altitudeHold ? 'ON' : 'OFF'}</div>
       <div>Debug State:</div>
-      <div style="margin-left: 10px">
-        Raw Inputs: ${JSON.stringify(formattedRawInputs, null, 2)}</div>
-      <div style="margin-left: 10px">
-        Processed Controls: ${JSON.stringify(formattedControls, null, 2)}</div>
-      <div style="margin-left: 10px">
-        Drone Orientation: ${JSON.stringify(roundedOrientation, null, 2)}</div>
+      <div style="margin-left: 10px; white-space: pre; font-family: monospace;">
+        Raw Inputs:
+${formatAsKeyValuePairs(formattedRawInputs)}</div>
+      <div style="margin-left: 10px; white-space: pre; font-family: monospace;">
+        Processed Controls:
+${formatAsKeyValuePairs(formattedControls)}</div>
+      <div style="margin-left: 10px; white-space: pre; font-family: monospace;">
+        Drone Orientation:
+${formatAsKeyValuePairs(roundedOrientation)}</div>
     `;
 
     // Update stick indicators
