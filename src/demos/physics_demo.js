@@ -33,11 +33,57 @@ class PhysicsDemo {
     this.camera.position.set(0, 15, 15);
     this.camera.lookAt(0, 0, 0);
 
+    // Set up FPV camera
+    this.setupFPVCamera();
+
     // Handle window resize
     window.addEventListener('resize', () => this.onWindowResize(), false);
 
     // Start animation loop
     this.animate();
+  }
+
+  setupFPVCamera() {
+    // Create FPV camera with wider FOV for fisheye effect
+    this.fpvCamera = new THREE.PerspectiveCamera(120, 1, 0.1, 1000);
+    
+    // Create FPV renderer
+    this.fpvRenderer = new THREE.WebGLRenderer({ antialias: false });
+    this.fpvRenderer.setSize(200, 200); // Small size for PIP
+    
+    // Style the PIP container
+    const pipContainer = document.createElement('div');
+    pipContainer.style.position = 'fixed';
+    pipContainer.style.bottom = '20px';
+    pipContainer.style.left = '20px';
+    pipContainer.style.width = '200px';
+    pipContainer.style.height = '200px';
+    pipContainer.style.border = '2px solid #00ff00';
+    pipContainer.style.borderRadius = '5px';
+    pipContainer.style.overflow = 'hidden';
+    pipContainer.style.zIndex = '1000';
+    
+    // Add label to PIP view
+    const pipLabel = document.createElement('div');
+    pipLabel.textContent = 'DRONE CAM';
+    pipLabel.style.position = 'absolute';
+    pipLabel.style.top = '5px';
+    pipLabel.style.left = '50%';
+    pipLabel.style.transform = 'translateX(-50%)';
+    pipLabel.style.color = '#00ff00';
+    pipLabel.style.fontFamily = 'monospace';
+    pipLabel.style.fontSize = '12px';
+    pipLabel.style.fontWeight = 'bold';
+    pipLabel.style.textShadow = '1px 1px 1px black';
+    pipLabel.style.zIndex = '1001';
+    
+    // Add the renderer to the container
+    pipContainer.appendChild(this.fpvRenderer.domElement);
+    pipContainer.appendChild(pipLabel);
+    document.body.appendChild(pipContainer);
+    
+    // Store the container reference
+    this.pipContainer = pipContainer;
   }
 
   setupControllerDisplay() {
@@ -124,6 +170,9 @@ class PhysicsDemo {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // Update FPV camera aspect ratio if needed
+    // (We keep it 1:1 for the PIP view)
   }
 
   updatePhysicsFromState() {
@@ -289,11 +338,31 @@ ${formatAsKeyValuePairs(roundedOrientation)}</div>
       this.drone.position.y,
       this.drone.position.z
     );
+    
+    // Update FPV camera position and rotation to match drone
+    // Create a forward vector to position camera at the tip of the red arrow
+    const frontOffset = new THREE.Vector3(0, 0, 0.8); // Red arrow is 0.6 units forward + 0.2 for its length
+    frontOffset.applyQuaternion(this.drone.droneMesh.quaternion);
+    
+    // Set camera position at the tip of the front indicator (red arrow)
+    this.fpvCamera.position.copy(this.drone.droneMesh.position);
+    this.fpvCamera.position.add(frontOffset);
+    
+    // Use drone's quaternion but rotate 180° around Y axis to face forward
+    this.fpvCamera.quaternion.copy(this.drone.droneMesh.quaternion);
+    this.fpvCamera.rotateY(Math.PI);
+    
+    // Add slight uptilt to the FPV camera (about 15 degrees)
+    this.fpvCamera.rotateX(-0.26); // ~15 degrees in radians
 
     // Update diagnostics
     this.updateDiagnostics();
 
+    // Render main view
     this.renderer.render(this.scene, this.camera);
+    
+    // Render FPV view
+    this.fpvRenderer.render(this.scene, this.fpvCamera);
   }
 
   reset() {
