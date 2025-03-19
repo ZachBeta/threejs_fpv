@@ -25,6 +25,7 @@ A simple 3D demo using Three.js that features a first-person view (FPV) drone-li
 - Gamepad support with traditional FPV drone controls
 - Flight routine demo with programmable drone movements
 - SVG favicon representing a racing drone
+- Improved physics with momentum and altitude hold functionality
 
 ## Controls
 
@@ -36,6 +37,8 @@ The demo supports both keyboard and gamepad controls:
 - `Space`: Move up
 - `Shift`: Move down
 - `Arrow Keys`: Rotate the view (left/right/up/down)
+- `H`: Toggle altitude hold mode
+- `R`: Reset drone position
 
 ### Gamepad Controls
 - Left Stick:
@@ -48,7 +51,6 @@ The demo supports both keyboard and gamepad controls:
   - Down: Tilt backward
   - Left: Tilt left
   - Right: Tilt right
-- L Button: Reset drone to starting position and orientation
 
 The control scheme follows traditional FPV drone controls for intuitive flying.
 
@@ -117,6 +119,8 @@ npm run preview
 - `src/demos/game_state_demo.js` - Game state and telemetry display demo
 - `src/demos/physics_demo.js` - Physics engine demonstration
 - `src/logger.js` - Telemetry logging system implementation
+- `src/flight_routines/` - Contains various flight routine definitions
+- `src/models/` - Contains 3D model definitions including drone and map
 - `package.json` - Project configuration and dependencies
 - `logs.db` - SQLite database for storing telemetry data
 - `public/favicon.svg` - SVG favicon representing a racing drone
@@ -136,12 +140,14 @@ The project includes a comprehensive telemetry logging system that captures perf
 - System information
 - Error events and stack traces
 - Performance bottlenecks
+- Game state data with player identification
 
 ### Database Structure
 The telemetry data is stored in a SQLite database (`logs.db`) with tables for:
 - Frame metrics
 - System information
 - Error logs
+- Game state snapshots with player name
 
 ### Accessing Logs
 You can query the logs using any SQLite client. For example:
@@ -181,21 +187,22 @@ Please read our [RULES.md](RULES.md) for guidelines on contributing to this proj
 - Implemented SVG favicon representing a racing drone
 
 ### In Progress
-- Investigating issues with sending game state
-- Logging System Test Demos:
-  - Implement logging functionality for system test demonstrations
-  - Add performance metrics collection
-  - Create visualization tools for logged data
+- Making spawn pedestal semi transparent like the platform
+- Creating a tracking flight routine for tower focusing
+- Creating collapsible flight routine demo menu
+- Adding scrollbar for longer flight routines
+- Implementing "out and back" flight routine
+- Handling momentum in physics tests
+- Creating "safety off" mode for full pitch and roll
+- Merging physics demo and flight routines demo
+- Adding player name functionality to game state logging system
 
 ### High Priority
 - Physics and Movement:
-  - Create a demo render of the physics engine
-  - Implement core physics features (acceleration, floating mechanics, etc.)
-- Controller Support:
-  - Fix controller mapping to match traditional controls
-  - Add controller calibration options
-  - Implement deadzone settings
-  - Add controller connection status indicator
+  - Implement separate rotor thrust physics
+  - Improve altitude hold behavior realism
+  - Enhance hover state physics
+  - Implement player name functionality in UI
 - Game State Display:
   - Display controller state information
   - Show position and orientation data
@@ -207,12 +214,12 @@ Please read our [RULES.md](RULES.md) for guidelines on contributing to this proj
 - Physics/controls: implement toggle hover feature
 - Migrate to TypeScript
 - Upgrade logo and the drone model used in the demo
-- Profile database to determine which code paths are dead
-- Clean up markdown, remove excess content
-- Rename game state logger to game_state_api
-- Evaluate need to flush server logs
-- Handle separation of events database from logging
-- Check in on tests
+- Add client/server rigor to prevent game hacking
+- Fix flight routines duplicates
+- Handle yaw modulo
+- Fix hover functionality on gamepad
+- Fix reset button on gamepad
+- Add more complex yaw flight routines (180s, 360s)
 - Development Tasks:
   - Write unit tests for new features
   - Add integration tests for physics system
