@@ -50,7 +50,7 @@ export class PhysicsTestRoutine {
       // Test 2: Orientation-relative movement
       {
         ...OrientationSteps.yawRight,
-        name: "Yaw right for 2 seconds"
+        name: "Yaw right for 1 second"
       },
       BasicSteps.hover,
       {
@@ -65,7 +65,7 @@ export class PhysicsTestRoutine {
       BasicSteps.hover,
       {
         ...OrientationSteps.yawLeft,
-        name: "Yaw left for 2 seconds"
+        name: "Yaw left for 1 second"
       },
       
       // Test 3: Quick direction changes

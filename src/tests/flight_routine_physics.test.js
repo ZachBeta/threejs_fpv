@@ -38,12 +38,12 @@ describe('Flight Routine Physics', () => {
 
     test('yaw right step should rotate drone clockwise', () => {
       const yawStep = routine.steps.find(step => 
-        step.name.includes("Yaw right for 2 seconds")
+        step.name.includes("Yaw right for 1 second")
       );
       expect(yawStep).toBeDefined();
       
       expect(drone.physics.localRotation.y).toBe(0);
-      simulatePhysics(yawStep, 2.0);
+      simulatePhysics(yawStep, 1.0);
       expect(drone.physics.localRotation.y).toBeLessThan(0);
     });
 
@@ -90,12 +90,12 @@ describe('Flight Routine Physics', () => {
       expect(drone.physics.position.z).toBeLessThan(initialZ);
     });
 
-    test('rotation steps should maintain position', () => {
-      const rotateStep = routine.steps.find(step => step.name === "Rotate Left");
-      expect(rotateStep).toBeDefined();
+    test('yaw steps should maintain position', () => {
+      const yawStep = routine.steps.find(step => step.name === "Yaw Left");
+      expect(yawStep).toBeDefined();
 
       const initialPos = { ...drone.physics.position };
-      simulatePhysics(rotateStep, 2.0);
+      simulatePhysics(yawStep, 2.0);
       
       expect(drone.physics.position.x).toBeCloseTo(initialPos.x, 1);
       expect(drone.physics.position.z).toBeCloseTo(initialPos.z, 1);

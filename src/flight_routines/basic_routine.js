@@ -30,14 +30,14 @@ export class BasicRoutine {
       roll: 0.5
     });
 
-    const rotateLeft = createStep("Rotate Left", 2000, {
+    const yawLeft = createStep("Yaw Left", 2000, {
       throttle: 0.5,
       pitch: 0,
       roll: 0,
       yaw: 0.5
     });
 
-    const rotateRight = createStep("Rotate Right", 2000, {
+    const yawRight = createStep("Yaw Right", 2000, {
       throttle: 0.5,
       pitch: 0,
       roll: 0,
@@ -55,9 +55,9 @@ export class BasicRoutine {
       BasicSteps.hover,
       moveRight,
       BasicSteps.hover,
-      rotateLeft,
+      yawLeft,
       BasicSteps.hover,
-      rotateRight,
+      yawRight,
       BasicSteps.hover,
       BasicSteps.land
     ];

@@ -49,8 +49,8 @@ export const BasicSteps = {
 
 export const OrientationSteps = {
   yawRight: {
-    name: "Yaw right for 2 seconds",
-    duration: 2000,
+    name: "Yaw right for 1 second",
+    duration: 1000,
     controls: {
       throttle: 0.6,
       pitch: 0,
@@ -60,8 +60,8 @@ export const OrientationSteps = {
   },
 
   yawLeft: {
-    name: "Yaw left for 2 seconds",
-    duration: 2000,
+    name: "Yaw left for 1 second",
+    duration: 1000,
     controls: {
       throttle: 0.6,
       pitch: 0,
