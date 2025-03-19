@@ -610,19 +610,57 @@ class BackflipAnalysisTool {
     // Create drone group
     this.drone = new THREE.Group();
     
-    // Create drone body
-    const bodyGeometry = new THREE.BoxGeometry(1, 0.2, 1);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    this.drone.add(body);
+    // Create drone body with black top and white bottom
+    const topGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    const bottomGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    const topMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const bottomMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    
+    // Top part of the frame
+    const topFrame = new THREE.Mesh(topGeometry, topMaterial);
+    topFrame.position.y = 0.05;
+    topFrame.castShadow = true;
+    this.drone.add(topFrame);
+    
+    // Bottom part of the frame
+    const bottomFrame = new THREE.Mesh(bottomGeometry, bottomMaterial);
+    bottomFrame.position.y = -0.05;
+    bottomFrame.castShadow = true;
+    this.drone.add(bottomFrame);
     
     // Create directional indicator (front)
     const frontGeometry = new THREE.ConeGeometry(0.2, 0.4, 8);
-    const frontMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+    const frontMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0.5 // More opaque
+    });
     const front = new THREE.Mesh(frontGeometry, frontMaterial);
     front.rotation.x = Math.PI / 2;
     front.position.z = 0.6;
     this.drone.add(front);
+    
+    // Add rotors (red)
+    const propellerGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.05, 16);
+    const propellerMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xff0000,
+      transparent: true,
+      opacity: 0.7
+    });
+    
+    const propellerPositions = [
+      { x: -0.65, z: -0.65 },
+      { x: 0.65, z: -0.65 },
+      { x: -0.65, z: 0.65 },
+      { x: 0.65, z: 0.65 }
+    ];
+    
+    propellerPositions.forEach(pos => {
+      const propeller = new THREE.Mesh(propellerGeometry, propellerMaterial);
+      propeller.position.set(pos.x, 0.1, pos.z);
+      propeller.castShadow = true;
+      this.drone.add(propeller);
+    });
     
     // Add to scene
     this.scene.add(this.drone);

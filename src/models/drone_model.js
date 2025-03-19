@@ -29,14 +29,32 @@ export class DroneModel {
   }
 
   createDroneMesh() {
-    // Create main drone body
-    const droneGeometry = new THREE.BoxGeometry(1, 0.2, 1);
-    const droneMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-    this._droneMesh = new THREE.Mesh(droneGeometry, droneMaterial);
+    // Create main drone body - two parts for top and bottom
+    const topGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    const bottomGeometry = new THREE.BoxGeometry(1, 0.1, 1);
+    
+    // Black top, white bottom as requested
+    const topMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
+    const bottomMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    
+    this._droneMesh = new THREE.Group();
+    
+    // Top part of the frame
+    const topFrame = new THREE.Mesh(topGeometry, topMaterial);
+    topFrame.position.y = 0.05;
+    topFrame.castShadow = true;
+    this._droneMesh.add(topFrame);
+    
+    // Bottom part of the frame
+    const bottomFrame = new THREE.Mesh(bottomGeometry, bottomMaterial);
+    bottomFrame.position.y = -0.05;
+    bottomFrame.castShadow = true;
+    this._droneMesh.add(bottomFrame);
+    
+    // Set initial position
     this._droneMesh.position.x = this.physics.position.x;
     this._droneMesh.position.y = this.physics.position.y;
     this._droneMesh.position.z = this.physics.position.z;
-    this._droneMesh.castShadow = true;
     this._droneMesh.rotation.y = Math.PI; // Rotate 180 degrees to face away from camera
 
     // Add orientation indicators
@@ -113,7 +131,7 @@ export class DroneModel {
       new THREE.MeshStandardMaterial({ 
         color: 0xff0000,
         transparent: true,
-        opacity: 0.15
+        opacity: 0.5  // More opaque than before (was 0.15)
       })
     );
     frontIndicator.rotation.x = Math.PI / 2; // Point forward
@@ -127,7 +145,7 @@ export class DroneModel {
       new THREE.MeshStandardMaterial({ 
         color: 0x0000ff,
         transparent: true,
-        opacity: 0.15
+        opacity: 0.5  // More opaque than before (was 0.15)
       })
     );
     upIndicator.position.y = 0.3;
@@ -140,7 +158,7 @@ export class DroneModel {
       new THREE.MeshStandardMaterial({ 
         color: 0x00ff00,
         transparent: true,
-        opacity: 0.15
+        opacity: 0.5  // More opaque than before (was 0.15)
       })
     );
     rightIndicator.rotation.z = -Math.PI / 2; // Point right
@@ -151,8 +169,9 @@ export class DroneModel {
 
   addPropellers() {
     const propellerGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.05, 16);
+    // Red propellers as requested
     const propellerMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0x000000,
+      color: 0xff0000,
       transparent: true,
       opacity: 0.7
     });
