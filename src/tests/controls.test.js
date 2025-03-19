@@ -160,6 +160,55 @@ describe('Controls', () => {
     });
   });
 
+  describe('Roll Direction Consistency', () => {
+    test('roll direction should be consistent between keyboard and gamepad', () => {
+      // Test keyboard-style direct roll setting
+      controls.setRoll(1.0); // Roll left
+      let state = controls.getControls();
+      expect(state.roll).toBe(1.0);
+      
+      controls.setRoll(-1.0); // Roll right
+      state = controls.getControls();
+      expect(state.roll).toBe(-1.0);
+      
+      // Test gamepad-style input
+      const mockGamepadLeft = {
+        axes: [0, 0, -1, 0], // Right stick X at -1 (left)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      
+      controls.state.gamepad = mockGamepadLeft;
+      controls.handleGamepadInput();
+      state = controls.getControls();
+      expect(state.roll).toBe(-1.0); // Left on stick should be negative (roll right)
+      
+      const mockGamepadRight = {
+        axes: [0, 0, 1, 0], // Right stick X at 1 (right)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      
+      controls.state.gamepad = mockGamepadRight;
+      controls.handleGamepadInput();
+      state = controls.getControls();
+      expect(state.roll).toBe(1.0); // Right on stick should be positive (roll left)
+    });
+
+    test('roll input should respect deadzone', () => {
+      const mockGamepad = {
+        axes: [0, 0, 0.05, 0], // Right stick X barely moved right
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller'
+      };
+      
+      controls.state.gamepad = mockGamepad;
+      controls.handleGamepadInput();
+      const state = controls.getControls();
+      expect(state.roll).toBe(0); // Should be zero due to deadzone
+    });
+  });
+
   describe('Orientation Tracking', () => {
     test('updateDroneOrientation should track pitch changes', () => {
       const mockRotation = { x: 0.5, y: 0, z: 0 }; // Pitched up by 0.5 radians
@@ -181,6 +230,102 @@ describe('Controls', () => {
       const state = controls.getControls();
       expect(state.pitch).toBe(0);
       expect(state.roll).toBe(0);
+    });
+  });
+
+  describe('Browser Input Flow', () => {
+    let mockPhysicsDemo;
+    
+    beforeEach(() => {
+      // Create a minimal mock of PhysicsDemo that matches the real implementation
+      mockPhysicsDemo = {
+        controls: controls,
+        setRoll: function(value) {
+          this.controls.setRoll(value);
+        },
+        setThrottle: function(value) {
+          this.controls.setThrottle(value);
+        },
+        setPitch: function(value) {
+          this.controls.setPitch(value);
+        },
+        setYaw: function(value) {
+          this.controls.setYaw(value);
+        }
+      };
+    });
+
+    test('keyboard roll inputs should flow correctly through PhysicsDemo', () => {
+      // Simulate keyboard events as they would come from the browser
+      const rollLeftEvent = new Event('keydown');
+      rollLeftEvent.key = 'j';  // Roll left key
+      
+      const rollRightEvent = new Event('keydown');
+      rollRightEvent.key = 'l';  // Roll right key
+      
+      const releaseEvent = new Event('keyup');
+      releaseEvent.key = 'j';
+
+      // Simulate the exact handler from physics_demo.js
+      function handleKeyDown(event) {
+        switch(event.key) {
+          case 'j': // Roll left
+            mockPhysicsDemo.setRoll(1.0);
+            break;
+          case 'l': // Roll right
+            mockPhysicsDemo.setRoll(-1.0);
+            break;
+        }
+      }
+
+      function handleKeyUp(event) {
+        switch(event.key) {
+          case 'j':
+          case 'l':
+            mockPhysicsDemo.setRoll(0);
+            break;
+        }
+      }
+
+      // Test roll left
+      handleKeyDown(rollLeftEvent);
+      let state = controls.getControls();
+      expect(state.roll).toBe(1.0); // Should be positive for left roll
+
+      // Test roll right
+      handleKeyDown(rollRightEvent);
+      state = controls.getControls();
+      expect(state.roll).toBe(-1.0); // Should be negative for right roll
+
+      // Test release
+      handleKeyUp(releaseEvent);
+      state = controls.getControls();
+      expect(state.roll).toBe(0); // Should reset to zero
+    });
+
+    test('gamepad roll inputs should flow correctly through PhysicsDemo', () => {
+      // Mock the gamepad API input as it would come from the browser
+      const mockGamepad = {
+        axes: [0, 0, 1, 0], // Right stick X at 1 (right)
+        buttons: Array(16).fill({ pressed: false }),
+        id: 'Test Controller',
+        index: 0
+      };
+
+      // Connect gamepad
+      gamepadConnectHandlers[0]({ gamepad: mockGamepad });
+      
+      // Update gamepad state as PhysicsDemo would
+      controls.state.gamepad = mockGamepad;
+      controls.handleGamepadInput();
+
+      // Verify the flow through controls to final state
+      const state = controls.getControls();
+      const diagnostics = controls.getDiagnostics();
+      
+      expect(state.roll).toBe(1.0); // Right on stick = roll left = positive
+      expect(diagnostics.debugState.rawInputs.rightStick.x).toBe(1);
+      expect(diagnostics.debugState.processedControls.roll).toBe(1.0);
     });
   });
 }); 

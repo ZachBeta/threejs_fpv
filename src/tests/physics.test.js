@@ -261,6 +261,37 @@ describe('Drone Physics', () => {
   });
 
   describe('Tilt-Based Movement', () => {
+    test('roll direction should be consistent with input values', () => {
+      const deltaTime = 0.016; // 60fps
+      
+      // Test positive roll input
+      drone.reset();
+      drone.setThrottle(0.8);
+      drone.setRoll(1.0); // Positive roll should be roll left
+      
+      for (let i = 0; i < 20; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      const leftRollVelocity = drone.velocity.x;
+      expect(leftRollVelocity).toBeLessThan(0); // Should move left with positive roll
+      
+      // Test negative roll input
+      drone.reset();
+      drone.setThrottle(0.8);
+      drone.setRoll(-1.0); // Negative roll should be roll right
+      
+      for (let i = 0; i < 20; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      const rightRollVelocity = drone.velocity.x;
+      expect(rightRollVelocity).toBeGreaterThan(0); // Should move right with negative roll
+      
+      // Verify symmetry of movement
+      expect(Math.abs(leftRollVelocity)).toBeCloseTo(Math.abs(rightRollVelocity), 1);
+    });
+
     test('rolling right should make the drone move right (positive x)', () => {
       const deltaTime = 0.016; // 60fps
       

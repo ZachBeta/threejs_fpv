@@ -267,10 +267,10 @@ document.addEventListener('keydown', (event) => {
       demo.setPitch(1.0); // Positive value to pitch backward
       break;
     case 'j': // Roll left
-      demo.setRoll(-1.0);
+      demo.setRoll(1.0); // Changed from -1.0 to 1.0 for left roll
       break;
     case 'l': // Roll right
-      demo.setRoll(1.0);
+      demo.setRoll(-1.0); // Changed from 1.0 to -1.0 for right roll
       break;
     
     // Other controls
