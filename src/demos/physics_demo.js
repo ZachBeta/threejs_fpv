@@ -387,17 +387,21 @@ ${formatAsKeyValuePairs(roundedOrientation)}</div>
       this.drone.position.z
     );
     
-    // Update FPV camera position and rotation to match drone
-    // Create a forward vector to position camera at the tip of the red arrow
-    const frontOffset = new THREE.Vector3(0, 0, 0.8); // Red arrow is 0.6 units forward + 0.2 for its length
-    frontOffset.applyQuaternion(this.drone.droneMesh.quaternion);
+    // Get world position of the camera model
+    const cameraWorldPosition = new THREE.Vector3();
+    this.drone.cameraModel.getWorldPosition(cameraWorldPosition);
     
-    // Set camera position at the tip of the front indicator (red arrow)
-    this.fpvCamera.position.copy(this.drone.droneMesh.position);
-    this.fpvCamera.position.add(frontOffset);
+    // Get world quaternion of the camera model
+    const cameraWorldQuaternion = new THREE.Quaternion();
+    this.drone.cameraModel.getWorldQuaternion(cameraWorldQuaternion);
     
-    // Use drone's quaternion but rotate 180° around Y axis to face forward
-    this.fpvCamera.quaternion.copy(this.drone.droneMesh.quaternion);
+    // Set FPV camera position to match physical camera model
+    this.fpvCamera.position.copy(cameraWorldPosition);
+    
+    // Set FPV camera orientation to match physical camera model
+    // The camera model is facing forward on the drone, but we need to rotate 180°
+    // around Y axis to make it face in the correct direction for the camera view
+    this.fpvCamera.quaternion.copy(cameraWorldQuaternion);
     this.fpvCamera.rotateY(Math.PI);
     
     // Add slight uptilt to the FPV camera (about 15 degrees)
