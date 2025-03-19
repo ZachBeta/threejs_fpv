@@ -168,12 +168,11 @@ export class DronePhysics {
       this.velocity.z *= (1 - horizontalDragForce * deltaTime);
     }
     
-    // Vertical drag
-    const verticalDragCoef = this.throttle < 0.1 && this.velocity.y < 0 
-                          ? this.verticalDrag * 0.5 
-                          : this.verticalDrag;
-    const verticalDragForce = Math.abs(this.velocity.y) * verticalDragCoef;
-    this.velocity.y *= (1 - verticalDragForce * deltaTime);
+    // Only apply vertical drag when not in freefall
+    if (!(this.throttle < 0.1 && this.velocity.y < 0)) {
+      const verticalDragForce = Math.abs(this.velocity.y) * this.verticalDrag;
+      this.velocity.y *= (1 - verticalDragForce * deltaTime);
+    }
   }
 
   handleGroundCollision() {

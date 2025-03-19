@@ -10,6 +10,7 @@ import { PhysicsTestRoutine } from '../flight_routines/physics_test_routine.js';
 import { ThrottleTestRoutine } from '../flight_routines/throttle_test_routine.js';
 import { AdvancedManeuversRoutine } from '../flight_routines/advanced_maneuvers_routine.js';
 import { YawTestRoutine } from '../flight_routines/yaw_test_routine.js';
+import { FreefallRoutine } from '../flight_routines/freefall_routine.js';
 import { Controls } from '../controls.js';
 
 class RoutineDemo {
@@ -49,7 +50,8 @@ class RoutineDemo {
       physicsTest: new PhysicsTestRoutine().steps,
       throttleTest: new ThrottleTestRoutine().steps,
       advancedManeuvers: new AdvancedManeuversRoutine().steps,
-      yawTest: new YawTestRoutine().steps
+      yawTest: new YawTestRoutine().steps,
+      freefall: new FreefallRoutine().steps
     };
 
     // Set default routine
@@ -555,6 +557,9 @@ class RoutineDemo {
         break;
       case 'yawTest':
         routine = new YawTestRoutine();
+        break;
+      case 'freefall':
+        routine = new FreefallRoutine();
         break;
       default:
         routine = new BasicRoutine();

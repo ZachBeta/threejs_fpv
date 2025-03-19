@@ -635,4 +635,95 @@ describe('Drone Physics', () => {
       expect(Math.abs(drone.position.z - initialZ)).toBeLessThan(0.1);
     });
   });
+
+  describe('Freefall Behavior', () => {
+    test('drone should accelerate downward at 9.81 m/s² in freefall', () => {
+      const drone = new DronePhysics();
+      const deltaTime = 1/60; // 60 fps, exactly 1/60th of a second
+      
+      // Start at 1000 units up
+      drone.position.y = 1000;
+      
+      // Run for 1 second (60 frames)
+      for (let i = 0; i < 60; i++) {
+        if (i % 10 === 0) {
+          console.log(`Frame ${i}: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
+        }
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // After 1s, velocity should be approximately -9.81 m/s
+      console.log(`After 1s: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
+      expect(drone.velocity.y).toBeCloseTo(-9.81, 1);
+      
+      // Run for another second
+      for (let i = 60; i < 120; i++) {
+        if (i % 10 === 0) {
+          console.log(`Frame ${i}: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
+        }
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // After 2s, velocity should be approximately -19.62 m/s
+      console.log(`After 2s: velocity.y = ${drone.velocity.y}, position.y = ${drone.position.y}`);
+      expect(drone.velocity.y).toBeCloseTo(-19.62, 1);
+      
+      // Verify we haven't hit the ground yet
+      expect(drone.position.y).toBeGreaterThan(0);
+    });
+
+    test('drone should stop at ground level', () => {
+      const deltaTime = 0.016;
+      drone.position.y = 50;   // Start from height
+      drone.velocity.y = -10;  // Start with downward velocity
+      drone.throttle = 0;      // No throttle
+      
+      // Let it fall
+      while (drone.position.y > 0) {  // Use 0 since that's the default groundLevel
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Should stop at ground level (0)
+      expect(drone.position.y).toBe(0);
+      expect(drone.velocity.y).toBe(0);
+    });
+
+    test('drone should survive extreme crash from high altitude', () => {
+      const deltaTime = 1/60; // Use precise deltaTime for consistent physics
+      const drone = new DronePhysics();
+      
+      // Start from extremely high altitude
+      drone.position.y = 10000; // 10km up
+      
+      // Track maximum velocity reached
+      let maxVelocity = 0;
+      
+      // Let it fall until it hits the ground
+      while (drone.position.y > 0) {
+        drone.updatePhysics(deltaTime);
+        maxVelocity = Math.min(maxVelocity, drone.velocity.y); // Track max negative velocity
+        
+        // Log every 1000m of descent
+        if (Math.floor(drone.position.y) % 1000 === 0) {
+          console.log(`Altitude: ${Math.floor(drone.position.y)}m, Velocity: ${drone.velocity.y.toFixed(2)} m/s`);
+        }
+      }
+      
+      console.log(`Maximum velocity reached: ${maxVelocity.toFixed(2)} m/s`);
+      console.log(`Final position: ${drone.position.y}, Final velocity: ${drone.velocity.y}`);
+      
+      // Verify final state
+      expect(drone.position.y).toBe(0); // Should stop exactly at ground
+      expect(drone.velocity.y).toBe(0); // Should have zero vertical velocity
+      
+      // Try to move after crash
+      drone.setThrottle(1.0);
+      for (let i = 0; i < 60; i++) {
+        drone.updatePhysics(deltaTime);
+      }
+      
+      // Should be able to take off again
+      expect(drone.position.y).toBeGreaterThan(0);
+    });
+  });
 }); 
