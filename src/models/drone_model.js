@@ -47,7 +47,11 @@ export class DroneModel {
     // Front indicator (red)
     const frontIndicator = new THREE.Mesh(
       new THREE.ConeGeometry(0.2, 0.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0xff0000 })
+      new THREE.MeshStandardMaterial({ 
+        color: 0xff0000,
+        transparent: true,
+        opacity: 0.15
+      })
     );
     frontIndicator.rotation.x = Math.PI / 2; // Point forward
     frontIndicator.position.z = 0.6;
@@ -57,7 +61,11 @@ export class DroneModel {
     // Up indicator (blue)
     const upIndicator = new THREE.Mesh(
       new THREE.ConeGeometry(0.2, 0.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0x0000ff })
+      new THREE.MeshStandardMaterial({ 
+        color: 0x0000ff,
+        transparent: true,
+        opacity: 0.15
+      })
     );
     upIndicator.position.y = 0.3;
     upIndicator.castShadow = true;
@@ -66,7 +74,11 @@ export class DroneModel {
     // Right indicator (green)
     const rightIndicator = new THREE.Mesh(
       new THREE.ConeGeometry(0.2, 0.4, 8),
-      new THREE.MeshStandardMaterial({ color: 0x00ff00 })
+      new THREE.MeshStandardMaterial({ 
+        color: 0x00ff00,
+        transparent: true,
+        opacity: 0.15
+      })
     );
     rightIndicator.rotation.z = -Math.PI / 2; // Point right
     rightIndicator.position.x = 0.6;

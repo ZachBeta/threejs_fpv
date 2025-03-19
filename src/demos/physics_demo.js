@@ -77,9 +77,57 @@ class PhysicsDemo {
     pipLabel.style.textShadow = '1px 1px 1px black';
     pipLabel.style.zIndex = '1001';
     
+    // Add crosshair to FPV view
+    const crosshair = document.createElement('div');
+    crosshair.style.position = 'absolute';
+    crosshair.style.top = '50%';
+    crosshair.style.left = '50%';
+    crosshair.style.transform = 'translate(-50%, -50%)';
+    crosshair.style.zIndex = '1001';
+    
+    // Create horizontal line
+    const horizontalLine = document.createElement('div');
+    horizontalLine.style.width = '20px';
+    horizontalLine.style.height = '2px';
+    horizontalLine.style.backgroundColor = '#00ff00';
+    horizontalLine.style.position = 'absolute';
+    horizontalLine.style.top = '50%';
+    horizontalLine.style.left = '50%';
+    horizontalLine.style.transform = 'translate(-50%, -50%)';
+    horizontalLine.style.opacity = '0.7';
+    
+    // Create vertical line
+    const verticalLine = document.createElement('div');
+    verticalLine.style.width = '2px';
+    verticalLine.style.height = '20px';
+    verticalLine.style.backgroundColor = '#00ff00';
+    verticalLine.style.position = 'absolute';
+    verticalLine.style.top = '50%';
+    verticalLine.style.left = '50%';
+    verticalLine.style.transform = 'translate(-50%, -50%)';
+    verticalLine.style.opacity = '0.7';
+    
+    // Create center dot
+    const centerDot = document.createElement('div');
+    centerDot.style.width = '4px';
+    centerDot.style.height = '4px';
+    centerDot.style.borderRadius = '50%';
+    centerDot.style.backgroundColor = '#00ff00';
+    centerDot.style.position = 'absolute';
+    centerDot.style.top = '50%';
+    centerDot.style.left = '50%';
+    centerDot.style.transform = 'translate(-50%, -50%)';
+    centerDot.style.opacity = '0.7';
+    
+    // Assemble crosshair
+    crosshair.appendChild(horizontalLine);
+    crosshair.appendChild(verticalLine);
+    crosshair.appendChild(centerDot);
+    
     // Add the renderer to the container
     pipContainer.appendChild(this.fpvRenderer.domElement);
     pipContainer.appendChild(pipLabel);
+    pipContainer.appendChild(crosshair);
     document.body.appendChild(pipContainer);
     
     // Store the container reference
