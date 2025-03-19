@@ -40,7 +40,8 @@ describe('Controls', () => {
         rightStickY: 3
       },
       buttonMapping: {
-        reset: 4
+        reset: 4,
+        hover: 5
       }
     };
 

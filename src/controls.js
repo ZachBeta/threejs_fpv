@@ -102,7 +102,7 @@ export class Controls {
       throttle: leftY !== 0 ? -leftY : 0,
       yaw: leftX !== 0 ? -leftX : 0,
       pitch: rightY !== 0 ? rightY : 0,
-      roll: rightX !== 0 ? -rightX : 0  // Inverted to match keyboard controls
+      roll: rightX !== 0 ? rightX : 0
     };
 
     // Store processed controls for debugging
@@ -111,15 +111,19 @@ export class Controls {
     // Update game state
     Object.assign(this.state.controls, controls);
 
-    // Handle button presses
-    if (gamepad.buttons[buttonMapping.reset]?.pressed && !this._lastResetState) {
+    // Handle button presses with proper state tracking
+    const resetPressed = gamepad.buttons[buttonMapping.reset]?.pressed;
+    const hoverPressed = gamepad.buttons[buttonMapping.hover]?.pressed;
+
+    if (resetPressed && !this._lastResetState) {
       this.reset();
     }
-    if (gamepad.buttons[buttonMapping.hover]?.pressed && !this._lastHoverState) {
+    if (hoverPressed && !this._lastHoverState) {
       this.toggleHoverMode();
     }
-    this._lastResetState = gamepad.buttons[buttonMapping.reset]?.pressed;
-    this._lastHoverState = gamepad.buttons[buttonMapping.hover]?.pressed;
+
+    this._lastResetState = resetPressed;
+    this._lastHoverState = hoverPressed;
   }
 
   updateGamepadState() {
@@ -172,7 +176,7 @@ export class Controls {
 
   toggleHoverMode() {
     this.state.controls.hover = !this.state.controls.hover;
-    console.log('Hover mode:', this.state.controls.hover);
+    console.log('Hover mode:', this.state.controls.hover ? 'enabled' : 'disabled');
   }
 
   reset() {
